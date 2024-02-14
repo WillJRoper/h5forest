@@ -22,13 +22,13 @@ To install `h5forest` simply clone this repo and run
 pip install .
 ```
 
-at the root level.
+at the root level of the repo.
 
-You will now have the `h5forest` command. Simply run
+You will now have the `h5forest` command installed. Simply run
 
 ```
 h5forest /path/to/hdf5/file.hdf5
 ```
 
-to get started exploring a file.
+on the command line to get started exploring a file.
 
