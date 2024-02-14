@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hdf5-forest"
+version = "0.1.0"
+description = "A tool to view HDF5 file structures in the terminal."
+authors = [{name = "Will Roper", email = "w.roper@sussex.ac.uk"}]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.6"
+
+dependencies = [
+  "h5py",
+  "numpy",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/WillJRoper/HDF5orest"
+"Repository" = "https://github.com/WillJRoper/HDF5orest"
+
+[project.scripts]
+h5forest = "h5forest.h5_forest:main"
