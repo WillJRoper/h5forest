@@ -1,14 +1,14 @@
 # HDF5orest
-HDF5 Forest (`h5forest`) is an interactive CLI application for exploring HDF5 files interactively.
+HDF5 Forest (`h5forest`) is an interactive CLI application for exploring HDF5 files.
 
-`h5ls` works, and `h5glance` is a great improvement on it. So "why bother?" I hear you say. 
+`h5ls` works, and `h5glance` is a great improvement on it. So "Why bother?" I hear you say. 
 
-Well, `h5forest` brings interactivity and functionality not available in its long standing brethren. `h5forest` includes:
+Well, `h5forest` brings interactivity and functionality not available in its long-standing brethren. `h5forest` includes:
 
 - An interactive interface capable of handling files with deep hierarchies and large numbers of groups.
-- Real time metadata and attribute displays.
+- Real-time metadata and attribute displays.
 - The ability to display the contents of a Dataset.
-- The ability to quick plot datasets against each other [WIP].
+- The ability to quickly plot datasets against each other [WIP].
 - Renaming of Datasets and Groups [WIP].
 - An emacs plugin to probe HDF5 natively in emacs [WIP].
 
