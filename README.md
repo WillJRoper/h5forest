@@ -7,7 +7,7 @@ Well, `h5forest` brings interactivity and functionality not available in its lon
 
 - An interactive interface capable of handling files with deep hierarchies and large numbers of groups.
 - Real time metadata and attribute displays.
-- The ability to display the contents of Datasets. (For Large datasets only a small sample of the values are read in to avoid flooding memory.)
+- The ability to display the contents of a Dataset.
 - The ability to quick plot datasets against each other [WIP].
 - Renaming of Datasets and Groups [WIP].
 - An emacs plugin to probe HDF5 natively in emacs [WIP].
