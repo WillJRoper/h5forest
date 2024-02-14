@@ -1,10 +1,20 @@
+# Set up the build system
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+
+# Use latest setuotools, setuptools_scm for git versioning and
+# numpy (numpy includes are needed for compilation of C extensions)
+requires = ["setuptools>=64", "setuptools_scm>=8", "numpy>=1.23"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools_scm]
+
+# Make a version file at build time
+version_file = "src/h5forest/_version.py"
+
 [project]
+dynamic = ["version"]
+
 name = "hdf5-forest"
-version = "0.1.0"
 description = "A tool to view HDF5 file structures in the terminal."
 authors = [{name = "Will Roper", email = "w.roper@sussex.ac.uk"}]
 license = {file = "LICENSE"}
