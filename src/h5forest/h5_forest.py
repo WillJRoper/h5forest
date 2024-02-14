@@ -1,4 +1,13 @@
-import argparse
+"""The main application for the HDF5 Forest.
+
+This application provides a CLI application for exploring HDF5 files. This is
+enabled by the h5forest entry point set up when the package is installed.
+
+Example Usage:
+    h5forest /path/to/file.hdf5
+
+"""
+import sys
 import threading
 
 from prompt_toolkit import Application
@@ -13,15 +22,13 @@ from prompt_toolkit.document import Document
 from h5forest.tree import Tree
 from h5forest.utils import DynamicTitle, get_window_size
 
-# Setup command line args
-parser = argparse.ArgumentParser(description="HDF5 file viewer")
-parser.add_argument("--filepath", help="The HDF5 file to view")
-
-# Parse the command line args
-args = parser.parse_args()
 
 # Set up the Tree object
-tree = Tree(args.filepath)
+if len(sys.argv) != 2:
+    print("Usage: h5forest /path/to/file.hdf5")
+    sys.exit(1)
+
+tree = Tree(sys.argv[1])
 
 # Set up some global flags
 values_visible = [False]
