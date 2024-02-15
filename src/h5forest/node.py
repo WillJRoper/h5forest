@@ -158,7 +158,7 @@ class Node:
             self.fillvalue = None
             self.nbytes = None
 
-        # Construct attribute and metadata text to avoid computation
+        # Construct tree_text, attribute and metadata text to avoid computation
         self._attr_text = None
         self._meta_text = None
 
@@ -187,7 +187,7 @@ class Node:
         """
         return f"Node({self.path})"
 
-    def to_tree_string(self):
+    def to_tree_text(self):
         """
         Return a string representing the node for inclusion in the tree.
 
@@ -198,12 +198,16 @@ class Node:
             str:
                 A string representing the node for inclusion in the tree text.
         """
-        out = "    " * self.depth
-        if self.is_expanded:
-            out += "▼ "
-        elif self.has_children:
-            out += "▶ "
-        return out + self.name
+        # Create the tree text
+        if self.has_children:
+            out = (
+                f"{'    ' * self.depth}"
+                f"{'▼' if self.is_expanded else '▶'} {self.name}"
+            )
+        else:
+            out = f"{'    ' * self.depth} {self.name}"
+
+        return out
 
     def open_node(self):
         """Open the node of the HDF5 file."""
