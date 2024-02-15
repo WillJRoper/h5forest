@@ -33,6 +33,20 @@ class H5Forest:
             Dataset in the HDF5 file is represented by a Node object.
         flag_values_visible (bool):
             A flag to control the visibility of the values text area.
+        flag_normal_mode (bool):
+            A flag to control the normal mode of the application.
+        flag_jump_mode (bool):
+            A flag to control the jump mode of the application.
+        flag_dataset_mode (bool):
+            A flag to control the dataset mode of the application.
+        flag_window_mode (bool):
+            A flag to control the window mode of the application.
+        jump_keys (VSplit):
+            The hotkeys for the jump mode.
+        dataset_keys (VSplit):
+            The hotkeys for the dataset mode.
+        window_keys (VSplit):
+            The hotkeys for the window mode.
         kb (KeyBindings):
             The keybindings for the application.
         value_title (DynamicTitle):
@@ -45,7 +59,9 @@ class H5Forest:
             The text area for the attributes.
         values_content (TextArea):
             The text area for the values.
-        hotkeys_panel (Label):
+        hot_keys (VSplit):
+            The hotkeys for the application.
+        hotkeys_panel (HSplit):
             The panel to display hotkeys.
         prev_row (int):
             The previous row the cursor was on. This means we can avoid
@@ -88,7 +104,7 @@ class H5Forest:
         # flag_normal_mode when the escape key is pressed
         self.flag_normal_mode = True
         self.flag_jump_mode = False
-        self.flag_values_mode = False
+        self.flag_dataset_mode = False
         self.flag_window_mode = False
 
         # Intialise the different leader key mode hot keys
@@ -98,10 +114,10 @@ class H5Forest:
                 Label("b → Jump to bottom"),
             ]
         )
-        self.values_keys = VSplit(
+        self.dataset_keys = VSplit(
             [
-                Label("o → Open Values"),
-                Label("c → Close Value View"),
+                Label("v → Show values"),
+                Label("c → Close value view"),
             ]
         )
         self.window_keys = VSplit(
@@ -117,7 +133,7 @@ class H5Forest:
         self.kb = KeyBindings()
         self._init_leader_bindings()
         self._init_app_bindings()
-        self._init_values_bindings()
+        self._init_dataset_bindings()
         self._init_jump_bindings()
 
         # Attributes for dynamic titles
@@ -135,7 +151,7 @@ class H5Forest:
         self.hot_keys = VSplit(
             [
                 Label("RET → Open Group"),
-                Label("v → Values Mode"),
+                Label("d → Dataset Mode"),
                 Label("j → Jump mode"),
                 Label("w → Window mode"),
                 Label("q → Exit"),
@@ -199,7 +215,7 @@ class H5Forest:
         """Return to normal mode."""
         self.flag_normal_mode = True
         self.flag_jump_mode = False
-        self.flag_values_mode = False
+        self.flag_dataset_mode = False
         self.flag_window_mode = False
 
     def _init_leader_bindings(self):
@@ -211,11 +227,11 @@ class H5Forest:
             self.flag_normal_mode = False
             self.flag_jump_mode = True
 
-        @self.kb.add("v", filter=Condition(lambda: self.flag_normal_mode))
-        def value_leader_mode(event):
-            """Enter value mode."""
+        @self.kb.add("d", filter=Condition(lambda: self.flag_normal_mode))
+        def dataset_leader_mode(event):
+            """Enter dataset mode."""
             self.flag_normal_mode = False
-            self.flag_values_mode = True
+            self.flag_dataset_mode = True
 
         @self.kb.add("w", filter=Condition(lambda: self.flag_normal_mode))
         def window_leader_mode(event):
@@ -278,10 +294,10 @@ class H5Forest:
                 self.tree.tree_text, new_cursor_pos=current_pos
             )
 
-    def _init_values_bindings(self):
-        """Set up the keybindings for the values mode."""
+    def _init_dataset_bindings(self):
+        """Set up the keybindings for the dataset mode."""
 
-        @self.kb.add("o", filter=Condition(lambda: self.flag_values_mode))
+        @self.kb.add("v", filter=Condition(lambda: self.flag_dataset_mode))
         def show_values(event):
             """
             Show the values of a dataset.
@@ -310,7 +326,7 @@ class H5Forest:
             # Exit values mode
             self.return_to_normal_mode()
 
-        @self.kb.add("c", filter=Condition(lambda: self.flag_values_mode))
+        @self.kb.add("c", filter=Condition(lambda: self.flag_dataset_mode))
         def close_values(event):
             """Close the value pane."""
             self.flag_values_visible = False
@@ -453,8 +469,8 @@ class H5Forest:
                     filter=Condition(lambda: self.flag_jump_mode),
                 ),
                 ConditionalContainer(
-                    content=self.values_keys,
-                    filter=Condition(lambda: self.flag_values_mode),
+                    content=self.dataset_keys,
+                    filter=Condition(lambda: self.flag_dataset_mode),
                 ),
                 ConditionalContainer(
                     content=self.window_keys,
