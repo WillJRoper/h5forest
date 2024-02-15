@@ -28,8 +28,57 @@ from h5forest.utils import (
 
 
 class H5Forest:
+    """
+    The main application for the HDF5 Forest.
+
+    Attributes:
+        tree (Tree):
+            The tree object representing the HDF5 file. Each Group or
+            Dataset in the HDF5 file is represented by a Node object.
+        flag_values_visible (bool):
+            A flag to control the visibility of the values text area.
+        kb (KeyBindings):
+            The keybindings for the application.
+        value_title (DynamicTitle):
+            A dynamic title for the values text area.
+        tree_content (TextArea):
+            The text area for the tree.
+        metadata_content (TextArea):
+            The text area for the metadata.
+        attributes_content (TextArea):
+            The text area for the attributes.
+        values_content (TextArea):
+            The text area for the values.
+        hotkeys_panel (Label):
+            The panel to display hotkeys.
+        prev_row (int):
+            The previous row the cursor was on. This means we can avoid
+            updating the metadata and attributes when the cursor hasn't moved.
+        tree_frame (Frame):
+            The frame for the tree text area.
+        metadata_frame (Frame):
+            The frame for the metadata text area.
+        attrs_frame (Frame):
+            The frame for the attributes text area.
+        values_frame (Frame):
+            The frame for the values text area.
+        layout (Layout):
+            The layout of the application.
+        app (Application):
+            The main application object.
+    """
+
     def __init__(self, hdf5_filepath):
-        """ """
+        """
+        Initialise the application.
+
+        Constructs all the frames necessary for the app, builds the HDF5 tree
+        (populating only the root), and populates the Layout.
+
+        Args:
+            hdf5_filepath (str):
+                The path to the HDF5 file to be explored.
+        """
 
         # We do, set up the Tree with the file
         # This will parse the root of the HDF5 file ready to populate the
