@@ -79,7 +79,6 @@ class H5Forest:
             hdf5_filepath (str):
                 The path to the HDF5 file to be explored.
         """
-
         # We do, set up the Tree with the file
         # This will parse the root of the HDF5 file ready to populate the
         # tree text area
@@ -135,7 +134,13 @@ class H5Forest:
 
     @property
     def current_row(self):
-        """Return the row under the cursor."""
+        """
+        Return the row under the cursor.
+
+        Returns:
+            int:
+                The row under the cursor.
+        """
         # Get the tree content
         doc = self.tree_content.document
 
