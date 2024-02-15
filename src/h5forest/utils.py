@@ -36,16 +36,26 @@ class DynamicTitle:
 
 
 def get_window_size():
-    """Get the terminal window size."""
+    """
+    Get the terminal window size in lines and characters.
+
+    Returns:
+        tuple: The number of lines and characters in the terminal window.
+    """
     rows, columns = os.popen("stty size", "r").read().split()
     return int(rows), int(columns)
 
 
-def calculate_new_cursor_position(current_row, node, text):
-    """Calculate the new cursor position after text update."""
-    # Split the text
-    lines = text.split("\n")
+def calculate_new_cursor_position(current_row, lines):
+    """
+    Calculate the new cursor position after text update.
 
+    Args:
+        current_row (int):
+            The current row in the tree output.
+        lines (l):ist
+            The tree output text split by newlines.
+    """
     # Sum all the characters up to position.
     # +1 for newline characters
     new_position = sum(len(lines[i]) + 1 for i in range(current_row))
