@@ -331,16 +331,9 @@ class Node:
         else:
             with h5py.File(self.filepath, "r") as hdf:
                 dataset = hdf[self.path]
-                rows, columns = get_window_size()
-
-                # Account for the other 2 frames we will have open
-                columns //= 3
-
-                # Subtract rows for the header and footer
-                rows //= 5
 
                 # How many values roughly can we show maximally?
-                max_count = min(100, columns * rows)
+                max_count = 1000
 
                 # If the dataset is small enough we can just read everything
                 if dataset.size < max_count:
@@ -363,16 +356,5 @@ class Node:
                         f"\n\nShowing {max_count}/{dataset.size} elements."
                     )
 
-                # Format data for display
-                formatted_data = np.array2string(
-                    data_subset,
-                    threshold=np.inf,
-                    edgeitems=3,
-                    max_line_width=columns - 4,
-                    precision=3,
-                    suppress_small=True,
-                    separator=", ",
-                )
-
                 # Combine path and data for output
-                return formatted_data + truncated
+                return str(data_subset) + truncated
