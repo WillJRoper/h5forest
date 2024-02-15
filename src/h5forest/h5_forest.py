@@ -20,11 +20,7 @@ from prompt_toolkit.application import get_app
 from prompt_toolkit.document import Document
 
 from h5forest.tree import Tree
-from h5forest.utils import (
-    DynamicTitle,
-    get_window_size,
-    calculate_new_cursor_position,
-)
+from h5forest.utils import DynamicTitle, get_window_size
 
 
 class H5Forest:
@@ -149,6 +145,17 @@ class H5Forest:
 
         return current_row
 
+    @property
+    def current_position(self):
+        """
+        Return the current position in the tree.
+
+        Returns:
+            int:
+                The current position in the tree.
+        """
+        return self.tree_content.document.cursor_position
+
     def _init_app_bindings(self):
         """Set up the keybindings for the UI."""
 
@@ -176,6 +183,7 @@ class H5Forest:
             """
             # Get the current cursor row and position
             current_row = self.current_row
+            current_pos = self.current_position
 
             # Get the node under the cursor
             node = self.tree.get_current_node(current_row)
@@ -193,13 +201,9 @@ class H5Forest:
                     node, current_row, self.tree_content
                 )
 
-            # After updating, calculate the new cursor position
-            new_cursor_position = calculate_new_cursor_position(
-                current_row, self.tree.tree_text_split
-            )
-
+            # Reset the cursor position post update
             self.set_cursor_position(
-                self.tree.tree_text, new_cursor_pos=new_cursor_position
+                self.tree.tree_text, new_cursor_pos=current_pos
             )
 
         @self.kb.add("c-t")
