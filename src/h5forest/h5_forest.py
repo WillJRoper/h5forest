@@ -174,12 +174,8 @@ class H5Forest:
             This uses lazy loading so only the group at the expansion point
             will be loaded.
             """
-            # Directly use `tree_content` instead of trying to get it from
-            # the focus
-            doc = self.tree_content.document
-
             # Get the current cursor row and position
-            current_row = doc.cursor_position_row
+            current_row = self.current_row
 
             # Get the node under the cursor
             node = self.tree.get_current_node(current_row)
@@ -199,24 +195,23 @@ class H5Forest:
 
             # After updating, calculate the new cursor position
             new_cursor_position = calculate_new_cursor_position(
-                current_row, node, self.tree_content.text
+                current_row, self.tree.tree_text_split
             )
 
             self.set_cursor_position(
-                self.tree_content.text, new_cursor_pos=new_cursor_position
+                self.tree.tree_text, new_cursor_pos=new_cursor_position
             )
 
         @self.kb.add("c-t")
         def jump_to_top(event):
             """Jump to the top of the tree."""
-            self.set_cursor_position(self.tree_content.text, new_cursor_pos=0)
+            self.set_cursor_position(self.tree.tree_text, new_cursor_pos=0)
 
         @self.kb.add("c-b")
         def jump_to_bottom(event):
             """Jump to the bottom of the tree."""
             self.set_cursor_position(
-                self.tree_content.text,
-                new_cursor_pos=len(self.tree_content.text),
+                self.tree.tree_text, new_cursor_pos=self.tree.length
             )
 
         @self.kb.add("v")
@@ -312,8 +307,8 @@ class H5Forest:
 
             except IndexError:
                 self.set_cursor_position(
-                    self.tree_content.text,
-                    new_cursor_pos=len(self.tree_content.text),
+                    self.tree.tree_text,
+                    new_cursor_pos=self.tree.length,
                 )
                 self.metadata_content.text = ""
                 self.attributes_content.text = ""
@@ -327,7 +322,9 @@ class H5Forest:
 
         # Create each individual element of the UI before packaging it
         # all into the layout
-        self.tree_frame = Frame(self.tree_content, title="HDF5 Structure")
+        self.tree_frame = Frame(
+            self.tree_content, title="HDF5 Structure", width=columns // 3
+        )
         self.metadata_frame = Frame(
             self.metadata_content, title="Metadata", height=10
         )
