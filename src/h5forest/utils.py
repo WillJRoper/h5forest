@@ -39,3 +39,14 @@ def get_window_size():
     """Get the terminal window size."""
     rows, columns = os.popen("stty size", "r").read().split()
     return int(rows), int(columns)
+
+
+def calculate_new_cursor_position(current_row, node, text):
+    """Calculate the new cursor position after text update."""
+    # Split the text
+    lines = text.split("\n")
+
+    # Sum all the characters up to position.
+    # +1 for newline characters
+    new_position = sum(len(lines[i]) + 1 for i in range(current_row))
+    return new_position
