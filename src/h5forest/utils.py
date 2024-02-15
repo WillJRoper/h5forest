@@ -36,6 +36,11 @@ class DynamicTitle:
 
 
 def get_window_size():
-    """Get the terminal window size."""
+    """
+    Get the terminal window size in lines and characters.
+
+    Returns:
+        tuple: The number of lines and characters in the terminal window.
+    """
     rows, columns = os.popen("stty size", "r").read().split()
     return int(rows), int(columns)

@@ -23,256 +23,368 @@ from h5forest.tree import Tree
 from h5forest.utils import DynamicTitle, get_window_size
 
 
-# Set up the Tree object
-if len(sys.argv) != 2:
-    print("Usage: h5forest /path/to/file.hdf5")
-    sys.exit(1)
-
-tree = Tree(sys.argv[1])
-
-# Set up some global flags
-values_visible = [False]
-
-
-# Keybindings for the application
-kb = KeyBindings()
-
-
-@kb.add("c-q")
-def exit_app(event):
-    event.app.exit()
-
-
-# Assuming `hdf5_structure` is defined outside to be accessible
-hdf5_structure = TextArea(
-    text=tree.get_tree_text(),
-    scrollbar=True,
-    read_only=True,
-)
-
-metadata_content = TextArea(
-    text="Metadata details here...",
-    scrollbar=False,
-    focusable=False,
-    read_only=True,
-)
-
-attributes_content = TextArea(
-    text="Attributes here...",
-    read_only=True,
-    scrollbar=True,
-    focusable=False,
-)
-
-values_content = TextArea(
-    text="Values here...",
-    read_only=True,
-    scrollbar=True,
-    focusable=False,
-)
-
-# Define a list of hotkeys
-hotkeys_panel = Label(
-    "C-q → Exit    RET → Open Node    v → View Values    "
-    "C-v → Close Value View    C-t → Jump to top"
-)
-
-# Create dynamic title for the values view
-value_title = DynamicTitle("Values")
-
-
-def set_cursor_position(text, new_cursor_pos):
-    # Create a new document for the TextArea with the updated cursor position
-    hdf5_structure.document = Document(
-        text=text, cursor_position=new_cursor_pos
-    )
-
-
-def calculate_new_cursor_position(current_row, node, text):
+class H5Forest:
     """
-    Calculate the new cursor position after text update.
-    This function needs to be implemented based on how the text structure changes.
+    The main application for the HDF5 Forest.
+
+    Attributes:
+        tree (Tree):
+            The tree object representing the HDF5 file. Each Group or
+            Dataset in the HDF5 file is represented by a Node object.
+        flag_values_visible (bool):
+            A flag to control the visibility of the values text area.
+        kb (KeyBindings):
+            The keybindings for the application.
+        value_title (DynamicTitle):
+            A dynamic title for the values text area.
+        tree_content (TextArea):
+            The text area for the tree.
+        metadata_content (TextArea):
+            The text area for the metadata.
+        attributes_content (TextArea):
+            The text area for the attributes.
+        values_content (TextArea):
+            The text area for the values.
+        hotkeys_panel (Label):
+            The panel to display hotkeys.
+        prev_row (int):
+            The previous row the cursor was on. This means we can avoid
+            updating the metadata and attributes when the cursor hasn't moved.
+        tree_frame (Frame):
+            The frame for the tree text area.
+        metadata_frame (Frame):
+            The frame for the metadata text area.
+        attrs_frame (Frame):
+            The frame for the attributes text area.
+        values_frame (Frame):
+            The frame for the values text area.
+        layout (Layout):
+            The layout of the application.
+        app (Application):
+            The main application object.
     """
-    # Example calculation; this needs to be specific to your application's logic
-    # For simplicity, let's assume the cursor should move to the beginning of the same row
-    lines = text.split("\n")
-    new_position = sum(
-        len(lines[i]) + 1 for i in range(current_row)
-    )  # +1 for newline characters
-    return new_position
 
+    def __init__(self, hdf5_filepath):
+        """
+        Initialise the application.
 
-def cursor_moved_action():
-    while True:
-        # Directly use `hdf5_structure` instead of trying to get it from the
-        # focus
-        doc = hdf5_structure.document
+        Constructs all the frames necessary for the app, builds the HDF5 tree
+        (populating only the root), and populates the Layout.
+
+        Args:
+            hdf5_filepath (str):
+                The path to the HDF5 file to be explored.
+        """
+        # We do, set up the Tree with the file
+        # This will parse the root of the HDF5 file ready to populate the
+        # tree text area
+        self.tree = Tree(hdf5_filepath)
+
+        # Define flags we need to control behaviour
+        self.flag_values_visible = False
+
+        # Set up the keybindings
+        self.kb = KeyBindings()
+        self._init_app_bindings()
+        self._init_tree_bindings()
+
+        # Attributes for dynamic titles
+        self.value_title = DynamicTitle("Values")
+
+        # Set up the text areas that will populate the layout
+        self.tree_content = None
+        self.metadata_content = None
+        self.attributes_content = None
+        self.values_content = None
+        self._init_text_areas()
+
+        # Set up the list of hotkeys to be displayed in different situations
+        self.hotkeys_panel = Label(
+            "CTRL-q → Exit    RET → Open Node    v → View Values    "
+            "CTRL-v → Close Value View    CTRL-t → Jump to top"
+        )
+
+        # We need to hang on to some information to avoid over the
+        # top computations running in the background for threaded functions
+        self.prev_row = None
+
+        # Set up the layout
+        self.tree_frame = None
+        self.metadata_frame = None
+        self.attrs_frame = None
+        self.values_frame = None
+        self.layout = None
+        self._init_layout()
+
+        # With all that done we can set up the application
+        self.app = Application(
+            layout=self.layout,
+            key_bindings=self.kb,
+            full_screen=True,
+            mouse_support=True,
+        )
+
+    def run(self):
+        """Run the application."""
+        self.app.run()
+
+    @property
+    def current_row(self):
+        """
+        Return the row under the cursor.
+
+        Returns:
+            int:
+                The row under the cursor.
+        """
+        # Get the tree content
+        doc = self.tree_content.document
 
         # Get the current cursor row
         current_row = doc.cursor_position_row
 
-        # Get the current node
-        try:
-            node = tree.get_current_node(current_row)
-            metadata_content.text = node.get_meta_text()
-            attributes_content.text = node.get_attr_text()
+        return current_row
 
-        except IndexError:
-            set_cursor_position(
-                hdf5_structure.text,
-                new_cursor_pos=len(hdf5_structure.text),
+    @property
+    def current_position(self):
+        """
+        Return the current position in the tree.
+
+        Returns:
+            int:
+                The current position in the tree.
+        """
+        return self.tree_content.document.cursor_position
+
+    def _init_app_bindings(self):
+        """Set up the keybindings for the UI."""
+
+        @self.kb.add("c-q")
+        def exit_app(event):
+            """Exit the app."""
+            event.app.exit()
+
+        @self.kb.add("c-v")
+        def close_values(event):
+            """Close the value pane."""
+            self.flag_values_visible = False
+            self.values_content.text = ""
+
+    def _init_tree_bindings(self):
+        """Set up the keybindings for the UI."""
+
+        @self.kb.add("enter")
+        def expand_collapse_node(event):
+            """
+            Expand the node under the cursor.
+
+            This uses lazy loading so only the group at the expansion point
+            will be loaded.
+            """
+            # Get the current cursor row and position
+            current_row = self.current_row
+            current_pos = self.current_position
+
+            # Get the node under the cursor
+            node = self.tree.get_current_node(current_row)
+
+            # If we have a dataset, redirect to show_values as a safe fall back
+            if node.is_dataset:
+                show_values(event)
+                return
+
+            # If the node is already open, close it
+            if node.is_expanded:
+                self.tree.close_node(node, current_row, self.tree_content)
+            else:  # Otherwise, open it
+                self.tree.update_tree_text(
+                    node, current_row, self.tree_content
+                )
+
+            # Reset the cursor position post update
+            self.set_cursor_position(
+                self.tree.tree_text, new_cursor_pos=current_pos
             )
-            metadata_content.text = ""
-            attributes_content.text = ""
 
-        get_app().invalidate()
+        @self.kb.add("c-t")
+        def jump_to_top(event):
+            """Jump to the top of the tree."""
+            self.set_cursor_position(self.tree.tree_text, new_cursor_pos=0)
 
+        @self.kb.add("c-b")
+        def jump_to_bottom(event):
+            """Jump to the bottom of the tree."""
+            self.set_cursor_position(
+                self.tree.tree_text, new_cursor_pos=self.tree.length
+            )
 
-@kb.add("enter")
-def expand_collapse_node(event):
-    """
-    Expand the node under the cursor.
+        @self.kb.add("v")
+        def show_values(event):
+            """
+            Show the values of a dataset.
 
-    This uses lazy loading so only the group at the expansion point will be
-    loaded.
-    """
+            This will truncate the value list if the array is large so as not
+            to flood memory.
+            """
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
 
-    # Directly use `hdf5_structure` instead of trying to get it from the focus
-    doc = hdf5_structure.document
+            # Get the value string
+            text = node.get_value_text()
 
-    # Get the current cursor row and position
-    current_row = doc.cursor_position_row
+            # Ensure there's something to draw
+            if len(text) == 0:
+                return
 
-    # Get the node under the cursor
-    node = tree.get_current_node(current_row)
+            self.value_title.update_title(f"Values: {node.path}")
 
-    # If we have a dataset, redirect to show_values as a safe fall back
-    if node.is_dataset:
-        show_values(event)
-        return
+            # Update the text
+            self.values_content.text = text
 
-    # If the node is already open, close it
-    if node.is_expanded:
-        tree.close_node(node, current_row, hdf5_structure)
-    else:  # Otherwise, open it
-        tree.update_tree_text(node, current_row, hdf5_structure)
+            # Flag that there are values to show
+            self.flag_values_visible = True
 
-    # After updating, calculate the new cursor position
-    # This is simplified; you'll need to adjust logic based on how text is updated
-    new_cursor_position = calculate_new_cursor_position(
-        current_row, node, hdf5_structure.text
-    )
-
-    set_cursor_position(
-        hdf5_structure.text, new_cursor_pos=new_cursor_position
-    )
-
-
-@kb.add("c-t")
-def jump_to_top(event):
-    """Jump to the top of the tree."""
-    set_cursor_position(hdf5_structure.text, new_cursor_pos=0)
-
-
-@kb.add("c-b")
-def jump_to_bottom(event):
-    """Jump to the bottom of the tree."""
-    set_cursor_position(
-        hdf5_structure.text, new_cursor_pos=len(hdf5_structure.text)
-    )
-
-
-@kb.add("v")
-def show_values(event):
-    """
-    Show the values of a dataset.
-
-    This will truncate the value list if the array is large so as not to flood
-    memory.
-    """
-    # Directly use `hdf5_structure` instead of trying to get it from the focus
-    doc = hdf5_structure.document
-
-    # Get the current cursor row and position
-    current_row = doc.cursor_position_row
-
-    # Get the node under the cursor
-    node = tree.get_current_node(current_row)
-
-    # Get the value string
-    text = node.get_value_text()
-
-    # Ensure there's something to draw
-    if len(text) == 0:
-        return
-
-    value_title.update_title(f"Values: {node.path}")
-
-    # Update the text
-    values_content.text = text
-
-    # Flag that there are values to show
-    values_visible[0] = True
-
-
-@kb.add("c-v")
-def close_values(event):
-    """Close the value pane."""
-    values_visible[0] = False
-    values_content.text = ""
-
-
-# Function to create the application layout
-def create_layout():
-    # Get the window size
-    rows, columns = get_window_size()
-
-    # Layout using split views
-    layout = Layout(
-        HSplit(
-            [
-                VSplit(
-                    [
-                        HSplit(
-                            [
-                                Frame(hdf5_structure, title="HDF5 Structure"),
-                                Frame(
-                                    metadata_content,
-                                    height=10,
-                                    title="Metadata",
-                                ),
-                            ]
-                        ),
-                        Frame(attributes_content, title="Attributes"),
-                        ConditionalContainer(
-                            content=Frame(
-                                values_content,
-                                width=columns // 3,
-                                title=value_title,
-                            ),
-                            filter=Condition(lambda: values_visible[0]),
-                        ),
-                    ]
-                ),
-                hotkeys_panel,
-            ]
+    def _init_text_areas(self):
+        """Initialise the text areas which will contain all information."""
+        # Text area for the tree itself
+        self.tree_content = TextArea(
+            text=self.tree.get_tree_text(),
+            scrollbar=True,
+            read_only=True,
         )
-    )
 
-    return layout
+        #
+        self.metadata_content = TextArea(
+            text="Metadata details here...",
+            scrollbar=False,
+            focusable=False,
+            read_only=True,
+        )
+
+        self.attributes_content = TextArea(
+            text="Attributes here...",
+            read_only=True,
+            scrollbar=True,
+            focusable=True,
+        )
+
+        self.values_content = TextArea(
+            text="Values here...",
+            read_only=True,
+            scrollbar=True,
+            focusable=False,
+        )
+
+    def set_cursor_position(self, text, new_cursor_pos):
+        """
+        Set the cursor position in the tree.
+
+        This is a horrid workaround but seems to be the only way to do it
+        in prompt_toolkit. We reset the entire Document with the
+        tree content text and a new cursor position.
+        """
+        # Create a new tree_content document with the updated cursor
+        # position
+        self.tree_content.document = Document(
+            text=text, cursor_position=new_cursor_pos
+        )
+
+    def cursor_moved_action(self):
+        """
+        Apply changes when the cursor has been moved.
+
+        This will update the metadata and attribute outputs to display
+        what is currently under the cursor.
+        """
+        while True:
+            # Check if we even have to update anything
+            if self.current_row == self.prev_row:
+                continue
+            else:
+                self.prev_row = self.current_row
+
+            # Get the current node
+            try:
+                node = self.tree.get_current_node(self.current_row)
+                self.metadata_content.text = node.get_meta_text()
+                self.attributes_content.text = node.get_attr_text()
+
+            except IndexError:
+                self.set_cursor_position(
+                    self.tree.tree_text,
+                    new_cursor_pos=self.tree.length,
+                )
+                self.metadata_content.text = ""
+                self.attributes_content.text = ""
+
+            get_app().invalidate()
+
+    def _init_layout(self):
+        """Intialise the layout."""
+        # Get the window size
+        rows, columns = get_window_size()
+
+        # Create each individual element of the UI before packaging it
+        # all into the layout
+        self.tree_frame = Frame(
+            self.tree_content, title="HDF5 Structure", width=columns // 3
+        )
+        self.metadata_frame = Frame(
+            self.metadata_content, title="Metadata", height=10
+        )
+        self.attrs_frame = Frame(self.attributes_content, title="Attributes")
+        self.values_frame = Frame(
+            self.values_content, title=self.value_title, width=columns // 3
+        )
+
+        # Wrap those frames that need it in conditional containers
+        self.values_frame = ConditionalContainer(
+            content=self.values_frame,
+            filter=Condition(lambda: self.flag_values_visible),
+        )
+
+        # Layout using split views
+        self.layout = Layout(
+            HSplit(
+                [
+                    VSplit(
+                        [
+                            HSplit(
+                                [
+                                    self.tree_frame,
+                                    self.metadata_frame,
+                                ]
+                            ),
+                            self.attrs_frame,
+                            self.values_frame,
+                        ]
+                    ),
+                    self.hotkeys_panel,
+                ]
+            )
+        )
 
 
-# Initialize and run the application
 def main():
-    layout = create_layout()
-    app = Application(layout=layout, key_bindings=kb, full_screen=True)
+    """Intialise and run the application."""
+    # First port of call, check we have been given a valid input
+    if len(sys.argv) != 2:
+        print("Usage: h5forest /path/to/file.hdf5")
+        sys.exit(1)
+
+    # Extract the filepath
+    filepath = sys.argv[1]
+
+    # Set up the app
+    app = H5Forest(filepath)
 
     # Kick off a thread to track changes to the automatically populated
     # frames
-    thread1 = threading.Thread(target=cursor_moved_action)
+    thread1 = threading.Thread(target=app.cursor_moved_action)
     thread1.daemon = True
     thread1.start()
 
+    # Lets get going!
     app.run()
 
 
