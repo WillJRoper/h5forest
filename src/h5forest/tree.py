@@ -59,6 +59,26 @@ class Tree:
         # Parse the root level
         self.parse_roots()
 
+    @property
+    def length(self):
+        """Return the length of the tree text."""
+        return len(self.tree_text)
+
+    @property
+    def height(self):
+        """Return the height of the tree text."""
+        return len(self.tree_text_split)
+
+    @property
+    def width(self):
+        """
+        Return the width of the tree text.
+
+        Note that this works because every line is padded with spaces to
+        the same length.
+        """
+        return len(self.tree_text_split[0])
+
     def parse_roots(self):
         """Parse the root level of the HDF5 file."""
         with h5py.File(self.filepath, "r") as hdf:
@@ -92,7 +112,7 @@ class Tree:
                 they are on in the text representation.
         """
         # Add this nodes representation
-        text += f"{current_node.to_tree_string()}\n"
+        text += f"{current_node.to_tree_text()}\n"
 
         # Append this node to the by row list
         nodes_by_row.append(current_node)
@@ -144,10 +164,10 @@ class Tree:
         self.parse_level(parent)
 
         # Update the parent node to reflect that it is now open
-        self.tree_text_split[current_row] = parent.to_tree_string()
+        self.tree_text_split[current_row] = parent.to_tree_text()
 
         # Create the text and node list for the children ready to insert
-        child_test = [child.to_tree_string() for child in parent.children]
+        child_test = [child.to_tree_text() for child in parent.children]
         child_nodes_by_row = [child for child in parent.children]
 
         # Insert the children into the tree text and nodes by row list
@@ -179,7 +199,7 @@ class Tree:
             del self.tree_text_split[current_row + 1]
 
         # Update the parent node to reflect that it is now closed
-        self.tree_text_split[current_row] = node.to_tree_string()
+        self.tree_text_split[current_row] = node.to_tree_text()
 
         # Update the tree text area
         self.tree_text = "\n".join(self.tree_text_split)
