@@ -1,4 +1,20 @@
-import os
+"""This module contains the Node class for the HDF5 file viewer.
+
+The Node class is used to represent a Group/Dataset in the HDF5 file. Nodes
+can be linked via parent/child relationships to form a tree structure
+representing the HDF5 file. A Node is lazy loaded, i.e. it only opens the
+HDF5 file when it is expanded. This allows for fast loading of the tree
+structure and only opening the HDF5 file when necessary.
+
+Example usage:
+    node = Node("group", group, "file.h5")
+    print(node)
+    print(node.open_node())
+    print(node.get_attr_text())
+    print(node.get_value_text())
+    print(node.is_expanded)
+
+"""
 import h5py
 import numpy as np
 
@@ -6,7 +22,78 @@ from h5forest.utils import get_window_size
 
 
 class Node:
+    """
+    A class to represent a node in the HDF5 file.
+
+    This class is used to represent a Group/Dataset in the HDF5 file. Nodes
+    can be linked via parent/child relationships to form a tree structure
+    representing the HDF5 file. A Node is lazy loaded, i.e. it only opens the
+    HDF5 file when it is expanded. This allows for fast loading of the tree
+    structure and only opening the HDF5 file when necessary.
+
+    Attributes:
+        name (str):
+            The name of the node.
+        filepath (str):
+            The filepath of the HDF5 file.
+        path (str):
+            The full path of the node.
+        children (list):
+            A list of the child nodes.
+        parent (Node):
+            The parent node.
+        depth (int):
+            The depth of the node in the tree.
+        obj_type (type):
+            The type of the object.
+        is_group (bool):
+            Whether the node is a group.
+        is_dataset (bool):
+            Whether the node is a dataset.
+        nr_child (int):
+            The number of children the node has.
+        has_children (bool):
+            Whether the node has children.
+        nr_attrs (int):
+            The number of attributes the node has.
+        has_attrs (bool):
+            Whether the node has attributes.
+        attrs (dict):
+            A dictionary of the attributes.
+        shape (tuple):
+            The shape of a dataset, None for a Group.
+        datatype (str):
+            The datatype of a dataset, None for a Group.
+        compression (str):
+            The compression type of a dataset, None for a Group.
+        compression_opts (int):
+            The compression options of a dataset, None for a Group.
+        chunks (tuple):
+            The chunk shape of a dataset, None for a Group.
+        fillvalue (int):
+            The fillvalue of a dataset, None for a Group.
+        nbytes (int):
+            The number of bytes the dataset uses, None for a Group.
+        _attr_text (str):
+            The attribute text for the node.
+        _meta_text (str):
+            The metadata text for the node.
+    """
+
     def __init__(self, name, obj, filepath, parent=None):
+        """
+        Initialise the Node.
+
+        Args:
+            name (str):
+                The name (key) of the node.
+            obj (h5py.Group/h5py.Dataset):
+                The object the node represents.
+            filepath (str):
+                The filepath of the HDF5 file.
+            parent (Node, optional):
+                The parent node. Defaults to None.
+        """
         # Store the name of the node
         self.name = name
 
@@ -71,23 +158,56 @@ class Node:
             self.fillvalue = None
             self.nbytes = None
 
+        # Construct tree_text, attribute and metadata text to avoid computation
+        self._attr_text = None
+        self._meta_text = None
+
+    @property
+    def is_expanded(self):
+        """
+        Return whether the node expanded.
+
+        This is a property that returns whether the node is expanded. A node
+        is expanded if it has children and all of its children are expanded.
+
+        Returns:
+            bool:
+                True if the children have been loaded (i.e. noded is
+                expanded).
+        """
+        return len(self.children) > 0
+
     def __repr__(self):
-        """Return a string representation of the node."""
+        """
+        Return a string representation of the node.
+
+        Returns:
+            str:
+                A string representation of the node.
+        """
         return f"Node({self.path})"
 
-    def to_tree_string(self):
+    def to_tree_text(self):
         """
         Return a string representing the node for inclusion in the tree.
 
         This will return a one line string with the correct indentation and
         arrow representing the node in the tree.
+
+        Returns:
+            str:
+                A string representing the node for inclusion in the tree text.
         """
-        out = "    " * self.depth
-        if self.is_expanded:
-            out += "▼ "
-        elif self.has_children:
-            out += "▶ "
-        return out + self.name
+        # Create the tree text
+        if self.has_children:
+            out = (
+                f"{'    ' * self.depth}"
+                f"{'▼' if self.is_expanded else '▶'} {self.name}"
+            )
+        else:
+            out = f"{'    ' * self.depth} {self.name}"
+
+        return out
 
     def open_node(self):
         """Open the node of the HDF5 file."""
@@ -101,8 +221,6 @@ class Node:
                     self.children.append(
                         Node(key, child, self.filepath, parent=self)
                     )
-            else:
-                return self.children
 
     def close_node(self):
         """Close the node of the HDF5 file."""
@@ -111,8 +229,14 @@ class Node:
             child.close_node()
         self.children = []
 
-    def get_meta_text(self):
-        """Return the metadata text for the node."""
+    def _get_meta_text(self):
+        """
+        Return the metadata text for the node.
+
+        Returns:
+            str:
+                The metadata text for the node.
+        """
         if self.is_group:
             text = f"Group:              {self.path}\n"
         else:
@@ -143,12 +267,49 @@ class Node:
                 text += f"Fillvalue:          {self.fillvalue}\n"
         return text
 
-    def get_attr_text(self):
-        """Return the attribute text for the node."""
+    def get_meta_text(self):
+        """
+        Return the text containing the metadata.
+
+        The first time this is called the private variable will be populated.
+
+        Returns:
+            str:
+                The metadata text for the node (stored in a private attribute).
+        """
+        # Construct the metadata text if it hasn't been done already
+        if self._meta_text is None:
+            self._meta_text = self._get_meta_text()
+        return self._meta_text
+
+    def _get_attr_text(self):
+        """
+        Return the attribute text for the node.
+
+        Returns:
+            str:
+                The attribute text for the node.
+        """
         text = ""
         for key, value in self.attrs.items():
             text += f"{key}: {value}\n"
         return text
+
+    def get_attr_text(self):
+        """
+        Return the text containing the attributes.
+
+        The first time this is called the private variable will be populated.
+
+        Returns:
+            str:
+                The attribute text for the node (stored in a private
+                attribute).
+        """
+        # Construct the attribute text if it hasn't already been done
+        if self._attr_text is None:
+            self._attr_text = self._get_attr_text()
+        return self._attr_text
 
     def get_value_text(self):
         """
@@ -156,6 +317,14 @@ class Node:
 
         If this node is a Group then an empty string is returned and showing
         the value frame won't be triggered.
+
+        If the Dataset is small enough we can just read everything and display
+        it. If the dataset is too large we will only show a truncated view
+        (first 100 elements or what will fit in the TextArea).
+
+        Returns:
+            str:
+                The value text for the node.
         """
         if self.is_group:
             return ""
@@ -207,13 +376,3 @@ class Node:
 
                 # Combine path and data for output
                 return formatted_data + truncated
-
-    @property
-    def is_expanded(self):
-        """
-        Return whether the node expanded.
-
-        This is a property that returns whether the node is expanded. A node
-        is expanded if it has children and all of its children are expanded.
-        """
-        return len(self.children) > 0
