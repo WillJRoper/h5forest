@@ -144,7 +144,14 @@ class H5Forest:
         self.metadata_content = None
         self.attributes_content = None
         self.values_content = None
+        self.mini_buffer_content = None
         self._init_text_areas()
+
+        # Set up the mini buffer
+        self.mini_buffer = Frame(
+            self.mini_buffer_content,
+            height=3,
+        )
 
         # Set up the list of hotkeys and leaders for the UI
         # These will always be displayed unless the user is in a leader mode
@@ -279,6 +286,12 @@ class H5Forest:
 
             # If we have a dataset just do nothing
             if node.is_dataset:
+                self.print(f"{node.path} is not a Group")
+                return
+
+            # If the node has no children, do nothing
+            if not node.has_children:
+                self.print(f"{node.path} has no children")
                 return
 
             # If the node is already open, close it
@@ -307,6 +320,11 @@ class H5Forest:
             """
             # Get the node under the cursor
             node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
 
             # Get the value string
             text = node.get_value_text()
@@ -385,6 +403,13 @@ class H5Forest:
             read_only=True,
             scrollbar=True,
             focusable=False,
+        )
+
+        self.mini_buffer_content = TextArea(
+            text="Welcome to h5forest!",
+            scrollbar=False,
+            focusable=True,
+            read_only=False,
         )
 
     def set_cursor_position(self, text, new_cursor_pos):
@@ -478,6 +503,7 @@ class H5Forest:
                 ),
             ]
         )
+        self.hotkeys_frame = Frame(self.hotkeys_panel, height=3)
 
         # Layout using split views
         self.layout = Layout(
@@ -499,10 +525,16 @@ class H5Forest:
                             ),
                         ]
                     ),
-                    self.hotkeys_panel,
+                    self.hotkeys_frame,
+                    self.mini_buffer,
                 ]
             )
         )
+
+    def print(self, *args):
+        """Print a single line to the mini buffer."""
+        self.mini_buffer_content.text = " ".join(args)
+        get_app().invalidate()
 
 
 def main():
