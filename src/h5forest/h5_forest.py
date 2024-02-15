@@ -335,6 +335,30 @@ class H5Forest:
             # Exit values mode
             self.return_to_normal_mode()
 
+        @self.kb.add("m", filter=Condition(lambda: self.flag_dataset_mode))
+        def minimum_maximum(event):
+            """Show the minimum and maximum values of a dataset."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Get the value string
+            text = node.get_min_max()
+
+            # Ensure there's something to draw
+            if len(text) == 0:
+                return
+
+            self.value_title.update_title(f"Min/Max: {node.path}")
+
+            # Update the text
+            self.values_content.text = text
+
+            # Flag that there are values to show
+            self.flag_values_visible = True
+
+            # Exit values mode
+            self.return_to_normal_mode()
+
     def _init_jump_bindings(self):
         """Set up the keybindings for the jump mode."""
 
