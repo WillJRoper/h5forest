@@ -82,7 +82,7 @@ class Node:
         This will return a one line string with the correct indentation and
         arrow representing the node in the tree.
         """
-        out = "    " * self.depth
+        out = "  " * self.depth
         if self.is_expanded:
             out += "▼ "
         elif self.has_children:
