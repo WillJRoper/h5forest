@@ -33,6 +33,20 @@ class H5Forest:
             Dataset in the HDF5 file is represented by a Node object.
         flag_values_visible (bool):
             A flag to control the visibility of the values text area.
+        flag_normal_mode (bool):
+            A flag to control the normal mode of the application.
+        flag_jump_mode (bool):
+            A flag to control the jump mode of the application.
+        flag_dataset_mode (bool):
+            A flag to control the dataset mode of the application.
+        flag_window_mode (bool):
+            A flag to control the window mode of the application.
+        jump_keys (VSplit):
+            The hotkeys for the jump mode.
+        dataset_keys (VSplit):
+            The hotkeys for the dataset mode.
+        window_keys (VSplit):
+            The hotkeys for the window mode.
         kb (KeyBindings):
             The keybindings for the application.
         value_title (DynamicTitle):
@@ -45,7 +59,9 @@ class H5Forest:
             The text area for the attributes.
         values_content (TextArea):
             The text area for the values.
-        hotkeys_panel (Label):
+        hot_keys (VSplit):
+            The hotkeys for the application.
+        hotkeys_panel (HSplit):
             The panel to display hotkeys.
         prev_row (int):
             The previous row the cursor was on. This means we can avoid
@@ -83,10 +99,42 @@ class H5Forest:
         # Define flags we need to control behaviour
         self.flag_values_visible = False
 
-        # Set up the keybindings
+        # Define the leader key mode flags
+        # NOTE: These must be unset when the leader mode is exited, and in
+        # flag_normal_mode when the escape key is pressed
+        self.flag_normal_mode = True
+        self.flag_jump_mode = False
+        self.flag_dataset_mode = False
+        self.flag_window_mode = False
+
+        # Intialise the different leader key mode hot keys
+        self.jump_keys = VSplit(
+            [
+                Label("t → Jump to top"),
+                Label("b → Jump to bottom"),
+            ]
+        )
+        self.dataset_keys = VSplit(
+            [
+                Label("v → Show values"),
+                Label("c → Close value view"),
+            ]
+        )
+        self.window_keys = VSplit(
+            [
+                Label("⇦ → Move left"),
+                Label("⇨ → Move right"),
+                Label("⇧ → Move up"),
+                Label("⇩ → Move down"),
+            ]
+        )
+
+        # set up the keybindings
         self.kb = KeyBindings()
+        self._init_leader_bindings()
         self._init_app_bindings()
-        self._init_tree_bindings()
+        self._init_dataset_bindings()
+        self._init_jump_bindings()
 
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
@@ -98,11 +146,18 @@ class H5Forest:
         self.values_content = None
         self._init_text_areas()
 
-        # Set up the list of hotkeys to be displayed in different situations
-        self.hotkeys_panel = Label(
-            "CTRL-q → Exit    RET → Open Node    v → View Values    "
-            "CTRL-v → Close Value View    CTRL-t → Jump to top"
+        # Set up the list of hotkeys and leaders for the UI
+        # These will always be displayed unless the user is in a leader mode
+        self.hot_keys = VSplit(
+            [
+                Label("RET → Open Group"),
+                Label("d → Dataset Mode"),
+                Label("j → Jump mode"),
+                Label("w → Window mode"),
+                Label("q → Exit"),
+            ]
         )
+        self.hotkeys_panel = None
 
         # We need to hang on to some information to avoid over the
         # top computations running in the background for threaded functions
@@ -156,22 +211,56 @@ class H5Forest:
         """
         return self.tree_content.document.cursor_position
 
-    def _init_app_bindings(self):
-        """Set up the keybindings for the UI."""
+    def return_to_normal_mode(self):
+        """Return to normal mode."""
+        self.flag_normal_mode = True
+        self.flag_jump_mode = False
+        self.flag_dataset_mode = False
+        self.flag_window_mode = False
 
-        @self.kb.add("c-q")
+    def _init_leader_bindings(self):
+        """Set up the leader key bindsings."""
+
+        @self.kb.add("j", filter=Condition(lambda: self.flag_normal_mode))
+        def jump_leader_mode(event):
+            """Enter jump mode."""
+            self.flag_normal_mode = False
+            self.flag_jump_mode = True
+
+        @self.kb.add("d", filter=Condition(lambda: self.flag_normal_mode))
+        def dataset_leader_mode(event):
+            """Enter dataset mode."""
+            self.flag_normal_mode = False
+            self.flag_dataset_mode = True
+
+        @self.kb.add("w", filter=Condition(lambda: self.flag_normal_mode))
+        def window_leader_mode(event):
+            """Enter window mode."""
+            self.flag_normal_mode = False
+            self.flag_window_mode = True
+
+        @self.kb.add("escape")
+        def exit_leader_mode(event):
+            """Exit leader mode."""
+            self.return_to_normal_mode()
+            event.app.invalidate()
+
+    def _init_app_bindings(self):
+        """
+        Set up the keybindings for the basic UI.
+
+        These are always active and are not dependent on any leader key.
+        """
+
+        @self.kb.add("q")
         def exit_app(event):
             """Exit the app."""
             event.app.exit()
 
-        @self.kb.add("c-v")
-        def close_values(event):
-            """Close the value pane."""
-            self.flag_values_visible = False
-            self.values_content.text = ""
-
-    def _init_tree_bindings(self):
-        """Set up the keybindings for the UI."""
+        @self.kb.add("c-q")
+        def other_exit_app(event):
+            """Exit the app."""
+            event.app.exit()
 
         @self.kb.add("enter")
         def expand_collapse_node(event):
@@ -188,9 +277,8 @@ class H5Forest:
             # Get the node under the cursor
             node = self.tree.get_current_node(current_row)
 
-            # If we have a dataset, redirect to show_values as a safe fall back
+            # If we have a dataset just do nothing
             if node.is_dataset:
-                show_values(event)
                 return
 
             # If the node is already open, close it
@@ -206,19 +294,10 @@ class H5Forest:
                 self.tree.tree_text, new_cursor_pos=current_pos
             )
 
-        @self.kb.add("c-t")
-        def jump_to_top(event):
-            """Jump to the top of the tree."""
-            self.set_cursor_position(self.tree.tree_text, new_cursor_pos=0)
+    def _init_dataset_bindings(self):
+        """Set up the keybindings for the dataset mode."""
 
-        @self.kb.add("c-b")
-        def jump_to_bottom(event):
-            """Jump to the bottom of the tree."""
-            self.set_cursor_position(
-                self.tree.tree_text, new_cursor_pos=self.tree.length
-            )
-
-        @self.kb.add("v")
+        @self.kb.add("v", filter=Condition(lambda: self.flag_dataset_mode))
         def show_values(event):
             """
             Show the values of a dataset.
@@ -243,6 +322,39 @@ class H5Forest:
 
             # Flag that there are values to show
             self.flag_values_visible = True
+
+            # Exit values mode
+            self.return_to_normal_mode()
+
+        @self.kb.add("c", filter=Condition(lambda: self.flag_dataset_mode))
+        def close_values(event):
+            """Close the value pane."""
+            self.flag_values_visible = False
+            self.values_content.text = ""
+
+            # Exit values mode
+            self.return_to_normal_mode()
+
+    def _init_jump_bindings(self):
+        """Set up the keybindings for the jump mode."""
+
+        @self.kb.add("t", filter=Condition(lambda: self.flag_jump_mode))
+        def jump_to_top(event):
+            """Jump to the top of the tree."""
+            self.set_cursor_position(self.tree.tree_text, new_cursor_pos=0)
+
+            # Exit jump mode
+            self.return_to_normal_mode()
+
+        @self.kb.add("b", filter=Condition(lambda: self.flag_jump_mode))
+        def jump_to_bottom(event):
+            """Jump to the bottom of the tree."""
+            self.set_cursor_position(
+                self.tree.tree_text, new_cursor_pos=self.tree.length
+            )
+
+            # Exit jump mode
+            self.return_to_normal_mode()
 
     def _init_text_areas(self):
         """Initialise the text areas which will contain all information."""
@@ -345,6 +457,28 @@ class H5Forest:
             filter=Condition(lambda: self.flag_values_visible),
         )
 
+        # Set up the hotkeys panel
+        self.hotkeys_panel = HSplit(
+            [
+                ConditionalContainer(
+                    content=self.hot_keys,
+                    filter=Condition(lambda: self.flag_normal_mode),
+                ),
+                ConditionalContainer(
+                    content=self.jump_keys,
+                    filter=Condition(lambda: self.flag_jump_mode),
+                ),
+                ConditionalContainer(
+                    content=self.dataset_keys,
+                    filter=Condition(lambda: self.flag_dataset_mode),
+                ),
+                ConditionalContainer(
+                    content=self.window_keys,
+                    filter=Condition(lambda: self.flag_window_mode),
+                ),
+            ]
+        )
+
         # Layout using split views
         self.layout = Layout(
             HSplit(
@@ -357,8 +491,12 @@ class H5Forest:
                                     self.metadata_frame,
                                 ]
                             ),
-                            self.attrs_frame,
-                            self.values_frame,
+                            HSplit(
+                                [
+                                    self.attrs_frame,
+                                    self.values_frame,
+                                ]
+                            ),
                         ]
                     ),
                     self.hotkeys_panel,
