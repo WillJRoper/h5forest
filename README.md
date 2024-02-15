@@ -1,4 +1,4 @@
-# HDF5orest
+# h5forest
 HDF5 Forest (`h5forest`) is an interactive CLI application for exploring HDF5 files.
 
 `h5ls` works, and `h5glance` is a great improvement on it. So "Why bother?" I hear you say. 
