@@ -51,6 +51,11 @@ class Tree:
         # Initialise a container to store nodes by row in the tree output
         self.nodes_by_row = []
 
+        # Intialise containers to hold the tree text and split version
+        # to avoid wasted computation
+        self.tree_text = ""
+        self.tree_text_split = []
+
         # Parse the root level
         self.parse_roots()
 
@@ -127,6 +132,10 @@ class Tree:
         # Store the nodes by row
         self.nodes_by_row = nodes_by_row
 
+        # Store the tree text
+        self.tree_text = text
+        self.tree_text_split = text.split("\n")
+
         return text
 
     def update_tree_text(self, parent, current_row, tree_text_area):
@@ -134,28 +143,27 @@ class Tree:
         # Open the parent
         self.parse_level(parent)
 
-        # Get the tree text split into lines
-        tree_text = tree_text_area.text.split("\n")
-
         # Update the parent node to reflect that it is now open
-        tree_text[current_row] = parent.to_tree_string()
+        self.tree_text_split[current_row] = parent.to_tree_string()
 
-        # Loop over the now populated children and insert them into the tree
-        # text
-        for i, child in enumerate(parent.children):
-            self.nodes_by_row.insert(current_row + i + 1, child)
-            tree_text.insert(current_row + i + 1, child.to_tree_string())
+        # Create the text and node list for the children ready to insert
+        child_test = [child.to_tree_string() for child in parent.children]
+        child_nodes_by_row = [child for child in parent.children]
+
+        # Insert the children into the tree text and nodes by row list
+        self.tree_text_split[current_row + 1 : current_row + 1] = child_test
+        self.nodes_by_row[
+            current_row + 1 : current_row + 1
+        ] = child_nodes_by_row
 
         # Update the tree text area
-        tree_text_area.text = "\n".join(tree_text)
+        self.tree_text = "\n".join(self.tree_text_split)
+        tree_text_area.text = self.tree_text
 
     def close_node(self, node, current_row, tree_text_area):
         """Close the node."""
         # Close the node itself
         node.close_node()
-
-        # Get the tree text split into lines
-        tree_text = tree_text_area.text.split("\n")
 
         # Now we need to remove all the children from the tree, these have
         # already been closed recursively by the call to `close_node` above
@@ -168,13 +176,14 @@ class Tree:
             if n.depth <= node.depth:
                 break
             del self.nodes_by_row[current_row + 1]
-            del tree_text[current_row + 1]
+            del self.tree_text_split[current_row + 1]
 
         # Update the parent node to reflect that it is now closed
-        tree_text[current_row] = node.to_tree_string()
+        self.tree_text_split[current_row] = node.to_tree_string()
 
         # Update the tree text area
-        tree_text_area.text = "\n".join(tree_text)
+        self.tree_text = "\n".join(self.tree_text_split)
+        tree_text_area.text = self.tree_text
 
     def get_current_node(self, row):
         """
