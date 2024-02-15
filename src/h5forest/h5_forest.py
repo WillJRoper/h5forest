@@ -56,8 +56,8 @@ class H5Forest:
 
         # Set up the list of hotkeys to be displayed in different situations
         self.hotkeys_panel = Label(
-            "C-q → Exit    RET → Open Node    v → View Values    "
-            "C-v → Close Value View    C-t → Jump to top"
+            "CTRL-q → Exit    RET → Open Node    v → View Values    "
+            "CTRL-v → Close Value View    CTRL-t → Jump to top"
         )
 
         # We need to hang on to some information to avoid over the
