@@ -94,6 +94,10 @@ class Tree:
 
         This will populate the chidlren dict on the node which will be parsed
         later when a text representation is requested updating the tree.
+
+        Args:
+            parent (Node):
+                The parent node to open.
         """
         # Open this group
         parent.open_node()
@@ -103,6 +107,15 @@ class Tree:
         Parse the open nodes to produce the text tree representation.
 
         This will recurse through the open nodes constructing the output.
+
+        Args:
+            current_node (Node):
+                The current node to parse.
+            text (str):
+                The current text representation of the tree.
+            nodes_by_row (list):
+                A list containing the nodes where the index is the row
+                they are on in the text representation.
 
         Returns:
             str:
@@ -159,7 +172,17 @@ class Tree:
         return text
 
     def update_tree_text(self, parent, current_row, tree_text_area):
-        """Update the tree text for the parent node."""
+        """
+        Update the tree text for the parent node.
+
+        Args:
+            parent (Node):
+                The parent node to update.
+            current_row (int):
+                The row in the tree text where the parent is.
+            tree_text_area (TextArea):
+                The TextArea widget to update.
+        """
         # Open the parent
         self.parse_level(parent)
 
@@ -181,7 +204,17 @@ class Tree:
         tree_text_area.text = self.tree_text
 
     def close_node(self, node, current_row, tree_text_area):
-        """Close the node."""
+        """
+        Close the node.
+
+        Args:
+            node (Node):
+                The node to close.
+            current_row (int):
+                The row in the tree text where the node is.
+            tree_text_area (TextArea):
+                The TextArea widget to update.
+        """
         # Close the node itself
         node.close_node()
 
