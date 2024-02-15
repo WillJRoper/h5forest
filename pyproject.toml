@@ -28,8 +28,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/WillJRoper/HDF5orest"
-"Repository" = "https://github.com/WillJRoper/HDF5orest"
+"Homepage" = "https://github.com/WillJRoper/h5forest"
+"Repository" = "https://github.com/WillJRoper/h5forest"
 
 [project.scripts]
 h5forest = "h5forest.h5_forest:main"
