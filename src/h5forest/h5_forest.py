@@ -327,14 +327,16 @@ class H5Forest:
         # Create each individual element of the UI before packaging it
         # all into the layout
         self.tree_frame = Frame(
-            self.tree_content, title="HDF5 Structure", width=columns // 3
+            self.tree_content,
+            title="HDF5 Structure",
         )
         self.metadata_frame = Frame(
             self.metadata_content, title="Metadata", height=10
         )
         self.attrs_frame = Frame(self.attributes_content, title="Attributes")
         self.values_frame = Frame(
-            self.values_content, title=self.value_title, width=columns // 3
+            self.values_content,
+            title=self.value_title,
         )
 
         # Wrap those frames that need it in conditional containers
