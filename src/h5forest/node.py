@@ -159,8 +159,8 @@ class Node:
             self.nbytes = None
 
         # Construct attribute and metadata text to avoid computation
-        self._attr_text = self._get_attr_text()
-        self._meta_text = self._get_meta_text()
+        self._attr_text = None
+        self._meta_text = None
 
     @property
     def is_expanded(self):
@@ -267,10 +267,15 @@ class Node:
         """
         Return the text containing the metadata.
 
+        The first time this is called the private variable will be populated.
+
         Returns:
             str:
                 The metadata text for the node (stored in a private attribute).
         """
+        # Construct the metadata text if it hasn't been done already
+        if self._meta_text is None:
+            self._meta_text = self._get_meta_text()
         return self._meta_text
 
     def _get_attr_text(self):
@@ -290,11 +295,16 @@ class Node:
         """
         Return the text containing the attributes.
 
+        The first time this is called the private variable will be populated.
+
         Returns:
             str:
                 The attribute text for the node (stored in a private
                 attribute).
         """
+        # Construct the attribute text if it hasn't already been done
+        if self._attr_text is None:
+            self._attr_text = self._get_attr_text()
         return self._attr_text
 
     def get_value_text(self):
