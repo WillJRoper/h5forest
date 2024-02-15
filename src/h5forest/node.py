@@ -1,4 +1,20 @@
-import os
+"""This module contains the Node class for the HDF5 file viewer.
+
+The Node class is used to represent a Group/Dataset in the HDF5 file. Nodes
+can be linked via parent/child relationships to form a tree structure
+representing the HDF5 file. A Node is lazy loaded, i.e. it only opens the
+HDF5 file when it is expanded. This allows for fast loading of the tree
+structure and only opening the HDF5 file when necessary.
+
+Example usage:
+    node = Node("group", group, "file.h5")
+    print(node)
+    print(node.open_node())
+    print(node.get_attr_text())
+    print(node.get_value_text())
+    print(node.is_expanded)
+
+"""
 import h5py
 import numpy as np
 
@@ -71,6 +87,10 @@ class Node:
             self.fillvalue = None
             self.nbytes = None
 
+        # Construct attribute and metadata text to avoid computation
+        self._attr_text = self._get_attr_text()
+        self._meta_text = self._get_meta_text()
+
     def __repr__(self):
         """Return a string representation of the node."""
         return f"Node({self.path})"
@@ -82,7 +102,7 @@ class Node:
         This will return a one line string with the correct indentation and
         arrow representing the node in the tree.
         """
-        out = "  " * self.depth
+        out = "    " * self.depth
         if self.is_expanded:
             out += "▼ "
         elif self.has_children:
@@ -111,7 +131,7 @@ class Node:
             child.close_node()
         self.children = []
 
-    def get_meta_text(self):
+    def _get_meta_text(self):
         """Return the metadata text for the node."""
         if self.is_group:
             text = f"Group:              {self.path}\n"
@@ -143,12 +163,20 @@ class Node:
                 text += f"Fillvalue:          {self.fillvalue}\n"
         return text
 
-    def get_attr_text(self):
+    def get_meta_text(self):
+        """Return the text containing the metadata."""
+        return self._meta_text
+
+    def _get_attr_text(self):
         """Return the attribute text for the node."""
         text = ""
         for key, value in self.attrs.items():
             text += f"{key}: {value}\n"
         return text
+
+    def get_attr_text(self):
+        """Return the text containing the attributes."""
+        return self._attr_text
 
     def get_value_text(self):
         """
