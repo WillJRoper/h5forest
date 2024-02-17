@@ -448,17 +448,25 @@ class H5Forest:
         @self.kb.add("m", filter=Condition(lambda: self.flag_dataset_mode))
         def minimum_maximum(event):
             """Show the minimum and maximum values of a dataset."""
-            # Get the node under the cursor
-            node = self.tree.get_current_node(self.current_row)
 
-            # Get the value string
-            vmin, vmax = node.get_min_max()
+            def run_in_thread():
+                # Get the node under the cursor
+                node = self.tree.get_current_node(self.current_row)
 
-            # Print the result
-            self.print(f"{node.path}: Minimum = {vmin},  Maximum = {vmax}")
+                # Get the value string
+                vmin, vmax = node.get_min_max()
 
-            # Exit values mode
-            self.return_to_normal_mode()
+                # Print the result on the main thread
+                self.app.loop.call_soon_threadsafe(
+                    self.print,
+                    f"{node.path}: Minimum = {vmin},  Maximum = {vmax}",
+                )
+
+                # Exit values mode
+                self.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
 
     def _init_jump_bindings(self):
         """Set up the keybindings for the jump mode."""
@@ -680,7 +688,7 @@ class H5Forest:
     def print(self, *args):
         """Print a single line to the mini buffer."""
         self.mini_buffer_content.text = " ".join(args)
-        get_app().invalidate()
+        self.app.invalidate()
 
     def input(self, prompt, callback):
         """
