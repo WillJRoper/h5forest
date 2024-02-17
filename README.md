@@ -8,7 +8,7 @@ Well, `h5forest` brings interactivity and functionality not available in its lon
 - An interactive interface capable of handling files with deep hierarchies and large numbers of groups.
 - Real-time metadata and attribute displays.
 - The ability to display the contents of a Dataset.
-- The ability to get basic statistics from a Dataset (e.g. min/max, mean, std, etc.)
+- The ability to get basic statistics from a Dataset.
 
 The following features will be coming soon:
 - A search function.
