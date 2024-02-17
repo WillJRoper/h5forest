@@ -59,6 +59,8 @@ class H5Forest:
             The text area for the attributes.
         values_content (TextArea):
             The text area for the values.
+        mini_buffer_content (TextArea):
+            The text area for the mini buffer.
         hot_keys (VSplit):
             The hotkeys for the application.
         hotkeys_panel (HSplit):
@@ -74,8 +76,12 @@ class H5Forest:
             The frame for the attributes text area.
         values_frame (Frame):
             The frame for the values text area.
+        mini_buffer (Frame):
+            The frame for the mini buffer text area.
         layout (Layout):
             The layout of the application.
+        user_input (str):
+            A container for the user input from the most recent mini buffer.
         app (Application):
             The main application object.
     """
@@ -112,12 +118,15 @@ class H5Forest:
             [
                 Label("t → Jump to top"),
                 Label("b → Jump to bottom"),
+                Label("Escape → Exit jump mode"),
             ]
         )
         self.dataset_keys = VSplit(
             [
                 Label("v → Show values"),
+                Label("V → Show values in range"),
                 Label("c → Close value view"),
+                Label("Escape → Exit dataset mode"),
             ]
         )
         self.window_keys = VSplit(
@@ -126,6 +135,7 @@ class H5Forest:
                 Label("⇨ → Move right"),
                 Label("⇧ → Move up"),
                 Label("⇩ → Move down"),
+                Label("Escape → Exit window mode"),
             ]
         )
 
@@ -147,17 +157,11 @@ class H5Forest:
         self.mini_buffer_content = None
         self._init_text_areas()
 
-        # Set up the mini buffer
-        self.mini_buffer = Frame(
-            self.mini_buffer_content,
-            height=3,
-        )
-
         # Set up the list of hotkeys and leaders for the UI
         # These will always be displayed unless the user is in a leader mode
         self.hot_keys = VSplit(
             [
-                Label("RET → Open Group"),
+                Label("Enter → Open Group"),
                 Label("d → Dataset Mode"),
                 Label("j → Jump mode"),
                 Label("w → Window mode"),
@@ -177,6 +181,9 @@ class H5Forest:
         self.values_frame = None
         self.layout = None
         self._init_layout()
+
+        # Intialise a container for user input
+        self.user_input = None
 
         # With all that done we can set up the application
         self.app = Application(
@@ -344,6 +351,68 @@ class H5Forest:
             # Exit values mode
             self.return_to_normal_mode()
 
+        @self.kb.add("V", filter=Condition(lambda: self.flag_dataset_mode))
+        def show_values_in_range(event):
+            """Show the values of a dataset in an index range."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            def values_in_range_callback(input):
+                """Get the start and end indices from the user input."""
+                # Parse the range
+                string_values = tuple(
+                    [s.strip() for s in self.user_input.split("-")]
+                )
+
+                # Attempt to convert to an int
+                try:
+                    start_index = int(string_values[0])
+                    end_index = int(string_values[1])
+                except ValueError:
+                    self.print(
+                        "Invalid input! Input must be a integers "
+                        f"separated by -, not ({self.user_input})"
+                    )
+
+                    # Exit this attempt gracefully
+                    self.default_focus()
+                    self.return_to_normal_mode()
+                    return
+
+                # Return focus to the tree
+                self.default_focus()
+
+                # Get the value string
+                text = node.get_value_text(
+                    start_index=start_index, end_index=end_index
+                )
+
+                # Ensure there's something to draw
+                if len(text) == 0:
+                    return
+
+                self.value_title.update_title(f"Values: {node.path}")
+
+                # Update the text
+                self.values_content.text = text
+
+                # Flag that there are values to show
+                self.flag_values_visible = True
+
+                # Exit values mode
+                self.return_to_normal_mode()
+
+            # Get the indices from the user
+            self.input(
+                "Enter the index range (seperated by -):",
+                values_in_range_callback,
+            )
+
         @self.kb.add("c", filter=Condition(lambda: self.flag_dataset_mode))
         def close_values(event):
             """Close the value pane."""
@@ -412,6 +481,13 @@ class H5Forest:
             read_only=False,
         )
 
+        self.input_buffer_content = TextArea(
+            text="",
+            scrollbar=False,
+            focusable=False,
+            read_only=True,
+        )
+
     def set_cursor_position(self, text, new_cursor_pos):
         """
         Set the cursor position in the tree.
@@ -476,6 +552,20 @@ class H5Forest:
             title=self.value_title,
         )
 
+        # Set up the mini buffer and input buffer
+        self.mini_buffer = Frame(
+            self.mini_buffer_content,
+            height=3,
+        )
+        self.input_buffer = Frame(
+            self.input_buffer_content,
+            height=3,
+        )
+        self.input_buffer = ConditionalContainer(
+            self.input_buffer,
+            filter=Condition(lambda: len(self.input_buffer_content.text) > 0),
+        )
+
         # Wrap those frames that need it in conditional containers
         self.values_frame = ConditionalContainer(
             content=self.values_frame,
@@ -526,7 +616,7 @@ class H5Forest:
                         ]
                     ),
                     self.hotkeys_frame,
-                    self.mini_buffer,
+                    VSplit([self.input_buffer, self.mini_buffer]),
                 ]
             )
         )
@@ -535,6 +625,70 @@ class H5Forest:
         """Print a single line to the mini buffer."""
         self.mini_buffer_content.text = " ".join(args)
         get_app().invalidate()
+
+    def input(self, prompt, callback):
+        """
+        Accept input from the user.
+
+        Note, this is pretty hacky! It will store the input into
+        self.user_input which will then be processed by the passed
+        callback function. This call back function must take self as
+        its only argument and it must safely process the input handling
+        possible errors gracefully.
+
+        Args:
+            prompt (str):
+                The string/s to print to the mini buffer.
+            callback (function):
+                The function using user input.
+        """
+        # Prepare to recieve an input
+        self.user_input = None
+
+        # Set the input read-only text
+        self.input_buffer_content.text = prompt
+        self.mini_buffer_content.text = ""
+        self.app.invalidate()
+
+        # Shift focus to the mini buffer to await input
+        self.shift_focus(self.mini_buffer_content)
+
+        def on_enter(event):
+            """Take the users input and process it."""
+            # Read the text from the mini_buffer_content TextArea
+            self.user_input = self.mini_buffer_content.text
+
+            # Clear buffers_content TextArea after processing
+            self.input_buffer_content.text = ""
+            self.mini_buffer_content.text = ""
+
+            # Run the callback function
+            callback(self)
+
+        # Add a temporary keybinding for Enter specific to this input action
+        self.kb.add(
+            "enter",
+            filter=Condition(
+                lambda: self.app.layout.has_focus(self.mini_buffer_content)
+            ),
+        )(on_enter)
+
+        # Update the app
+        get_app().invalidate()
+
+    def default_focus(self):
+        """Shift the focus to the tree."""
+        self.app.layout.focus(self.tree_content)
+
+    def shift_focus(self, focused_area):
+        """
+        Shift the focus to a different area.
+
+        Args:
+            focused_area (TextArea):
+                The text area to focus on.
+        """
+        self.app.layout.focus(focused_area)
 
 
 def main():
