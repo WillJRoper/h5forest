@@ -54,7 +54,6 @@ class ProgressBar:
         self.text_area = self.forest.progress_bar_content
 
         self.forest.flag_progress_bar = True
-        self.forest.print("Entered")
 
     def update_progress(self, step):
         """
