@@ -140,6 +140,8 @@ class H5Forest:
             [
                 Label("t → Jump to Top"),
                 Label("b → Jump to Bottom"),
+                Label("p → Jump to Parent"),
+                Label("n → Jump to Next"),
                 Label("Escape → Exit Jump Mode"),
             ]
         )
@@ -239,6 +241,23 @@ class H5Forest:
         current_row = doc.cursor_position_row
 
         return current_row
+
+    @property
+    def current_column(self):
+        """
+        Return the column under the cursor.
+
+        Returns:
+            int:
+                The column under the cursor.
+        """
+        # Get the tree content
+        doc = self.tree_content.document
+
+        # Get the current cursor row
+        current_col = doc.cursor_position_col
+
+        return current_col
 
     @property
     def current_position(self):
@@ -548,6 +567,80 @@ class H5Forest:
             )
 
             # Exit jump mode
+            self.return_to_normal_mode()
+
+        @self.kb.add("p", filter=Condition(lambda: self.flag_jump_mode))
+        def jump_to_parent(event):
+            """Jump to the parent of the current node."""
+            # Get the current node
+            node = self.tree.get_current_node(self.current_row)
+
+            # Get the node's parent
+            parent = node.parent
+
+            # if we're at the top, do nothing
+            if parent is None:
+                self.print(f"{node.path} is a root Group!")
+                self.return_to_normal_mode()
+                return
+
+            # Get position of the first character in this row
+            pos = self.current_position - self.current_column
+
+            # Loop backwards until we hit the parent
+            for row in range(self.current_row - 1, -1, -1):
+                # Compute the position at this row
+                pos -= len(self.tree.tree_text_split[row]) + 1
+
+                # If we are at the parent stop
+                if self.tree.get_current_node(row) is parent:
+                    break
+
+            # Safety check, avoid doing something stupid
+            if pos < 0:
+                pos = 0
+
+            # Move the cursor
+            self.set_cursor_position(self.tree.tree_text, pos)
+
+            self.return_to_normal_mode()
+
+        @self.kb.add("n", filter=Condition(lambda: self.flag_jump_mode))
+        def jump_to_next(event):
+            """Jump to the next node."""
+            # Get the current node
+            node = self.tree.get_current_node(self.current_row)
+
+            # Get the depth of this node and the target depth
+            depth = node.depth
+            target_depth = depth - 1 if depth > 0 else 0
+
+            # Get the position of the first character in this row
+            pos = self.current_position - self.current_column
+
+            # Do nothing if we are at the end
+            if self.current_row == self.tree.height - 1:
+                self.return_to_normal_mode
+                return
+
+            # Loop forwards until we hit the next node at the level above
+            # this node's depth. If at the root just move to the next
+            # root group.
+            for row in range(self.current_row, self.tree.height):
+                # Compute the position at this row
+                pos += len(self.tree.tree_text_split[row]) + 1
+
+                # Ensure we don't over shoot
+                if row + 1 > self.tree.height:
+                    continue
+
+                # If we are at the next node stop
+                if self.tree.get_current_node(row + 1).depth == target_depth:
+                    break
+
+            # Move the cursor
+            self.set_cursor_position(self.tree.tree_text, pos)
+
             self.return_to_normal_mode()
 
     def _init_text_areas(self):
