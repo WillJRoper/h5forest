@@ -27,6 +27,9 @@ class H5Forest:
     """
     The main application for the HDF5 Forest.
 
+    This class is a singleton. Any attempt to create a new instance will
+    return the existing instance. This makes the instance available globally.
+
     Attributes:
         tree (Tree):
             The tree object representing the HDF5 file. Each Group or
@@ -86,7 +89,24 @@ class H5Forest:
             The main application object.
     """
 
-    def __init__(self, hdf5_filepath):
+    # Singleton instance
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Create a new instance of the class.
+
+        This method ensures that only one instance of the class is created.
+
+        This method takes precendence over the usual __init__ method.
+        """
+        if cls._instance is None:
+            cls._instance = super(H5Forest, cls).__new__(cls)
+            # Call the init method explicitly to initialize the instance
+            cls._instance._init(*args, **kwargs)
+        return cls._instance
+
+    def _init(self, hdf5_filepath):
         """
         Initialise the application.
 
@@ -104,6 +124,7 @@ class H5Forest:
 
         # Define flags we need to control behaviour
         self.flag_values_visible = False
+        self.flag_progress_bar = False
 
         # Define the leader key mode flags
         # NOTE: These must be unset when the leader mode is exited, and in
@@ -125,6 +146,7 @@ class H5Forest:
             [
                 Label("v → Show values"),
                 Label("V → Show values in range"),
+                Label("m → Get minimum and maximum values"),
                 Label("c → Close value view"),
                 Label("Escape → Exit dataset mode"),
             ]
@@ -155,6 +177,7 @@ class H5Forest:
         self.attributes_content = None
         self.values_content = None
         self.mini_buffer_content = None
+        self.progress_bar_content = None
         self._init_text_areas()
 
         # Set up the list of hotkeys and leaders for the UI
@@ -429,19 +452,10 @@ class H5Forest:
             node = self.tree.get_current_node(self.current_row)
 
             # Get the value string
-            text = node.get_min_max()
+            vmin, vmax = node.get_min_max()
 
-            # Ensure there's something to draw
-            if len(text) == 0:
-                return
-
-            self.value_title.update_title(f"Min/Max: {node.path}")
-
-            # Update the text
-            self.values_content.text = text
-
-            # Flag that there are values to show
-            self.flag_values_visible = True
+            # Print the result
+            self.print(f"{node.path}: Minimum = {vmin},  Maximum = {vmax}")
 
             # Exit values mode
             self.return_to_normal_mode()
@@ -506,6 +520,13 @@ class H5Forest:
         )
 
         self.input_buffer_content = TextArea(
+            text="",
+            scrollbar=False,
+            focusable=False,
+            read_only=True,
+        )
+
+        self.progress_bar_content = TextArea(
             text="",
             scrollbar=False,
             focusable=False,
@@ -619,6 +640,16 @@ class H5Forest:
         )
         self.hotkeys_frame = Frame(self.hotkeys_panel, height=3)
 
+        # Set up the progress bar and buffer conditional containers
+        self.progress_frame = ConditionalContainer(
+            Frame(self.progress_bar_content, height=3),
+            filter=Condition(lambda: self.flag_progress_bar),
+        )
+        buffers = ConditionalContainer(
+            content=VSplit([self.input_buffer, self.mini_buffer]),
+            filter=Condition(lambda: not self.flag_progress_bar),
+        )
+
         # Layout using split views
         self.layout = Layout(
             HSplit(
@@ -640,7 +671,8 @@ class H5Forest:
                         ]
                     ),
                     self.hotkeys_frame,
-                    VSplit([self.input_buffer, self.mini_buffer]),
+                    self.progress_frame,
+                    buffers,
                 ]
             )
         )
@@ -713,6 +745,30 @@ class H5Forest:
                 The text area to focus on.
         """
         self.app.layout.focus(focused_area)
+
+    def progress(self, completed, total):
+        """
+        Update the progress bar.
+
+        This abstracts the showing and hiding of the progress bar as well as
+        updating the progress bar itself.
+
+        Args:
+            completed (int):
+                The number of items completed.
+            total (int):
+                The total number of items to complete.
+        """
+        # Flag that the progress bar should be visible
+        if completed == 0:
+            self.flag_progress_bar = True
+
+        # Update the progress bar
+        self.progress.update(self.progress_bar, completed=completed)
+
+        # If completed hide the progress bar
+        if completed == total - 1:
+            self.flag_progress_bar = False
 
 
 def main():
