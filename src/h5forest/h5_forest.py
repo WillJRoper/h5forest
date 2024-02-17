@@ -27,6 +27,9 @@ class H5Forest:
     """
     The main application for the HDF5 Forest.
 
+    This class is a singleton. Any attempt to create a new instance will
+    return the existing instance. This makes the instance available globally.
+
     Attributes:
         tree (Tree):
             The tree object representing the HDF5 file. Each Group or
@@ -86,7 +89,24 @@ class H5Forest:
             The main application object.
     """
 
-    def __init__(self, hdf5_filepath):
+    # Singleton instance
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Create a new instance of the class.
+
+        This method ensures that only one instance of the class is created.
+
+        This method takes precendence over the usual __init__ method.
+        """
+        if cls._instance is None:
+            cls._instance = super(H5Forest, cls).__new__(cls)
+            # Call the init method explicitly to initialize the instance
+            cls._instance._init(*args, **kwargs)
+        return cls._instance
+
+    def _init(self, hdf5_filepath):
         """
         Initialise the application.
 
@@ -104,6 +124,7 @@ class H5Forest:
 
         # Define flags we need to control behaviour
         self.flag_values_visible = False
+        self.flag_progress_bar = False
 
         # Define the leader key mode flags
         # NOTE: These must be unset when the leader mode is exited, and in
@@ -116,26 +137,29 @@ class H5Forest:
         # Intialise the different leader key mode hot keys
         self.jump_keys = VSplit(
             [
-                Label("t → Jump to top"),
-                Label("b → Jump to bottom"),
-                Label("Escape → Exit jump mode"),
+                Label("t → Jump to Top"),
+                Label("b → Jump to Bottom"),
+                Label("Escape → Exit Jump Mode"),
             ]
         )
         self.dataset_keys = VSplit(
             [
-                Label("v → Show values"),
-                Label("V → Show values in range"),
-                Label("c → Close value view"),
-                Label("Escape → Exit dataset mode"),
+                Label("v → Show Values"),
+                Label("V → Show Values In Range"),
+                Label("m → Get Minimum and Maximum"),
+                Label("M → Get Mean"),
+                Label("s → Get Standard Deviation"),
+                Label("c → Close Value View"),
+                Label("Escape → Exit Dataset Mode"),
             ]
         )
         self.window_keys = VSplit(
             [
-                Label("⇦ → Move left"),
-                Label("⇨ → Move right"),
-                Label("⇧ → Move up"),
-                Label("⇩ → Move down"),
-                Label("Escape → Exit window mode"),
+                Label("⇦ → Move Left"),
+                Label("⇨ → Move Right"),
+                Label("⇧ → Move Up"),
+                Label("⇩ → Move Down"),
+                Label("Escape → Exit Window Mode"),
             ]
         )
 
@@ -155,6 +179,7 @@ class H5Forest:
         self.attributes_content = None
         self.values_content = None
         self.mini_buffer_content = None
+        self.progress_bar_content = None
         self._init_text_areas()
 
         # Set up the list of hotkeys and leaders for the UI
@@ -163,8 +188,8 @@ class H5Forest:
             [
                 Label("Enter → Open Group"),
                 Label("d → Dataset Mode"),
-                Label("j → Jump mode"),
-                Label("w → Window mode"),
+                Label("j → Jump Mode"),
+                Label("w → Window Mode"),
                 Label("q → Exit"),
             ]
         )
@@ -422,6 +447,87 @@ class H5Forest:
             # Exit values mode
             self.return_to_normal_mode()
 
+        @self.kb.add("m", filter=Condition(lambda: self.flag_dataset_mode))
+        def minimum_maximum(event):
+            """Show the minimum and maximum values of a dataset."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            def run_in_thread():
+                # Get the value string
+                vmin, vmax = node.get_min_max()
+
+                # Print the result on the main thread
+                self.app.loop.call_soon_threadsafe(
+                    self.print,
+                    f"{node.path}: Minimum = {vmin},  Maximum = {vmax}",
+                )
+
+                # Exit values mode
+                self.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        @self.kb.add("M", filter=Condition(lambda: self.flag_dataset_mode))
+        def mean(event):
+            """Show the mean of a dataset."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            def run_in_thread():
+                # Get the value string
+                vmean = node.get_mean()
+
+                # Print the result on the main thread
+                self.app.loop.call_soon_threadsafe(
+                    self.print,
+                    f"{node.path}: Mean = {vmean}",
+                )
+
+                # Exit values mode
+                self.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        @self.kb.add("s", filter=Condition(lambda: self.flag_dataset_mode))
+        def std(event):
+            """Show the standard deviation of a dataset."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            def run_in_thread():
+                # Get the value string
+                vstd = node.get_std()
+
+                # Print the result on the main thread
+                self.app.loop.call_soon_threadsafe(
+                    self.print,
+                    f"{node.path}: Standard Deviation = {vstd}",
+                )
+
+                # Exit values mode
+                self.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
     def _init_jump_bindings(self):
         """Set up the keybindings for the jump mode."""
 
@@ -482,6 +588,13 @@ class H5Forest:
         )
 
         self.input_buffer_content = TextArea(
+            text="",
+            scrollbar=False,
+            focusable=False,
+            read_only=True,
+        )
+
+        self.progress_bar_content = TextArea(
             text="",
             scrollbar=False,
             focusable=False,
@@ -595,6 +708,16 @@ class H5Forest:
         )
         self.hotkeys_frame = Frame(self.hotkeys_panel, height=3)
 
+        # Set up the progress bar and buffer conditional containers
+        self.progress_frame = ConditionalContainer(
+            Frame(self.progress_bar_content, height=3),
+            filter=Condition(lambda: self.flag_progress_bar),
+        )
+        buffers = ConditionalContainer(
+            content=HSplit([self.input_buffer, self.mini_buffer]),
+            filter=Condition(lambda: not self.flag_progress_bar),
+        )
+
         # Layout using split views
         self.layout = Layout(
             HSplit(
@@ -616,7 +739,8 @@ class H5Forest:
                         ]
                     ),
                     self.hotkeys_frame,
-                    VSplit([self.input_buffer, self.mini_buffer]),
+                    self.progress_frame,
+                    buffers,
                 ]
             )
         )
@@ -624,7 +748,7 @@ class H5Forest:
     def print(self, *args):
         """Print a single line to the mini buffer."""
         self.mini_buffer_content.text = " ".join(args)
-        get_app().invalidate()
+        self.app.invalidate()
 
     def input(self, prompt, callback):
         """
@@ -689,6 +813,30 @@ class H5Forest:
                 The text area to focus on.
         """
         self.app.layout.focus(focused_area)
+
+    def progress(self, completed, total):
+        """
+        Update the progress bar.
+
+        This abstracts the showing and hiding of the progress bar as well as
+        updating the progress bar itself.
+
+        Args:
+            completed (int):
+                The number of items completed.
+            total (int):
+                The total number of items to complete.
+        """
+        # Flag that the progress bar should be visible
+        if completed == 0:
+            self.flag_progress_bar = True
+
+        # Update the progress bar
+        self.progress.update(self.progress_bar, completed=completed)
+
+        # If completed hide the progress bar
+        if completed == total - 1:
+            self.flag_progress_bar = False
 
 
 def main():
