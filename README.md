@@ -16,7 +16,7 @@ The following features will be coming soon:
 - Renaming of Datasets and Groups.
 - An emacs plugin to probe HDF5 natively in emacs.
 
-![SCR-20240214-sfaa](https://github.com/WillJRoper/HDF5orest/assets/40025495/711ccd02-a3c0-479f-831a-9f26018ad708)
+![SCR-20240217-pnoi](https://github.com/WillJRoper/h5forest/assets/40025495/365a9a54-95ce-4642-8e60-b3c176b40201)
 
 ## Getting started
 
