@@ -137,27 +137,29 @@ class H5Forest:
         # Intialise the different leader key mode hot keys
         self.jump_keys = VSplit(
             [
-                Label("t → Jump to top"),
-                Label("b → Jump to bottom"),
-                Label("Escape → Exit jump mode"),
+                Label("t → Jump to Top"),
+                Label("b → Jump to Bottom"),
+                Label("Escape → Exit Jump Mode"),
             ]
         )
         self.dataset_keys = VSplit(
             [
-                Label("v → Show values"),
-                Label("V → Show values in range"),
-                Label("m → Get minimum and maximum values"),
-                Label("c → Close value view"),
-                Label("Escape → Exit dataset mode"),
+                Label("v → Show Values"),
+                Label("V → Show Values In Range"),
+                Label("m → Get Minimum and Maximum"),
+                Label("M → Get Mean"),
+                Label("s → Get Standard Deviation"),
+                Label("c → Close Value View"),
+                Label("Escape → Exit Dataset Mode"),
             ]
         )
         self.window_keys = VSplit(
             [
-                Label("⇦ → Move left"),
-                Label("⇨ → Move right"),
-                Label("⇧ → Move up"),
-                Label("⇩ → Move down"),
-                Label("Escape → Exit window mode"),
+                Label("⇦ → Move Left"),
+                Label("⇨ → Move Right"),
+                Label("⇧ → Move Up"),
+                Label("⇩ → Move Down"),
+                Label("Escape → Exit Window Mode"),
             ]
         )
 
@@ -186,8 +188,8 @@ class H5Forest:
             [
                 Label("Enter → Open Group"),
                 Label("d → Dataset Mode"),
-                Label("j → Jump mode"),
-                Label("w → Window mode"),
+                Label("j → Jump Mode"),
+                Label("w → Window Mode"),
                 Label("q → Exit"),
             ]
         )
@@ -448,11 +450,15 @@ class H5Forest:
         @self.kb.add("m", filter=Condition(lambda: self.flag_dataset_mode))
         def minimum_maximum(event):
             """Show the minimum and maximum values of a dataset."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
 
             def run_in_thread():
-                # Get the node under the cursor
-                node = self.tree.get_current_node(self.current_row)
-
                 # Get the value string
                 vmin, vmax = node.get_min_max()
 
@@ -460,6 +466,60 @@ class H5Forest:
                 self.app.loop.call_soon_threadsafe(
                     self.print,
                     f"{node.path}: Minimum = {vmin},  Maximum = {vmax}",
+                )
+
+                # Exit values mode
+                self.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        @self.kb.add("M", filter=Condition(lambda: self.flag_dataset_mode))
+        def mean(event):
+            """Show the mean of a dataset."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            def run_in_thread():
+                # Get the value string
+                vmean = node.get_mean()
+
+                # Print the result on the main thread
+                self.app.loop.call_soon_threadsafe(
+                    self.print,
+                    f"{node.path}: Mean = {vmean}",
+                )
+
+                # Exit values mode
+                self.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        @self.kb.add("s", filter=Condition(lambda: self.flag_dataset_mode))
+        def std(event):
+            """Show the standard deviation of a dataset."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            def run_in_thread():
+                # Get the value string
+                vstd = node.get_std()
+
+                # Print the result on the main thread
+                self.app.loop.call_soon_threadsafe(
+                    self.print,
+                    f"{node.path}: Standard Deviation = {vstd}",
                 )
 
                 # Exit values mode
@@ -654,7 +714,7 @@ class H5Forest:
             filter=Condition(lambda: self.flag_progress_bar),
         )
         buffers = ConditionalContainer(
-            content=VSplit([self.input_buffer, self.mini_buffer]),
+            content=HSplit([self.input_buffer, self.mini_buffer]),
             filter=Condition(lambda: not self.flag_progress_bar),
         )
 
