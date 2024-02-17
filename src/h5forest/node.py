@@ -18,6 +18,8 @@ Example usage:
 import h5py
 import numpy as np
 
+from h5forest.progress import ProgressBar
+
 
 class Node:
     """
@@ -141,6 +143,7 @@ class Node:
         # For a dataset we can get a bunch of metadata to display
         if self.is_dataset:
             self.shape = obj.shape
+            self.size = obj.size
             self.datatype = str(obj.dtype)
             self.compression = obj.compression
             self.compression_opts = obj.compression_opts
@@ -150,12 +153,14 @@ class Node:
             self.ndim = obj.ndim
         else:
             self.shape = None
+            self.size = None
             self.datatype = None
             self.compression = None
             self.compression_opts = None
             self.chunks = None
             self.fillvalue = None
             self.nbytes = None
+            self.ndim = None
 
         # Construct tree_text, attribute and metadata text to avoid computation
         self._attr_text = None
@@ -405,27 +410,32 @@ class Node:
                     max_val = -np.inf
 
                     # Compute the number of chunks in each dimension
-                    n_chunks = [
-                        int(np.ceil(s / c))
-                        for s, c in zip(self.shape, self.chunks)
-                    ]
+                    n_chunks = int(self.shape[0] / self.chunks[0])
 
                     # Loop over all possible chunks
-                    for chunk_index in np.ndindex(*n_chunks):
-                        # Get the current slice for each dimension
-                        slices = tuple(
-                            slice(c_idx * c_size, min((c_idx + 1) * c_size, s))
-                            for c_idx, c_size, s in zip(
-                                chunk_index, self.chunks, self.shape
+                    with ProgressBar(total=self.size) as pb:
+                        for chunk_index in range(n_chunks):
+                            # Get the current slice for each dimension
+                            slices = tuple(
+                                [
+                                    slice(
+                                        chunk_index * self.chunks[0],
+                                        min(
+                                            (chunk_index + 1) * self.chunks[0],
+                                            self.shape[0],
+                                        ),
+                                    ),
+                                ]
                             )
-                        )
 
-                        # Read the chunk data
-                        chunk_data = dataset[slices]
+                            # Read the chunk data
+                            chunk_data = dataset[slices]
 
-                        # Get the minimum and maximum for the final dimension
-                        min_val = np.min((min_val, np.min(chunk_data)))
-                        max_val = np.max((max_val, np.max(chunk_data)))
+                            # Get the minimum and maximum for the final dimension
+                            min_val = np.min((min_val, np.min(chunk_data)))
+                            max_val = np.max((max_val, np.max(chunk_data)))
+
+                            pb.advance(step=chunk_data.size)
 
                     return min_val, max_val
 
@@ -443,30 +453,38 @@ class Node:
                     ]
 
                     # Loop over all possible chunks
-                    for chunk_index in np.ndindex(*n_chunks):
-                        # Get the current slice for each dimension
-                        slices = tuple(
-                            slice(c_idx * c_size, min((c_idx + 1) * c_size, s))
-                            for c_idx, c_size, s in zip(
-                                chunk_index, self.chunks, self.shape
+                    with ProgressBar(total=self.size) as pb:
+                        for chunk_index in np.ndindex(*n_chunks):
+                            # Get the current slice for each dimension
+                            slices = tuple(
+                                slice(
+                                    c_idx * c_size,
+                                    min((c_idx + 1) * c_size, s),
+                                )
+                                for c_idx, c_size, s in zip(
+                                    chunk_index, self.chunks, self.shape
+                                )
                             )
-                        )
 
-                        # Read the chunk data
-                        chunk_data = dataset[slices]
+                            # Read the chunk data
+                            chunk_data = dataset[slices]
 
-                        # Get the minimum and maximum for the final dimension
-                        min_val = np.minimum(
-                            min_val,
-                            np.min(
-                                chunk_data, axis=tuple(range(self.ndim - 1))
-                            ),
-                        )
-                        max_val = np.maximum(
-                            max_val,
-                            np.max(
-                                chunk_data, axis=tuple(range(self.ndim - 1))
-                            ),
-                        )
+                            # Get the minimum and maximum for the final dimension
+                            min_val = np.minimum(
+                                min_val,
+                                np.min(
+                                    chunk_data,
+                                    axis=tuple(range(self.ndim - 1)),
+                                ),
+                            )
+                            max_val = np.maximum(
+                                max_val,
+                                np.max(
+                                    chunk_data,
+                                    axis=tuple(range(self.ndim - 1)),
+                                ),
+                            )
+
+                            pb.advance(step=chunk_data.size)
 
                     return min_val, max_val
