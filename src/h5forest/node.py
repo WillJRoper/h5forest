@@ -383,7 +383,8 @@ class Node:
 
         To limit the memory load this will use the chunks recorded in the
         dataset to read in the data in manageable chunks and compute the
-        minimum and maximum values on the fly.
+        minimum and maximum values on the fly. If chunks == shape then
+        they are calculated on the whole Dataset.
 
         Returns:
             tuple:
@@ -488,3 +489,216 @@ class Node:
                             pb.advance(step=chunk_data.size)
 
                     return min_val, max_val
+
+    def get_mean(self):
+        """
+        Return the mean of the dataset values.
+
+        To limit the memory load this will use the chunks recorded in the
+        dataset to read in the data in manageable chunks and compute the
+        mean value on the fly. If chunks == shape then
+        the mean is calculated on the whole Dataset.
+
+        Returns:
+            float:
+                The mean of the dataset values.
+        """
+        if self.is_group:
+            return None, None
+        else:
+            with h5py.File(self.filepath, "r") as hdf:
+                dataset = hdf[self.path]
+
+                # If chunks and shape are equal just get the min and max
+                if self.chunks == self.shape:
+                    arr = dataset[:]
+                    return arr.mean(axis=0)
+
+                # OK, we have chunks. Now we need to have slightly different
+                # behaviours based on dimensions
+
+                # For 1D arrays we can just loop getting the sum.
+                if self.ndim == 1:
+                    # Define the sum
+                    val_sum = 0
+
+                    # Compute the number of chunks in each dimension
+                    n_chunks = int(self.shape[0] / self.chunks[0])
+
+                    # Loop over all possible chunks
+                    with ProgressBar(total=self.size) as pb:
+                        for chunk_index in range(n_chunks):
+                            # Get the current slice for each dimension
+                            slices = tuple(
+                                [
+                                    slice(
+                                        chunk_index * self.chunks[0],
+                                        min(
+                                            (chunk_index + 1) * self.chunks[0],
+                                            self.shape[0],
+                                        ),
+                                    ),
+                                ]
+                            )
+
+                            # Read the chunk data
+                            chunk_data = dataset[slices]
+
+                            # Add this chunk
+                            val_sum += np.sum(chunk_data)
+
+                            pb.advance(step=chunk_data.size)
+
+                    # Return the mean
+                    return val_sum / self.size
+
+                # Otherwise we get the mean for the final
+                # dimension
+                else:
+                    # Define initial sum
+                    val_sum = np.zeros(self.shape[-1])
+
+                    # Compute the number of chunks in each dimension
+                    n_chunks = [
+                        int(np.ceil(s / c))
+                        for s, c in zip(self.shape, self.chunks)
+                    ]
+
+                    # Loop over all possible chunks
+                    with ProgressBar(total=self.size) as pb:
+                        for chunk_index in np.ndindex(*n_chunks):
+                            # Get the current slice for each dimension
+                            slices = tuple(
+                                slice(
+                                    c_idx * c_size,
+                                    min((c_idx + 1) * c_size, s),
+                                )
+                                for c_idx, c_size, s in zip(
+                                    chunk_index, self.chunks, self.shape
+                                )
+                            )
+
+                            # Read the chunk data
+                            chunk_data = dataset[slices]
+
+                            # Get the sum for the final dimension
+                            val_sum += np.sum(
+                                chunk_data,
+                                axis=tuple(range(self.ndim - 1)),
+                            )
+
+                            pb.advance(step=chunk_data.size)
+
+                    # Return the mean
+                    return val_sum / (self.size / self.shape[-1])
+
+    def get_std(self):
+        """
+        Return the standard deviation of the dataset values.
+
+        NOTE: this will first calculate the mean so requires two loops over
+        the chunks and thus two progress bars will be displayed.
+
+        To limit the memory load this will use the chunks recorded in the
+        dataset to read in the data in manageable chunks and compute the
+        mean value on the fly. If chunks == shape then
+        the mean is calculated on the whole Dataset.
+
+        Returns:
+            float:
+                The standard deviation of the dataset values.
+        """
+        if self.is_group:
+            return None, None
+        else:
+            with h5py.File(self.filepath, "r") as hdf:
+                dataset = hdf[self.path]
+
+                # If chunks and shape are equal just get the min and max
+                if self.chunks == self.shape:
+                    arr = dataset[:]
+                    return arr.std(axis=0)
+
+                # OK, we have chunks. Now we need to have slightly different
+                # behaviours based on dimensions. This also means doing the
+                # mean first
+
+                # First we need the mean
+                mean = self.get_mean()
+
+                # For 1D arrays we can just loop getting the stardard deviation
+                if self.ndim == 1:
+                    # Define the sum
+                    val_sum = 0
+
+                    # Compute the number of chunks in each dimension
+                    n_chunks = int(self.shape[0] / self.chunks[0])
+
+                    # Loop over all possible chunks
+                    with ProgressBar(total=self.size) as pb:
+                        for chunk_index in range(n_chunks):
+                            # Get the current slice for each dimension
+                            slices = tuple(
+                                [
+                                    slice(
+                                        chunk_index * self.chunks[0],
+                                        min(
+                                            (chunk_index + 1) * self.chunks[0],
+                                            self.shape[0],
+                                        ),
+                                    ),
+                                ]
+                            )
+
+                            # Read the chunk data
+                            chunk_data = dataset[slices]
+
+                            # Add this chunk
+                            val_sum += np.sum((chunk_data - mean) ** 2)
+
+                            pb.advance(step=chunk_data.size)
+
+                    # Return the standard deviation
+                    return np.sqrt(val_sum / (self.size - 1))
+
+                # Otherwise we get the standard deviation for the final
+                # dimension
+                else:
+                    # Define initial sum
+                    val_sum = np.zeros(self.shape[-1])
+
+                    # Compute the number of chunks in each dimension
+                    n_chunks = [
+                        int(np.ceil(s / c))
+                        for s, c in zip(self.shape, self.chunks)
+                    ]
+
+                    # Loop over all possible chunks
+                    with ProgressBar(total=self.size) as pb:
+                        for chunk_index in np.ndindex(*n_chunks):
+                            # Get the current slice for each dimension
+                            slices = tuple(
+                                slice(
+                                    c_idx * c_size,
+                                    min((c_idx + 1) * c_size, s),
+                                )
+                                for c_idx, c_size, s in zip(
+                                    chunk_index, self.chunks, self.shape
+                                )
+                            )
+
+                            # Read the chunk data
+                            chunk_data = dataset[slices]
+
+                            # Get the sum for the final dimension
+                            val_sum += np.sum(
+                                (chunk_data - mean) ** 2,
+                                axis=tuple(range(self.ndim - 1)),
+                            )
+
+                            pb.advance(step=chunk_data.size)
+
+                    # Return the standard deviation
+                    return np.sqrt(
+                        val_sum / ((self.size / self.shape[-1]) - 1)
+                    )
