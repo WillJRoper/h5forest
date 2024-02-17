@@ -19,6 +19,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import get_app
 from prompt_toolkit.document import Document
 
+from h5forest.plotting import HexbinPlotter
 from h5forest.tree import Tree
 from h5forest.utils import DynamicTitle, get_window_size
 from h5forest._version import __version__
@@ -134,6 +135,7 @@ class H5Forest:
         self._flag_jump_mode = False
         self._flag_dataset_mode = False
         self._flag_window_mode = False
+        self._flag_plotting_mode = False
 
         # Intialise the different leader key mode hot keys
         self.jump_keys = VSplit(
@@ -182,7 +184,41 @@ class H5Forest:
                         and not self.app.layout.has_focus(self.values_content)
                     ),
                 ),
+                ConditionalContainer(
+                    Label("p → Move to Plot"),
+                    Condition(
+                        lambda: not self.app.layout.has_focus(
+                            self.plot_content
+                        )
+                    ),
+                ),
                 Label("q → Exit Window Mode"),
+            ]
+        )
+        self.plot_keys = VSplit(
+            [
+                Label("x → Select x-axis"),
+                Label("y → Select y-axis"),
+                Label("c → Select Color-axis"),
+                ConditionalContainer(
+                    Label("C → Plot Hexbin (Count)"),
+                    filter=Condition(
+                        lambda: "color" not in self.hexbin_plotter.plot_params
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("S → Plot Hexbin (Sum)"),
+                    filter=Condition(
+                        lambda: "color" in self.hexbin_plotter.plot_params
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("M → Plot Hexbin (Mean)"),
+                    filter=Condition(
+                        lambda: "color" in self.hexbin_plotter.plot_params
+                    ),
+                ),
+                Label("q → Exit"),
             ]
         )
 
@@ -193,9 +229,13 @@ class H5Forest:
         self._init_dataset_bindings()
         self._init_jump_bindings()
         self._init_window_bindings()
+        self._init_plot_bindings()
 
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
+
+        # Attach the hexbin plotter
+        self.hexbin_plotter = HexbinPlotter()
 
         # Set up the text areas that will populate the layout
         self.tree_content = None
@@ -204,6 +244,7 @@ class H5Forest:
         self.values_content = None
         self.mini_buffer_content = None
         self.progress_bar_content = None
+        self.plot_content = None
         self._init_text_areas()
 
         # Set up the list of hotkeys and leaders for the UI
@@ -214,6 +255,7 @@ class H5Forest:
                 Label("d → Dataset Mode"),
                 Label("j → Jump Mode"),
                 Label("w → Window Mode"),
+                Label("p → Plotting Mode"),
                 Label("{ → Move Up 10 Lines"),
                 Label("} → Move Down 10 Lines"),
                 Label("q → Exit"),
@@ -230,6 +272,7 @@ class H5Forest:
         self.metadata_frame = None
         self.attrs_frame = None
         self.values_frame = None
+        self.plot_frame = None
         self.layout = None
         self._init_layout()
 
@@ -353,7 +396,25 @@ class H5Forest:
             bool:
                 The flag for window mode.
         """
-        return self._flag_window_mode
+        return self._flag_window_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
+
+    @property
+    def flag_plotting_mode(self):
+        """
+        Return the plotting mode flag.
+
+        This accounts for whether we are awaiting user input in the mini
+        buffer.
+
+        Returns:
+            bool:
+                The flag for plotting mode.
+        """
+        return self._flag_plotting_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
 
     def return_to_normal_mode(self):
         """Return to normal mode."""
@@ -361,6 +422,7 @@ class H5Forest:
         self._flag_jump_mode = False
         self._flag_dataset_mode = False
         self._flag_window_mode = False
+        self._flag_plotting_mode = False
 
     def _init_leader_bindings(self):
         """Set up the leader key bindsings."""
@@ -382,6 +444,12 @@ class H5Forest:
             """Enter window mode."""
             self._flag_normal_mode = False
             self._flag_window_mode = True
+
+        @self.kb.add("p")
+        def plotting_leader_mode(event):
+            """Enter plotting mode."""
+            self._flag_normal_mode = False
+            self._flag_plotting_mode = True
 
         @self.kb.add("q")
         def exit_leader_mode(event):
@@ -837,6 +905,17 @@ class H5Forest:
             self.shift_focus(self.values_content)
             self.return_to_normal_mode()
 
+        @self.kb.add("p", filter=Condition(lambda: self.flag_window_mode))
+        def move_plot(event):
+            """Move focus to the plot."""
+            self.shift_focus(self.plot_content)
+
+            # Plotting is special case where we also want to enter plotting
+            # mode
+            self._flag_normal_mode = False
+            self._flag_window_mode = False
+            self._flag_plotting_mode = True
+
         @self.kb.add("escape")
         def move_to_default(event):
             """
@@ -845,6 +924,90 @@ class H5Forest:
             This is the tree content.
             """
             self.default_focus()
+            self.return_to_normal_mode()
+
+    def _init_plot_bindings(self):
+        """Set up the keybindings for the plotting mode."""
+
+        @self.kb.add("x", filter=Condition(lambda: self.flag_plotting_mode))
+        def select_x(event):
+            """Select the x-axis."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            # Set the text in the plotting area
+            self.plot_content.text = self.hexbin_plotter.set_x_key(node)
+
+            self.return_to_normal_mode()
+
+        @self.kb.add("y", filter=Condition(lambda: self.flag_plotting_mode))
+        def select_y(event):
+            """Select the y-axis."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            # Set the text in the plotting area
+            self.plot_content.text = self.hexbin_plotter.set_y_key(node)
+
+            self.return_to_normal_mode()
+
+        @self.kb.add("c", filter=Condition(lambda: self.flag_plotting_mode))
+        def select_color(event):
+            """Select the color-axis."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            # Set the text in the plotting area
+            self.plot_content.text = self.hexbin_plotter.set_color_key(node)
+
+            self.return_to_normal_mode()
+
+        @self.kb.add("C", filter=Condition(lambda: self.flag_plotting_mode))
+        def plot_hexbin_count(event):
+            """Plot hexbin with count in bins."""
+            # Make the plot
+            self.hexbin_plotter.plot_hexbin_count()
+
+            # Show it (this resets the plotter class)
+            self.hexbin_plotter.show()
+
+            self.return_to_normal_mode()
+
+        @self.kb.add("S", filter=Condition(lambda: self.flag_plotting_mode))
+        def plot_hexbin_sum(event):
+            """Plot hexbin with sum in bins."""
+            # Make the plot
+            self.hexbin_plotter.plot_hexbin_sum()
+
+            # Show it (this resets the plotter class)
+            self.hexbin_plotter.show()
+
+            self.return_to_normal_mode()
+
+        @self.kb.add("M", filter=Condition(lambda: self.flag_plotting_mode))
+        def plot_hexbin_mean(event):
+            """Plot hexbin with mean in bins."""
+            # Make the plot
+            self.hexbin_plotter.plot_hexbin_mean()
+
+            # Show it (this resets the plotter class)
+            self.hexbin_plotter.show()
+
             self.return_to_normal_mode()
 
     def _init_text_areas(self):
@@ -897,6 +1060,13 @@ class H5Forest:
             scrollbar=False,
             focusable=False,
             read_only=True,
+        )
+
+        self.plot_content = TextArea(
+            text=self.hexbin_plotter.default_plot_text,
+            scrollbar=False,
+            focusable=True,
+            read_only=False,
         )
 
     def set_cursor_position(self, text, new_cursor_pos):
@@ -1002,6 +1172,10 @@ class H5Forest:
                     content=self.window_keys,
                     filter=Condition(lambda: self.flag_window_mode),
                 ),
+                ConditionalContainer(
+                    content=self.plot_keys,
+                    filter=Condition(lambda: self.flag_plotting_mode),
+                ),
             ]
         )
         self.hotkeys_frame = ConditionalContainer(
@@ -1011,6 +1185,15 @@ class H5Forest:
                 or self.flag_jump_mode
                 or self.flag_dataset_mode
                 or self.flag_window_mode
+                or self.flag_plotting_mode
+            ),
+        )
+
+        # Set up the plot frame
+        self.plot_frame = ConditionalContainer(
+            Frame(self.plot_content, title="Plotting", height=10),
+            filter=Condition(
+                lambda: self.flag_plotting_mode or len(self.hexbin_plotter) > 0
             ),
         )
 
@@ -1040,6 +1223,7 @@ class H5Forest:
                                 [
                                     self.attrs_frame,
                                     self.values_frame,
+                                    self.plot_frame,
                                 ]
                             ),
                         ]
