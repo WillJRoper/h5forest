@@ -21,6 +21,7 @@ from prompt_toolkit.document import Document
 
 from h5forest.tree import Tree
 from h5forest.utils import DynamicTitle, get_window_size
+from h5forest._version import __version__
 
 
 class H5Forest:
@@ -581,7 +582,7 @@ class H5Forest:
         )
 
         self.mini_buffer_content = TextArea(
-            text="Welcome to h5forest!",
+            text=f"Welcome to h5forest (v{__version__})!",
             scrollbar=False,
             focusable=True,
             read_only=False,
