@@ -582,7 +582,7 @@ class H5Forest:
         )
 
         self.mini_buffer_content = TextArea(
-            text=f"Welcome to h5forest (v{__version__})!",
+            text=f"Welcome to h5forest! (v{__version__})",
             scrollbar=False,
             focusable=True,
             read_only=False,
