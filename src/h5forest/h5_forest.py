@@ -951,7 +951,7 @@ class H5Forest:
         # all into the layout
         self.tree_frame = Frame(
             self.tree_content,
-            title="HDF5 Structure",
+            title="HDF5 File Tree",
         )
         self.metadata_frame = Frame(
             self.metadata_content, title="Metadata", height=10
