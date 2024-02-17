@@ -26,7 +26,7 @@ To install `h5forest` simply clone this repo and run
 pip install .
 ```
 
-at the root level of the repo.
+at the root level of the repo (PyPi install coming soon). 
 
 You will now have the `h5forest` command installed. Simply run
 
