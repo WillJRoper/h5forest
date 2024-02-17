@@ -138,11 +138,11 @@ class H5Forest:
         # Intialise the different leader key mode hot keys
         self.jump_keys = VSplit(
             [
-                Label("k → Jump to Key"),
                 Label("t → Jump to Top"),
                 Label("b → Jump to Bottom"),
                 Label("p → Jump to Parent"),
                 Label("n → Jump to Next"),
+                Label("k → Jump to Next Key"),
                 Label("Escape → Exit Jump Mode"),
             ]
         )
