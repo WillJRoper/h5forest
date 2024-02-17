@@ -37,13 +37,13 @@ class H5Forest:
             Dataset in the HDF5 file is represented by a Node object.
         flag_values_visible (bool):
             A flag to control the visibility of the values text area.
-        flag_normal_mode (bool):
+        _flag_normal_mode (bool):
             A flag to control the normal mode of the application.
-        flag_jump_mode (bool):
+        _flag_jump_mode (bool):
             A flag to control the jump mode of the application.
-        flag_dataset_mode (bool):
+        _flag_dataset_mode (bool):
             A flag to control the dataset mode of the application.
-        flag_window_mode (bool):
+        _flag_window_mode (bool):
             A flag to control the window mode of the application.
         jump_keys (VSplit):
             The hotkeys for the jump mode.
@@ -129,15 +129,16 @@ class H5Forest:
 
         # Define the leader key mode flags
         # NOTE: These must be unset when the leader mode is exited, and in
-        # flag_normal_mode when the escape key is pressed
-        self.flag_normal_mode = True
-        self.flag_jump_mode = False
-        self.flag_dataset_mode = False
-        self.flag_window_mode = False
+        # _flag_normal_mode when the escape key is pressed
+        self._flag_normal_mode = True
+        self._flag_jump_mode = False
+        self._flag_dataset_mode = False
+        self._flag_window_mode = False
 
         # Intialise the different leader key mode hot keys
         self.jump_keys = VSplit(
             [
+                Label("k → Jump to Key"),
                 Label("t → Jump to Top"),
                 Label("b → Jump to Bottom"),
                 Label("p → Jump to Parent"),
@@ -270,12 +271,76 @@ class H5Forest:
         """
         return self.tree_content.document.cursor_position
 
+    @property
+    def flag_normal_mode(self):
+        """
+        Return the normal mode flag.
+
+        This accounts for whether we are awaiting user input in the mini
+        buffer.
+
+        Returns:
+            bool:
+                The flag for normal mode.
+        """
+        return self._flag_normal_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
+
+    @property
+    def flag_jump_mode(self):
+        """
+        Return the jump mode flag.
+
+        This accounts for whether we are awaiting user input in the mini
+        buffer.
+
+        Returns:
+            bool:
+                The flag for jump mode.
+        """
+        return self._flag_jump_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
+
+    @property
+    def flag_dataset_mode(self):
+        """
+        Return the dataset mode flag.
+
+        This accounts for whether we are awaiting user input in the mini
+        buffer.
+
+        Returns:
+            bool:
+                The flag for dataset mode.
+        """
+        return self._flag_dataset_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
+
+    @property
+    def flag_window_mode(self):
+        """
+        Return the window mode flag.
+
+        This accounts for whether we are awaiting user input in the mini
+        buffer.
+
+        Returns:
+            bool:
+                The flag for window mode.
+        """
+        return self._flag_window_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
+
     def return_to_normal_mode(self):
         """Return to normal mode."""
-        self.flag_normal_mode = True
-        self.flag_jump_mode = False
-        self.flag_dataset_mode = False
-        self.flag_window_mode = False
+        self._flag_normal_mode = True
+        self._flag_jump_mode = False
+        self._flag_dataset_mode = False
+        self._flag_window_mode = False
 
     def _init_leader_bindings(self):
         """Set up the leader key bindsings."""
@@ -283,20 +348,20 @@ class H5Forest:
         @self.kb.add("j", filter=Condition(lambda: self.flag_normal_mode))
         def jump_leader_mode(event):
             """Enter jump mode."""
-            self.flag_normal_mode = False
-            self.flag_jump_mode = True
+            self._flag_normal_mode = False
+            self._flag_jump_mode = True
 
         @self.kb.add("d", filter=Condition(lambda: self.flag_normal_mode))
         def dataset_leader_mode(event):
             """Enter dataset mode."""
-            self.flag_normal_mode = False
-            self.flag_dataset_mode = True
+            self._flag_normal_mode = False
+            self._flag_dataset_mode = True
 
         @self.kb.add("w", filter=Condition(lambda: self.flag_normal_mode))
         def window_leader_mode(event):
             """Enter window mode."""
-            self.flag_normal_mode = False
-            self.flag_window_mode = True
+            self._flag_normal_mode = False
+            self._flag_window_mode = True
 
         @self.kb.add("escape")
         def exit_leader_mode(event):
@@ -407,7 +472,7 @@ class H5Forest:
                 self.print(f"{node.path} is not a Dataset")
                 return
 
-            def values_in_range_callback(input):
+            def values_in_range_callback():
                 """Get the start and end indices from the user input."""
                 # Parse the range
                 string_values = tuple(
@@ -620,7 +685,7 @@ class H5Forest:
 
             # Do nothing if we are at the end
             if self.current_row == self.tree.height - 1:
-                self.return_to_normal_mode
+                self.return_to_normal_mode()
                 return
 
             # Loop forwards until we hit the next node at the level above
@@ -632,7 +697,8 @@ class H5Forest:
 
                 # Ensure we don't over shoot
                 if row + 1 > self.tree.height:
-                    continue
+                    self.return_to_normal_mode()
+                    return
 
                 # If we are at the next node stop
                 if self.tree.get_current_node(row + 1).depth == target_depth:
@@ -642,6 +708,47 @@ class H5Forest:
             self.set_cursor_position(self.tree.tree_text, pos)
 
             self.return_to_normal_mode()
+
+        @self.kb.add("k", filter=Condition(lambda: self.flag_jump_mode))
+        def jump_to_key(event):
+            """Jump to next key containing user input."""
+
+            def jump_to_key_callback():
+                """Jump to next key containing user input."""
+                # Unpack user input
+                key = self.user_input.strip()
+
+                # Get the position of the first character in this row
+                pos = self.current_position - self.current_column
+
+                # Loop over keys until we find a key containing the
+                # user input
+                for row in range(self.current_row, self.tree.height):
+                    # Compute the position at this row
+                    pos += len(self.tree.tree_text_split[row]) + 1
+
+                    # Ensure we don't over shoot
+                    if row + 1 > self.tree.height - 1:
+                        self.print("Couldn't find matching key!")
+                        self.return_to_normal_mode()
+                        return
+
+                    # If we are at the next node stop
+                    if key in self.tree.get_current_node(row + 1).name:
+                        break
+
+                # Return to normal
+                self.default_focus()
+                self.return_to_normal_mode()
+
+                # Move the cursor
+                self.set_cursor_position(self.tree.tree_text, pos)
+
+            # Get the indices from the user
+            self.input(
+                "Jump to next key containing:",
+                jump_to_key_callback,
+            )
 
     def _init_text_areas(self):
         """Initialise the text areas which will contain all information."""
@@ -800,7 +907,15 @@ class H5Forest:
                 ),
             ]
         )
-        self.hotkeys_frame = Frame(self.hotkeys_panel, height=3)
+        self.hotkeys_frame = ConditionalContainer(
+            Frame(self.hotkeys_panel, height=3),
+            filter=Condition(
+                lambda: self.flag_normal_mode
+                or self.flag_jump_mode
+                or self.flag_dataset_mode
+                or self.flag_window_mode
+            ),
+        )
 
         # Set up the progress bar and buffer conditional containers
         self.progress_frame = ConditionalContainer(
@@ -878,10 +993,9 @@ class H5Forest:
 
             # Clear buffers_content TextArea after processing
             self.input_buffer_content.text = ""
-            self.mini_buffer_content.text = ""
 
             # Run the callback function
-            callback(self)
+            callback()
 
         # Add a temporary keybinding for Enter specific to this input action
         self.kb.add(
