@@ -67,7 +67,7 @@ class Tree:
     @property
     def height(self):
         """Return the height of the tree text."""
-        return len(self.tree_text_split)
+        return len(self.nodes_by_row)
 
     @property
     def width(self):
