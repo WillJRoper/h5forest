@@ -143,7 +143,7 @@ class H5Forest:
                 Label("p → Jump to Parent"),
                 Label("n → Jump to Next"),
                 Label("k → Jump to Next Key"),
-                Label("Escape → Exit Jump Mode"),
+                Label("q → Exit Jump Mode"),
             ]
         )
         self.dataset_keys = VSplit(
@@ -154,16 +154,35 @@ class H5Forest:
                 Label("M → Get Mean"),
                 Label("s → Get Standard Deviation"),
                 Label("c → Close Value View"),
-                Label("Escape → Exit Dataset Mode"),
+                Label("q → Exit Dataset Mode"),
             ]
         )
         self.window_keys = VSplit(
             [
-                Label("⇦ → Move Left"),
-                Label("⇨ → Move Right"),
-                Label("⇧ → Move Up"),
-                Label("⇩ → Move Down"),
-                Label("Escape → Exit Window Mode"),
+                ConditionalContainer(
+                    Label("t → Move to Tree"),
+                    Condition(
+                        lambda: not self.app.layout.has_focus(
+                            self.tree_content
+                        )
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("a → Move to Attributes"),
+                    Condition(
+                        lambda: not self.app.layout.has_focus(
+                            self.attributes_content
+                        )
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("v → Move to Values"),
+                    Condition(
+                        lambda: self.flag_values_visible
+                        and not self.app.layout.has_focus(self.values_content)
+                    ),
+                ),
+                Label("q → Exit Window Mode"),
             ]
         )
 
@@ -173,6 +192,7 @@ class H5Forest:
         self._init_app_bindings()
         self._init_dataset_bindings()
         self._init_jump_bindings()
+        self._init_window_bindings()
 
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
@@ -194,6 +214,8 @@ class H5Forest:
                 Label("d → Dataset Mode"),
                 Label("j → Jump Mode"),
                 Label("w → Window Mode"),
+                Label("{ → Move Up 10 Lines"),
+                Label("} → Move Down 10 Lines"),
                 Label("q → Exit"),
             ]
         )
@@ -331,9 +353,7 @@ class H5Forest:
             bool:
                 The flag for window mode.
         """
-        return self._flag_window_mode and not self.app.layout.has_focus(
-            self.mini_buffer_content
-        )
+        return self._flag_window_mode
 
     def return_to_normal_mode(self):
         """Return to normal mode."""
@@ -363,7 +383,7 @@ class H5Forest:
             self._flag_normal_mode = False
             self._flag_window_mode = True
 
-        @self.kb.add("escape")
+        @self.kb.add("q")
         def exit_leader_mode(event):
             """Exit leader mode."""
             self.return_to_normal_mode()
@@ -376,7 +396,7 @@ class H5Forest:
         These are always active and are not dependent on any leader key.
         """
 
-        @self.kb.add("q")
+        @self.kb.add("q", filter=Condition(lambda: self.flag_normal_mode))
         def exit_app(event):
             """Exit the app."""
             event.app.exit()
@@ -386,7 +406,47 @@ class H5Forest:
             """Exit the app."""
             event.app.exit()
 
-        @self.kb.add("enter")
+        @self.kb.add("{")
+        def move_up_ten(event):
+            """Move up ten lines."""
+            # Get the current position
+            pos = self.current_position
+
+            # Move up 10 lines
+            for row in range(self.current_row - 1, self.current_row - 11, -1):
+                # Compute the position at this row
+                pos -= len(self.tree.tree_text_split[row]) + 1
+
+                if pos < 0:
+                    pos = 0
+                    break
+
+            # Move the cursor
+            self.set_cursor_position(self.tree.tree_text, pos)
+
+        @self.kb.add("}")
+        def move_down_ten(event):
+            """Move down ten lines."""
+            # Get the current position
+            pos = self.current_position
+
+            # Move down 10 lines
+            for row in range(self.current_row, self.current_row + 10):
+                # Compute the position at this row
+                pos += len(self.tree.tree_text_split[row]) + 1
+
+                if row + 1 > self.tree.height:
+                    break
+
+            # Move the cursor
+            self.set_cursor_position(self.tree.tree_text, pos)
+
+        @self.kb.add(
+            "enter",
+            filter=Condition(
+                lambda: self.app.layout.has_focus(self.tree_content)
+            ),
+        )
         def expand_collapse_node(event):
             """
             Expand the node under the cursor.
@@ -749,6 +809,42 @@ class H5Forest:
                 "Jump to next key containing:",
                 jump_to_key_callback,
             )
+
+    def _init_window_bindings(self):
+        """Set up the keybindings for the window mode."""
+
+        @self.kb.add("t", filter=Condition(lambda: self.flag_window_mode))
+        def move_tree(event):
+            """Move focus to the tree."""
+            self.shift_focus(self.tree_content)
+            self.return_to_normal_mode()
+
+        @self.kb.add("a", filter=Condition(lambda: self.flag_window_mode))
+        def move_attr(event):
+            """Move focus to the attributes."""
+            self.shift_focus(self.attributes_content)
+            self.return_to_normal_mode()
+
+        @self.kb.add(
+            "v",
+            filter=Condition(
+                lambda: self.flag_window_mode and self.flag_values_visible
+            ),
+        )
+        def move_values(event):
+            """Move focus to values."""
+            self.shift_focus(self.values_content)
+            self.return_to_normal_mode()
+
+        @self.kb.add("escape")
+        def move_to_default(event):
+            """
+            Move focus to the default area.
+
+            This is the tree content.
+            """
+            self.default_focus()
+            self.return_to_normal_mode()
 
     def _init_text_areas(self):
         """Initialise the text areas which will contain all information."""
