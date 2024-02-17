@@ -9,9 +9,12 @@ Well, `h5forest` brings interactivity and functionality not available in its lon
 - Real-time metadata and attribute displays.
 - The ability to display the contents of a Dataset.
 - The ability to get basic statistics from a Dataset (e.g. min/max, mean, std, etc.)
-- The ability to quickly plot datasets against each other [WIP].
-- Renaming of Datasets and Groups [WIP].
-- An emacs plugin to probe HDF5 natively in emacs [WIP].
+
+The following features will be coming soon:
+- A search function.
+- The ability to quickly plot datasets against each other.
+- Renaming of Datasets and Groups.
+- An emacs plugin to probe HDF5 natively in emacs.
 
 ![SCR-20240214-sfaa](https://github.com/WillJRoper/HDF5orest/assets/40025495/711ccd02-a3c0-479f-831a-9f26018ad708)
 
