@@ -18,8 +18,6 @@ Example usage:
 import h5py
 import numpy as np
 
-from h5forest.utils import get_window_size
-
 
 class Node:
     """
@@ -149,6 +147,7 @@ class Node:
             self.chunks = obj.chunks
             self.fillvalue = obj.fillvalue
             self.nbytes = obj.nbytes
+            self.ndim = obj.ndim
         else:
             self.shape = None
             self.datatype = None
@@ -372,3 +371,102 @@ class Node:
 
                 # Combine path and data for output
                 return str(data_subset) + truncated
+
+    def get_min_max(self):
+        """
+        Return the minimum and maximum values of the dataset.
+
+        To limit the memory load this will use the chunks recorded in the
+        dataset to read in the data in manageable chunks and compute the
+        minimum and maximum values on the fly.
+
+        Returns:
+            tuple:
+                The minimum and maximum values of the dataset.
+        """
+        if self.is_group:
+            return None, None
+        else:
+            with h5py.File(self.filepath, "r") as hdf:
+                dataset = hdf[self.path]
+
+                # If chunks and shape are equal just get the min and max
+                if self.chunks == self.shape:
+                    arr = dataset[:]
+                    return arr.min(axis=0), arr.max(axis=0)
+
+                # OK, we have chunks. Now we need to have slightly different
+                # behaviours based on dimensions
+
+                # For 1D arrays we can just loop getting the min and max.
+                if self.ndim == 1:
+                    # Define the initial min and max
+                    min_val = np.inf
+                    max_val = -np.inf
+
+                    # Compute the number of chunks in each dimension
+                    n_chunks = [
+                        int(np.ceil(s / c))
+                        for s, c in zip(self.shape, self.chunks)
+                    ]
+
+                    # Loop over all possible chunks
+                    for chunk_index in np.ndindex(*n_chunks):
+                        # Get the current slice for each dimension
+                        slices = tuple(
+                            slice(c_idx * c_size, min((c_idx + 1) * c_size, s))
+                            for c_idx, c_size, s in zip(
+                                chunk_index, self.chunks, self.shape
+                            )
+                        )
+
+                        # Read the chunk data
+                        chunk_data = dataset[slices]
+
+                        # Get the minimum and maximum for the final dimension
+                        min_val = np.min((min_val, np.min(chunk_data)))
+                        max_val = np.max((max_val, np.max(chunk_data)))
+
+                    return min_val, max_val
+
+                # Otherwise we get the minimum and maximum for the final
+                # dimension
+                else:
+                    # Define initial min and max
+                    min_val = np.full(self.shape[-1], np.inf)
+                    max_val = np.full(self.shape[-1], -np.inf)
+
+                    # Compute the number of chunks in each dimension
+                    n_chunks = [
+                        int(np.ceil(s / c))
+                        for s, c in zip(self.shape, self.chunks)
+                    ]
+
+                    # Loop over all possible chunks
+                    for chunk_index in np.ndindex(*n_chunks):
+                        # Get the current slice for each dimension
+                        slices = tuple(
+                            slice(c_idx * c_size, min((c_idx + 1) * c_size, s))
+                            for c_idx, c_size, s in zip(
+                                chunk_index, self.chunks, self.shape
+                            )
+                        )
+
+                        # Read the chunk data
+                        chunk_data = dataset[slices]
+
+                        # Get the minimum and maximum for the final dimension
+                        min_val = np.minimum(
+                            min_val,
+                            np.min(
+                                chunk_data, axis=tuple(range(self.ndim - 1))
+                            ),
+                        )
+                        max_val = np.maximum(
+                            max_val,
+                            np.max(
+                                chunk_data, axis=tuple(range(self.ndim - 1))
+                            ),
+                        )
+
+                    return min_val, max_val
