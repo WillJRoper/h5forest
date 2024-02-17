@@ -4,6 +4,9 @@
 # Ignore HDF5 files
 *.hdf5
 
+# Ignore the version
+*_version.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
