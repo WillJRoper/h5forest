@@ -311,16 +311,22 @@ class Node:
             self._attr_text = self._get_attr_text()
         return self._attr_text
 
-    def get_value_text(self):
+    def get_value_text(self, start_index=None, end_index=None):
         """
-        Return the value text for the node.
+        Return the value text for the node (optionally in a range).
 
         If this node is a Group then an empty string is returned and showing
-        the value frame won't be triggered.
+        the value frame won't be triggered. Note that this should be handled
+        outside but is included for safety.
 
-        If the Dataset is small enough we can just read everything and display
-        it. If the dataset is too large we will only show a truncated view
-        (first 100 elements or what will fit in the TextArea).
+        When no range is specified this method will try to limit to a sensible
+        output size if necessary. If the Dataset is small enough we can
+        just read everything and display it. If the dataset is too large
+        we will only show a truncated view (first 100 elements or what will
+        fit in the TextArea).
+
+        When a range is stated that range of values will be read in and
+        displayed.
 
         Returns:
             str:
@@ -335,8 +341,16 @@ class Node:
                 # How many values roughly can we show maximally?
                 max_count = 1000
 
+                # If a range has been given follow that
+                if start_index is not None:
+                    data_subset = dataset[start_index:end_index]
+                    truncated = (
+                        f"\n\nShowing {len(data_subset)}/"
+                        f"{dataset.size} elements ({start_index}-{end_index})."
+                    )
+
                 # If the dataset is small enough we can just read everything
-                if dataset.size < max_count:
+                elif dataset.size < max_count:
                     data_subset = dataset[...]
                     truncated = ""
 
