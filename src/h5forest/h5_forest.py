@@ -790,6 +790,7 @@ class H5Forest:
                     # Ensure we don't over shoot
                     if row + 1 > self.tree.height - 1:
                         self.print("Couldn't find matching key!")
+                        self.default_focus()
                         self.return_to_normal_mode()
                         return
 
