@@ -36,3 +36,13 @@ h5forest /path/to/hdf5/file.hdf5
 
 on the command line to get started exploring a file.
 
+## Testimonials
+
+"This is the most compelling and useful procrastination I've ever seen" - Frustrated collaborator waiting for actual work to be done.
+
+"Why has no one done this before? Let’s nominate him for a peerage." - Professor incapable of peerage nomination.
+
+"Nice" - Previous supervisor.
+
+
+
