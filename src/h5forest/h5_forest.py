@@ -304,6 +304,7 @@ class H5Forest:
         self._init_jump_bindings()
         self._init_window_bindings()
         self._init_plot_bindings()
+        self._init_hist_bindings()
 
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
@@ -497,14 +498,14 @@ class H5Forest:
     @property
     def flag_hist_mode(self):
         """
-        Return the plotting mode flag.
+        Return the histogram mode flag.
 
         This accounts for whether we are awaiting user input in the mini
         buffer.
 
         Returns:
             bool:
-                The flag for plotting mode.
+                The flag for histogram mode.
         """
         return self._flag_hist_mode and not self.app.layout.has_focus(
             self.mini_buffer_content
@@ -1027,6 +1028,17 @@ class H5Forest:
             self._flag_window_mode = False
             self._flag_plotting_mode = True
 
+        @self.kb.add("h", filter=Condition(lambda: self.flag_window_mode))
+        def move_hist(event):
+            """Move focus to the plot."""
+            self.shift_focus(self.hist_content)
+
+            # Plotting is special case where we also want to enter plotting
+            # mode
+            self._flag_normal_mode = False
+            self._flag_window_mode = False
+            self._flag_hist_mode = True
+
         @self.kb.add("escape")
         def move_to_default(event):
             """
@@ -1261,7 +1273,7 @@ class H5Forest:
 
         @self.kb.add("d", filter=Condition(lambda: self.flag_hist_mode))
         def select_data(event):
-            """Select the x-axis."""
+            """Select the data to sort into bins."""
             # Get the node under the cursor
             node = self.tree.get_current_node(self.current_row)
 
