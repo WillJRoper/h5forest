@@ -19,7 +19,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import get_app
 from prompt_toolkit.document import Document
 
-from h5forest.plotting import HexbinPlotter
+from h5forest.plotting import DensityPlotter, HistogramPlotter
 from h5forest.tree import Tree
 from h5forest.utils import DynamicTitle, get_window_size
 from h5forest._version import __version__
@@ -136,6 +136,7 @@ class H5Forest:
         self._flag_dataset_mode = False
         self._flag_window_mode = False
         self._flag_plotting_mode = False
+        self._flag_hist_mode = False
 
         # Intialise the different leader key mode hot keys
         self.jump_keys = VSplit(
@@ -197,28 +198,101 @@ class H5Forest:
         )
         self.plot_keys = VSplit(
             [
-                Label("x → Select x-axis"),
-                Label("y → Select y-axis"),
-                Label("c → Select Color-axis"),
                 ConditionalContainer(
-                    Label("C → Plot Hexbin (Count)"),
-                    filter=Condition(
-                        lambda: "color" not in self.hexbin_plotter.plot_params
+                    Label("Enter → Edit entry"),
+                    Condition(
+                        lambda: self.app.layout.has_focus(self.plot_content)
                     ),
                 ),
                 ConditionalContainer(
-                    Label("S → Plot Hexbin (Sum)"),
+                    Label("x → Select x-axis"),
                     filter=Condition(
-                        lambda: "color" in self.hexbin_plotter.plot_params
+                        lambda: "x" not in self.density_plotter.plot_params
                     ),
                 ),
                 ConditionalContainer(
-                    Label("M → Plot Hexbin (Mean)"),
+                    Label("y → Select y-axis"),
                     filter=Condition(
-                        lambda: "color" in self.hexbin_plotter.plot_params
+                        lambda: "y" not in self.density_plotter.plot_params
                     ),
                 ),
-                Label("q → Exit"),
+                ConditionalContainer(
+                    Label("w → Select Weights"),
+                    filter=Condition(
+                        lambda: "weights"
+                        not in self.density_plotter.plot_params
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("c → Compute Density (Count)"),
+                    filter=Condition(
+                        lambda: "x" in self.density_plotter.plot_params
+                        and "y" in self.density_plotter.plot_params
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("s → Compute Density (Sum)"),
+                    filter=Condition(
+                        lambda: "color" in self.density_plotter.plot_params
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("m → Compute Density (Mean)"),
+                    filter=Condition(
+                        lambda: "color" in self.density_plotter.plot_params
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("C → Plot Density (Count)"),
+                    filter=Condition(
+                        lambda: self.density_plotter.count_density is not None
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("S → Plot Density (Sum)"),
+                    filter=Condition(
+                        lambda: self.density_plotter.sum_density is not None
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("M → Plot Density (Mean)"),
+                    filter=Condition(
+                        lambda: self.density_plotter.mean_density is not None
+                    ),
+                ),
+                Label("r → Reset"),
+                Label("q → Exit Plotting Mode"),
+            ]
+        )
+        self.hist_keys = VSplit(
+            [
+                ConditionalContainer(
+                    Label("Enter → Edit entry"),
+                    Condition(
+                        lambda: self.app.layout.has_focus(self.hist_content)
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("d → Select data"),
+                    filter=Condition(
+                        lambda: "data"
+                        not in self.histogram_plotter.plot_params
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("h → Compute Histogram"),
+                    filter=Condition(
+                        lambda: "data" in self.histogram_plotter.plot_params
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("H → Plot Histogram"),
+                    filter=Condition(
+                        lambda: self.histogram_plotter.hist is not None
+                    ),
+                ),
+                Label("r → Reset"),
+                Label("q → Exit Hist Mode"),
             ]
         )
 
@@ -235,7 +309,8 @@ class H5Forest:
         self.value_title = DynamicTitle("Values")
 
         # Attach the hexbin plotter
-        self.hexbin_plotter = HexbinPlotter()
+        self.density_plotter = DensityPlotter()
+        self.histogram_plotter = HistogramPlotter()
 
         # Set up the text areas that will populate the layout
         self.tree_content = None
@@ -245,6 +320,7 @@ class H5Forest:
         self.mini_buffer_content = None
         self.progress_bar_content = None
         self.plot_content = None
+        self.hist_content = None
         self._init_text_areas()
 
         # Set up the list of hotkeys and leaders for the UI
@@ -253,9 +329,10 @@ class H5Forest:
             [
                 Label("Enter → Open Group"),
                 Label("d → Dataset Mode"),
+                Label("h → Hist Mode"),
                 Label("j → Jump Mode"),
-                Label("w → Window Mode"),
                 Label("p → Plotting Mode"),
+                Label("w → Window Mode"),
                 Label("{ → Move Up 10 Lines"),
                 Label("} → Move Down 10 Lines"),
                 Label("q → Exit"),
@@ -273,6 +350,7 @@ class H5Forest:
         self.attrs_frame = None
         self.values_frame = None
         self.plot_frame = None
+        self.hist_frame = None
         self.layout = None
         self._init_layout()
 
@@ -416,6 +494,22 @@ class H5Forest:
             self.mini_buffer_content
         )
 
+    @property
+    def flag_hist_mode(self):
+        """
+        Return the plotting mode flag.
+
+        This accounts for whether we are awaiting user input in the mini
+        buffer.
+
+        Returns:
+            bool:
+                The flag for plotting mode.
+        """
+        return self._flag_hist_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
+
     def return_to_normal_mode(self):
         """Return to normal mode."""
         self._flag_normal_mode = True
@@ -423,6 +517,7 @@ class H5Forest:
         self._flag_dataset_mode = False
         self._flag_window_mode = False
         self._flag_plotting_mode = False
+        self._flag_hist_mode = False
 
     def _init_leader_bindings(self):
         """Set up the leader key bindsings."""
@@ -445,16 +540,23 @@ class H5Forest:
             self._flag_normal_mode = False
             self._flag_window_mode = True
 
-        @self.kb.add("p")
+        @self.kb.add("p", filter=Condition(lambda: self.flag_normal_mode))
         def plotting_leader_mode(event):
             """Enter plotting mode."""
             self._flag_normal_mode = False
             self._flag_plotting_mode = True
 
+        @self.kb.add("h", filter=Condition(lambda: self.flag_normal_mode))
+        def hist_leader_mode(event):
+            """Enter hist mode."""
+            self._flag_normal_mode = False
+            self._flag_hist_mode = True
+
         @self.kb.add("q")
         def exit_leader_mode(event):
             """Exit leader mode."""
             self.return_to_normal_mode()
+            self.default_focus()
             event.app.invalidate()
 
     def _init_app_bindings(self):
@@ -503,8 +605,17 @@ class H5Forest:
                 # Compute the position at this row
                 pos += len(self.tree.tree_text_split[row]) + 1
 
-                if row + 1 > self.tree.height:
+                if row + 1 > self.tree.height - 1:
+                    pos = self.tree.length - len(
+                        self.tree.tree_text_split[self.tree.height - 1]
+                    )
                     break
+
+            # Ensure we don't overshoot
+            if pos > self.tree.length:
+                pos = self.tree.length - len(
+                    self.tree.tree_text_split[self.tree.height - 1]
+                )
 
             # Move the cursor
             self.set_cursor_position(self.tree.tree_text, pos)
@@ -941,7 +1052,7 @@ class H5Forest:
                 return
 
             # Set the text in the plotting area
-            self.plot_content.text = self.hexbin_plotter.set_x_key(node)
+            self.plot_content.text = self.density_plotter.set_x_key(node)
 
             self.return_to_normal_mode()
 
@@ -957,11 +1068,11 @@ class H5Forest:
                 return
 
             # Set the text in the plotting area
-            self.plot_content.text = self.hexbin_plotter.set_y_key(node)
+            self.plot_content.text = self.density_plotter.set_y_key(node)
 
             self.return_to_normal_mode()
 
-        @self.kb.add("c", filter=Condition(lambda: self.flag_plotting_mode))
+        @self.kb.add("w", filter=Condition(lambda: self.flag_plotting_mode))
         def select_color(event):
             """Select the color-axis."""
             # Get the node under the cursor
@@ -973,42 +1084,220 @@ class H5Forest:
                 return
 
             # Set the text in the plotting area
-            self.plot_content.text = self.hexbin_plotter.set_color_key(node)
+            self.plot_content.text = self.density_plotter.set_color_key(node)
 
             self.return_to_normal_mode()
+
+        @self.kb.add(
+            "enter",
+            filter=Condition(
+                lambda: self.app.layout.has_focus(self.plot_content)
+            ),
+        )
+        def edit_plot_entry(event):
+            """Edit plot param under cursor."""
+            # Get the current position and row in the plot content
+            current_row = self.plot_content.document.cursor_position_row
+            current_pos = self.plot_content.document.cursor_position
+
+            # Get the current row text  in the plot content split into
+            # key and value
+            split_line = self.density_plotter.get_row(current_row).split(": ")
+
+            # Split the current plot content into lines
+            split_text = self.plot_content.text.split("\n")
+
+            def edit_plot_entry_callback():
+                """Edit the plot param under cursor."""
+                # Strip the user input
+                user_input = self.user_input.strip()
+
+                # And set the text here
+                split_text[current_row] = (
+                    f"{split_line[0]}:  ".ljust(13) + f"{user_input}"
+                )
+
+                # And display the new text
+                self.plot_content.text = "\n".join(split_text)
+                self.density_plotter.plot_text = self.plot_content.text
+
+                # And shift focus back to the plot content
+                self.shift_focus(self.plot_content)
+
+                # And put the cursor back where it was
+                self.plot_content.document = Document(
+                    text=self.plot_content.text, cursor_position=current_pos
+                )
+
+            # Get the modified entry from the user
+            self.input(split_line[0], edit_plot_entry_callback)
+
+        @self.kb.add("c", filter=Condition(lambda: self.flag_plotting_mode))
+        def get_count_density(event):
+            """Get the count density of the dataset."""
+
+            def run_in_thread():
+                """Make the plot."""
+                self.density_plotter.compute_counts(self.plot_content.text)
+
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("s", filter=Condition(lambda: self.flag_plotting_mode))
+        def get_sum_density(event):
+            """Get the sum density of the dataset."""
+
+            def run_in_thread():
+                """Make the plot."""
+                self.density_plotter.compute_sums(self.plot_content.text)
+
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("m", filter=Condition(lambda: self.flag_plotting_mode))
+        def get_mean_density(event):
+            """Get the mean density of the dataset."""
+
+            def run_in_thread():
+                """Make the plot."""
+                self.density_plotter.compute_means(self.plot_content.text)
+
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+            self.return_to_normal_mode()
+            self.default_focus()
 
         @self.kb.add("C", filter=Condition(lambda: self.flag_plotting_mode))
-        def plot_hexbin_count(event):
-            """Plot hexbin with count in bins."""
-            # Make the plot
-            self.hexbin_plotter.plot_hexbin_count()
+        def plot_count_density(event):
+            """
+            Plot pcolormesh with counts in bins.
+
+            This will plot the pcolormesh with histograms along the axes.
+            """
+            self.density_plotter.plot_count_density(self.plot_content.text)
 
             # Show it (this resets the plotter class)
-            self.hexbin_plotter.show()
+            self.density_plotter.show()
 
             self.return_to_normal_mode()
+            self.default_focus()
 
         @self.kb.add("S", filter=Condition(lambda: self.flag_plotting_mode))
-        def plot_hexbin_sum(event):
+        def plot_sum_density(event):
             """Plot hexbin with sum in bins."""
             # Make the plot
-            self.hexbin_plotter.plot_hexbin_sum()
+            self.density_plotter.plot_sum_density(self.plot_content.text)
 
             # Show it (this resets the plotter class)
-            self.hexbin_plotter.show()
+            self.density_plotter.show()
 
             self.return_to_normal_mode()
+            self.default_focus()
 
         @self.kb.add("M", filter=Condition(lambda: self.flag_plotting_mode))
-        def plot_hexbin_mean(event):
+        def plot_mean_density(event):
             """Plot hexbin with mean in bins."""
             # Make the plot
-            self.hexbin_plotter.plot_hexbin_mean()
+            self.density_plotter.plot_mean_density(self.plot_content.text)
 
             # Show it (this resets the plotter class)
-            self.hexbin_plotter.show()
+            self.density_plotter.show()
 
             self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("r", filter=Condition(lambda: self.flag_plotting_mode))
+        def reset(event):
+            """Reset the plot content."""
+            self.plot_content.text = self.density_plotter.reset()
+
+    def _init_hist_bindings(self):
+        """Set up the bindings for histogram mode."""
+
+        @self.kb.add("enter", filter=Condition(lambda: self.flag_hist_mode))
+        def edit_hist_entry(event):
+            """Edit histogram param under cursor."""
+            # Get the current position and row in the plot content
+            current_row = self.hist_content.document.cursor_position_row
+            current_pos = self.hist_content.document.cursor_position
+
+            # Get the current row text  in the plot content split into
+            # key and value
+            split_line = self.histogram_plotter.get_row(current_row).split(
+                ": "
+            )
+
+            # Split the current plot content into lines
+            split_text = self.hist_content.text.split("\n")
+
+            def edit_hist_entry_callback():
+                """Edit the plot param under cursor."""
+                # Strip the user input
+                user_input = self.user_input.strip()
+
+                # And set the text here
+                split_text[current_row] = (
+                    f"{split_line[0]}:  ".ljust(13) + f"{user_input}"
+                )
+
+                # And display the new text
+                self.hist_content.text = "\n".join(split_text)
+                self.histogram_plotter.plot_text = self.hist_content.text
+
+                # And shift focus back to the plot content
+                self.shift_focus(self.hist_content)
+
+                # And put the cursor back where it was
+                self.hist_content.document = Document(
+                    text=self.hist_content.text, cursor_position=current_pos
+                )
+
+            # Get the modified entry from the user
+            self.input(split_line[0], edit_hist_entry_callback)
+
+        @self.kb.add("d", filter=Condition(lambda: self.flag_hist_mode))
+        def select_data(event):
+            """Select the x-axis."""
+            # Get the node under the cursor
+            node = self.tree.get_current_node(self.current_row)
+
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                self.print(f"{node.path} is not a Dataset")
+                return
+
+            # Set the text in the plotting area
+            self.hist_content.text = self.histogram_plotter.set_data_key(node)
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("h", filter=Condition(lambda: self.flag_hist_mode))
+        def compute_hist(event):
+            """Compute the histogram."""
+            self.histogram_plotter.compute_hist(self.hist_content.text)
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("H", filter=Condition(lambda: self.flag_hist_mode))
+        def plot_hist(event):
+            """Plot the histogram."""
+            self.histogram_plotter.plot_hist(self.hist_content.text)
+
+            self.histogram_plotter.show()
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("r", filter=Condition(lambda: self.flag_hist_mode))
+        def reset_hist(event):
+            """Reset the histogram content."""
+            self.hist_content.text = self.histogram_plotter.reset()
 
     def _init_text_areas(self):
         """Initialise the text areas which will contain all information."""
@@ -1063,10 +1352,17 @@ class H5Forest:
         )
 
         self.plot_content = TextArea(
-            text=self.hexbin_plotter.default_plot_text,
-            scrollbar=False,
+            text=self.density_plotter.default_plot_text,
+            scrollbar=True,
             focusable=True,
-            read_only=False,
+            read_only=True,
+        )
+
+        self.hist_content = TextArea(
+            text=self.histogram_plotter.default_plot_text,
+            scrollbar=True,
+            focusable=True,
+            read_only=True,
         )
 
     def set_cursor_position(self, text, new_cursor_pos):
@@ -1106,7 +1402,8 @@ class H5Forest:
             except IndexError:
                 self.set_cursor_position(
                     self.tree.tree_text,
-                    new_cursor_pos=self.tree.length,
+                    new_cursor_pos=self.tree.length
+                    - len(self.tree.tree_text_split[self.tree.height - 1]),
                 )
                 self.metadata_content.text = ""
                 self.attributes_content.text = ""
@@ -1176,6 +1473,10 @@ class H5Forest:
                     content=self.plot_keys,
                     filter=Condition(lambda: self.flag_plotting_mode),
                 ),
+                ConditionalContainer(
+                    content=self.hist_keys,
+                    filter=Condition(lambda: self.flag_hist_mode),
+                ),
             ]
         )
         self.hotkeys_frame = ConditionalContainer(
@@ -1186,6 +1487,7 @@ class H5Forest:
                 or self.flag_dataset_mode
                 or self.flag_window_mode
                 or self.flag_plotting_mode
+                or self.flag_hist_mode
             ),
         )
 
@@ -1193,7 +1495,16 @@ class H5Forest:
         self.plot_frame = ConditionalContainer(
             Frame(self.plot_content, title="Plotting", height=10),
             filter=Condition(
-                lambda: self.flag_plotting_mode or len(self.hexbin_plotter) > 0
+                lambda: self.flag_plotting_mode
+                or len(self.density_plotter) > 0
+            ),
+        )
+
+        # Set up the plot frame
+        self.hist_frame = ConditionalContainer(
+            Frame(self.hist_content, title="Histogram", height=10),
+            filter=Condition(
+                lambda: self.flag_hist_mode or len(self.histogram_plotter) > 0
             ),
         )
 
@@ -1202,10 +1513,7 @@ class H5Forest:
             Frame(self.progress_bar_content, height=3),
             filter=Condition(lambda: self.flag_progress_bar),
         )
-        buffers = ConditionalContainer(
-            content=HSplit([self.input_buffer, self.mini_buffer]),
-            filter=Condition(lambda: not self.flag_progress_bar),
-        )
+        buffers = HSplit([self.input_buffer, self.mini_buffer])
 
         # Layout using split views
         self.layout = Layout(
@@ -1224,6 +1532,7 @@ class H5Forest:
                                     self.attrs_frame,
                                     self.values_frame,
                                     self.plot_frame,
+                                    self.hist_frame,
                                 ]
                             ),
                         ]
@@ -1237,6 +1546,7 @@ class H5Forest:
 
     def print(self, *args):
         """Print a single line to the mini buffer."""
+        args = [str(a) for a in args]
         self.mini_buffer_content.text = " ".join(args)
         self.app.invalidate()
 
@@ -1302,30 +1612,6 @@ class H5Forest:
                 The text area to focus on.
         """
         self.app.layout.focus(focused_area)
-
-    def progress(self, completed, total):
-        """
-        Update the progress bar.
-
-        This abstracts the showing and hiding of the progress bar as well as
-        updating the progress bar itself.
-
-        Args:
-            completed (int):
-                The number of items completed.
-            total (int):
-                The total number of items to complete.
-        """
-        # Flag that the progress bar should be visible
-        if completed == 0:
-            self.flag_progress_bar = True
-
-        # Update the progress bar
-        self.progress.update(self.progress_bar, completed=completed)
-
-        # If completed hide the progress bar
-        if completed == total - 1:
-            self.flag_progress_bar = False
 
 
 def main():
