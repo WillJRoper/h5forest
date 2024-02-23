@@ -37,7 +37,7 @@ class ProgressBar:
             The text area to display the progress bar in.
     """
 
-    def __init__(self, total):
+    def __init__(self, total, description=""):
         """
         Initialize the progress bar.
 
@@ -50,6 +50,7 @@ class ProgressBar:
         self.total_steps = total
         self.max_length = get_window_size()[1] - 4
         self.current_step = 0
+        self.description = description
         self.forest = H5Forest()
         self.text_area = self.forest.progress_bar_content
 
@@ -69,7 +70,8 @@ class ProgressBar:
         # Define the text that'll appear at the end
         back = (
             f"{self.current_step/self.total_steps * 100:.2f}% "
-            f"{self.current_step}/{self.total_steps}"
+            f"({self.current_step}/{self.total_steps})"
+            f" [{self.description}]"
         )
 
         # How long can the bar be including the end text?
@@ -109,7 +111,7 @@ class ProgressBar:
         # Reset the progress bar for potential reuse
         self.current_step = 0
 
-        # Cleanup or final update if necessary
+        # Cleanup and final update if necessary
         self.forest.flag_progress_bar = False
         self.forest.app.invalidate()
 
