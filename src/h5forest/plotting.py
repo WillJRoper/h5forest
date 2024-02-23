@@ -1,20 +1,39 @@
 """A module for plotting with matplotlib directly from the HDF5 file.
+
+This is only ever called from the h5forest module and is not intended to be
+used directly by the user.
 """
 import h5py
 import threading
-import queue
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
 
-# Supress warnings related to numpy
-warnings.filterwarnings("ignore")
-
 from h5forest.progress import ProgressBar
 
 
+# Supress warnings related to numpy
+warnings.filterwarnings("ignore")
+
+
 class Plotter:
+    """
+    A class to handle the plotting of data from the HDF5 file.
+
+    This is the parent class to all other plotting classes and contains only
+    the generic plotting methods.
+
+    Attributes:
+        plot_params (dict):
+            A dictionary to store the plot parameters.
+        default_plot_text (str):
+            The default text to display in the plotting TextArea.
+        plot_text (str):
+            The text to display in the plotting TextArea.
+    """
+
     def __init__(self):
+        """Initialise the plotter."""
         # Container for the plot parameters
         self.plot_params = {}
 
@@ -40,7 +59,42 @@ class Plotter:
 
 
 class DensityPlotter(Plotter):
+    """
+    The density grid plotting class.
+
+    Attributes:
+        plot_params (dict):
+            A dictionary to store the plot parameters.
+        default_plot_text (str):
+            The default text to display in the plotting TextArea.
+        plot_text (str):
+            The text to display in the plotting TextArea.
+        x_min (float):
+            The minimum value for the x-axis.
+        x_max (float):
+            The maximum value for the x-axis.
+        y_min (float):
+            The minimum value for the y-axis.
+        y_max (float):
+            The maximum value for the y-axis.
+        c_min (float):
+            The minimum value for the color-axis.
+        c_max (float):
+            The maximum value for the color-axis.
+        count_density (np.ndarray):
+            The grid of counts.
+        sum_density (np.ndarray):
+            The grid of sums.
+        mean_density (np.ndarray):
+            The grid of means.
+        xs (np.ndarray):
+            The x-axis grid.
+        ys (np.ndarray):
+            The y-axis grid.
+    """
+
     def __init__(self):
+        """Initialise the density plotter."""
         # Call the parent class
         super().__init__()
 
@@ -467,7 +521,7 @@ class DensityPlotter(Plotter):
         fig = plt.figure(figsize=(3.5, 3.5))
         ax = fig.add_subplot(111)
 
-        # Visulise the SFZH grid
+        # Visulise the grid
         ax.pcolormesh(
             self.xs,
             self.ys,
@@ -504,7 +558,7 @@ class DensityPlotter(Plotter):
         fig = plt.figure(figsize=(3.5, 3.5))
         ax = fig.add_subplot(111)
 
-        # Visulise the SFZH grid
+        # Visulise the grid
         im = ax.pcolormesh(
             self.xs,
             self.ys,
@@ -548,7 +602,7 @@ class DensityPlotter(Plotter):
         fig = plt.figure(figsize=(3.5, 3.5))
         ax = fig.add_subplot(111)
 
-        # Visulise the SFZH grid
+        # Visulise the grid
         im = ax.pcolormesh(
             self.xs,
             self.ys,
@@ -575,7 +629,30 @@ class DensityPlotter(Plotter):
 
 
 class HistogramPlotter(Plotter):
+    """
+    The histogram plotting class.
+
+    Attributes:
+        plot_params (dict):
+            A dictionary to store the plot parameters.
+        default_plot_text (str):
+            The default text to display in the plotting TextArea.
+        plot_text (str):
+            The text to display in the plotting TextArea.
+        x_min (float):
+            The minimum value for the x-axis.
+        x_max (float):
+            The maximum value for the x-axis.
+        hist (np.ndarray):
+            The histogram.
+        xs (np.ndarray):
+            The x-axis grid.
+        widths (np.ndarray):
+            The bin widths.
+    """
+
     def __init__(self):
+        """Initialise the histogram plotter."""
         # Call the parent class
         super().__init__()
 
@@ -584,7 +661,6 @@ class HistogramPlotter(Plotter):
             "data:        <key>\n"
             "nbins:       50\n"
             "x-label:     <label>\n"
-            "y-label:     <label>\n"
             "x-scale:     linear\n"
             "y-scale:     linear\n"
         )
@@ -599,6 +675,7 @@ class HistogramPlotter(Plotter):
         # Plotting data containers
         self.hist = None
         self.xs = None
+        self.widths = None
 
     def set_data_key(self, node):
         """
@@ -643,10 +720,10 @@ class HistogramPlotter(Plotter):
         split_text = text.split("\n")
 
         # Unpack the number of bins
-        nbins = split_text[1].split(": ")[1].strip()
+        nbins = int(split_text[1].split(": ")[1].strip())
 
         # Unpack scales
-        x_scale = split_text[4].split(": ")[1].strip()
+        x_scale = split_text[3].split(": ")[1].strip()
 
         # Define the bins
         if x_scale == "log":
@@ -655,6 +732,7 @@ class HistogramPlotter(Plotter):
             )
         else:
             bins = np.linspace(self.x_min, self.x_max, nbins + 1)
+        self.widths = bins[1:] - bins[:-1]
         self.xs = (bins[1:] + bins[:-1]) / 2
 
         # Get the chunk shape
@@ -723,24 +801,20 @@ class HistogramPlotter(Plotter):
         # Unpack the labels scales
         split_text = text.split("\n")
         x_label = split_text[2].split(": ")[1].strip()
-        y_label = split_text[3].split(": ")[1].strip()
-        x_scale = split_text[4].split(": ")[1].strip()
-        y_scale = split_text[5].split(": ")[1].strip()
+        x_scale = split_text[3].split(": ")[1].strip()
+        y_scale = split_text[4].split(": ")[1].strip()
 
         # Create the figure
         fig = plt.figure(figsize=(3.5, 3.5))
         ax = fig.add_subplot(111)
+        ax.grid(True)
 
-        # Visulise the SFZH grid
-        ax.bar(
-            self.xs,
-            self.hist,
-            cmap="plasma",
-        )
+        # Draw the bars
+        ax.bar(self.xs, self.hist, width=self.widths)
 
         # Set the labels
         ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
+        ax.set_ylabel("$N$")
 
         # Set the scale
         ax.set_xscale(x_scale)
@@ -752,5 +826,6 @@ class HistogramPlotter(Plotter):
         """Reset the histogram."""
         self.hist = None
         self.xs = None
+        self.widths = None
         self.plot_text = self.default_plot_text
         return self.plot_text
