@@ -401,7 +401,7 @@ class Node:
                 dataset = hdf[self.path]
 
                 # If chunks and shape are equal just get the min and max
-                if self.is_chunked:
+                if not self.is_chunked:
                     arr = dataset[:]
                     return arr.min(axis=0), arr.max(axis=0)
 
@@ -418,7 +418,9 @@ class Node:
                     n_chunks = int(self.shape[0] / self.chunks[0])
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="Min/Max"
+                    ) as pb:
                         for chunk_index in range(n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -458,7 +460,9 @@ class Node:
                     ]
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="Min/Max"
+                    ) as pb:
                         for chunk_index in np.ndindex(*n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -514,7 +518,7 @@ class Node:
                 dataset = hdf[self.path]
 
                 # If chunks and shape are equal just get the min and max
-                if self.is_chunked:
+                if not self.is_chunked:
                     arr = dataset[:]
                     return arr.mean(axis=0)
 
@@ -530,7 +534,9 @@ class Node:
                     n_chunks = int(self.shape[0] / self.chunks[0])
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="Mean"
+                    ) as pb:
                         for chunk_index in range(n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -569,7 +575,9 @@ class Node:
                     ]
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="Mean"
+                    ) as pb:
                         for chunk_index in np.ndindex(*n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -619,7 +627,7 @@ class Node:
                 dataset = hdf[self.path]
 
                 # If chunks and shape are equal just get the min and max
-                if self.is_chunked:
+                if not self.is_chunked:
                     arr = dataset[:]
                     return arr.std(axis=0)
 
@@ -639,7 +647,9 @@ class Node:
                     n_chunks = int(self.shape[0] / self.chunks[0])
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="StDev"
+                    ) as pb:
                         for chunk_index in range(n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -678,7 +688,9 @@ class Node:
                     ]
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="StDev"
+                    ) as pb:
                         for chunk_index in np.ndindex(*n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
