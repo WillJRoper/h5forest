@@ -278,7 +278,7 @@ def _init_plot_bindings(app):
                 filter=Condition(
                     lambda: "x" in app.density_plotter.plot_params
                     and "y" in app.density_plotter.plot_params
-                    and "color" in app.density_plotter.plot_params
+                    and "weights" in app.density_plotter.plot_params
                     and app.density_plotter.sum_density is None
                 ),
             ),
@@ -287,7 +287,7 @@ def _init_plot_bindings(app):
                 filter=Condition(
                     lambda: "x" in app.density_plotter.plot_params
                     and "y" in app.density_plotter.plot_params
-                    and "color" in app.density_plotter.plot_params
+                    and "weights" in app.density_plotter.plot_params
                     and app.density_plotter.mean_density is None
                 ),
             ),
