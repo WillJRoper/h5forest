@@ -14,6 +14,7 @@ from prompt_toolkit.widgets import Label
 def _init_plot_bindings(app):
     """Set up the keybindings for the plotting mode."""
 
+    @app.error_handler
     def select_x(event):
         """Select the x-axis."""
         # Get the node under the cursor
@@ -29,6 +30,7 @@ def _init_plot_bindings(app):
 
         app.return_to_normal_mode()
 
+    @app.error_handler
     def select_y(event):
         """Select the y-axis."""
         # Get the node under the cursor
@@ -44,6 +46,7 @@ def _init_plot_bindings(app):
 
         app.return_to_normal_mode()
 
+    @app.error_handler
     def select_color(event):
         """Select the color-axis."""
         # Get the node under the cursor
@@ -59,6 +62,7 @@ def _init_plot_bindings(app):
 
         app.return_to_normal_mode()
 
+    @app.error_handler
     def edit_plot_entry(event):
         """Edit plot param under cursor."""
         # Get the current position and row in the plot content
@@ -97,6 +101,7 @@ def _init_plot_bindings(app):
         # Get the modified entry from the user
         app.input(split_line[0], edit_plot_entry_callback)
 
+    @app.error_handler
     def get_count_density(event):
         """Get the count density of the dataset."""
 
@@ -109,6 +114,7 @@ def _init_plot_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def get_sum_density(event):
         """Get the sum density of the dataset."""
 
@@ -121,6 +127,7 @@ def _init_plot_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def get_mean_density(event):
         """Get the mean density of the dataset."""
 
@@ -133,6 +140,7 @@ def _init_plot_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def plot_count_density(event):
         """Plot and show pcolormesh with counts in bins."""
         app.density_plotter.plot_count_density(app.plot_content.text)
@@ -143,6 +151,7 @@ def _init_plot_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def plot_sum_density(event):
         """Plot and show pcolormesh with sum in bins."""
         # Make the plot
@@ -154,6 +163,7 @@ def _init_plot_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def plot_mean_density(event):
         """Plot and show pcolormesh with mean in bins."""
         # Make the plot
@@ -165,24 +175,28 @@ def _init_plot_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def save_count(event):
         """Plot and save the density count."""
         app.density_plotter.plot_count_density(app.plot_content.text)
 
         app.density_plotter.save()
 
+    @app.error_handler
     def save_sum(event):
         """Plot and save the density sum."""
         app.density_plotter.plot_sum_density(app.plot_content.text)
 
         app.density_plotter.save()
 
+    @app.error_handler
     def save_mean(event):
         """Plot and save the density mean."""
         app.density_plotter.plot_mean_density(app.plot_content.text)
 
         app.density_plotter.save()
 
+    @app.error_handler
     def reset(event):
         """Reset the plot content."""
         app.plot_content.text = app.density_plotter.reset()

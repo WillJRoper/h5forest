@@ -14,6 +14,7 @@ from prompt_toolkit.widgets import Label
 def _init_hist_bindings(app):
     """Set up the bindings for histogram mode."""
 
+    @app.error_handler
     def edit_hist_entry(event):
         """Edit histogram param under cursor."""
         # Get the current position and row in the plot content
@@ -52,6 +53,7 @@ def _init_hist_bindings(app):
         # Get the modified entry from the user
         app.input(split_line[0], edit_hist_entry_callback)
 
+    @app.error_handler
     def select_data(event):
         """Select the data to sort into bins."""
         # Get the node under the cursor
@@ -68,6 +70,7 @@ def _init_hist_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def compute_hist(event):
         """Compute the histogram."""
 
@@ -80,6 +83,7 @@ def _init_hist_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def plot_hist(event):
         """Plot the histogram."""
         app.histogram_plotter.plot_hist(app.hist_content.text)
@@ -89,12 +93,14 @@ def _init_hist_bindings(app):
         app.return_to_normal_mode()
         app.default_focus()
 
+    @app.error_handler
     def save_hist(event):
         """Plot the histogram."""
         app.histogram_plotter.plot_hist(app.hist_content.text)
 
         app.histogram_plotter.save()
 
+    @app.error_handler
     def reset_hist(event):
         """Reset the histogram content."""
         app.hist_content.text = app.histogram_plotter.reset()

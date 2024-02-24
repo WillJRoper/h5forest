@@ -46,6 +46,7 @@ def _init_app_bindings(app):
         app._flag_normal_mode = False
         app._flag_hist_mode = True
 
+    @app.error_handler
     def exit_leader_mode(event):
         """Exit leader mode."""
         app.return_to_normal_mode()
