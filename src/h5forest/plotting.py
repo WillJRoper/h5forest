@@ -848,4 +848,5 @@ class HistogramPlotter(Plotter):
         self.plot_text = self.default_plot_text
         self.fig = None
         self.ax = None
+        self.plot_params = {}
         return self.plot_text
