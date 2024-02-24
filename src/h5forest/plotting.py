@@ -3,6 +3,7 @@
 This is only ever called from the h5forest module and is not intended to be
 used directly by the user.
 """
+import os
 import h5py
 import threading
 import numpy as np
@@ -37,6 +38,10 @@ class Plotter:
         # Container for the plot parameters
         self.plot_params = {}
 
+        # Placeholder for the fig and ax
+        self.fig = None
+        self.ax = None
+
     def get_row(self, row):
         """
         Return the current row in the plot text.
@@ -54,8 +59,25 @@ class Plotter:
     def show(self):
         """Show the plot and reset everything."""
         plt.show()
-        self.plot_params = {}
-        self.plot_text = self.default_plot_text
+        self.reset()
+
+    def save(self):
+        """Save the plot and reset everything."""
+        from h5forest.h5_forest import H5Forest
+
+        def save_callback():
+            """Get the filepath and save the plot."""
+            # Strip the user input
+            out_path = self.user_input.strip()
+
+            self.fig.savefig(out_path, dpi=100, bbox_inches="tight")
+            self.reset()
+
+        H5Forest().input(
+            "Enter the filepath to save the plot: ",
+            save_callback,
+            mini_buffer_text=os.getcwd(),
+        )
 
 
 class DensityPlotter(Plotter):
@@ -518,11 +540,11 @@ class DensityPlotter(Plotter):
         y_scale = split_text[9].split(": ")[1].strip()
 
         # Create the figure
-        fig = plt.figure(figsize=(3.5, 3.5))
-        ax = fig.add_subplot(111)
+        self.fig = plt.figure(figsize=(3.5, 3.5))
+        self.ax = self.fig.add_subplot(111)
 
         # Visulise the grid
-        ax.pcolormesh(
+        self.ax.pcolormesh(
             self.xs,
             self.ys,
             self.count_density.T,
@@ -530,14 +552,12 @@ class DensityPlotter(Plotter):
         )
 
         # Set the labels
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
+        self.ax.set_xlabel(x_label)
+        self.ax.set_ylabel(y_label)
 
         # Set the scale
-        ax.set_xscale(x_scale)
-        ax.set_yscale(y_scale)
-
-        plt.show()
+        self.ax.set_xscale(x_scale)
+        self.ax.set_yscale(y_scale)
 
     def plot_sum_density(self, text):
         """
@@ -555,11 +575,11 @@ class DensityPlotter(Plotter):
         w_scale = split_text[10].split(": ")[1].strip()
 
         # Create the figure
-        fig = plt.figure(figsize=(3.5, 3.5))
-        ax = fig.add_subplot(111)
+        self.fig = plt.figure(figsize=(3.5, 3.5))
+        self.ax = self.fig.add_subplot(111)
 
         # Visulise the grid
-        im = ax.pcolormesh(
+        im = self.ax.pcolormesh(
             self.xs,
             self.ys,
             self.sum_density.T,
@@ -567,27 +587,25 @@ class DensityPlotter(Plotter):
         )
 
         # Set the labels
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
+        self.ax.set_xlabel(x_label)
+        self.ax.set_ylabel(y_label)
 
         # Set the scale
-        ax.set_xscale(x_scale)
-        ax.set_yscale(y_scale)
+        self.ax.set_xscale(x_scale)
+        self.ax.set_yscale(y_scale)
 
         # Draw the colorbar and label it
-        cbar = fig.colorbar(im)
+        cbar = self.fig.colorbar(im)
         if w_scale == "log" and "log" not in w_label:
             cbar.set_label(r"$\log_{10}$" f"({w_label})")
         else:
             cbar.set_label(w_label)
 
-        plt.show()
-
     def plot_mean_density(self, text):
         """
         Plot pcolormesh with sums in bins.
 
-        This will plot the pcolormesh with histograms along the axes.
+        This will plot the pcolormesh with histograms along the self.axes.
         """
         # Unpack the labels scales
         split_text = text.split("\n")
@@ -599,11 +617,11 @@ class DensityPlotter(Plotter):
         w_scale = split_text[10].split(": ")[1].strip()
 
         # Create the figure
-        fig = plt.figure(figsize=(3.5, 3.5))
-        ax = fig.add_subplot(111)
+        self.fig = plt.figure(figsize=(3.5, 3.5))
+        self.ax = self.fig.add_subplot(111)
 
         # Visulise the grid
-        im = ax.pcolormesh(
+        im = self.ax.pcolormesh(
             self.xs,
             self.ys,
             self.mean_density.T,
@@ -611,21 +629,19 @@ class DensityPlotter(Plotter):
         )
 
         # Set the labels
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
+        self.ax.set_xlabel(x_label)
+        self.ax.set_ylabel(y_label)
 
         # Set the scale
-        ax.set_xscale(x_scale)
-        ax.set_yscale(y_scale)
+        self.ax.set_xscale(x_scale)
+        self.ax.set_yscale(y_scale)
 
         # Draw the colorbar and label it
-        cbar = fig.colorbar(im)
+        cbar = self.fig.colorbar(im)
         if w_scale == "log" and "log" not in w_label:
             cbar.set_label(r"<$\log_{10}$" f"({w_label})>")
         else:
             cbar.set_label(f"<{w_label}>")
-
-        plt.show()
 
 
 class HistogramPlotter(Plotter):
@@ -766,7 +782,7 @@ class HistogramPlotter(Plotter):
                 data = hdf[node.path]
 
                 # Loop over the chunks
-                with ProgressBar(total=self.size, description="Mean") as pb:
+                with ProgressBar(total=node.size, description="Hist") as pb:
                     for chunk_index in np.ndindex(*n_chunks):
                         # Get the current slice for each dimension
                         slices = tuple(
@@ -805,27 +821,27 @@ class HistogramPlotter(Plotter):
         y_scale = split_text[4].split(": ")[1].strip()
 
         # Create the figure
-        fig = plt.figure(figsize=(3.5, 3.5))
-        ax = fig.add_subplot(111)
-        ax.grid(True)
+        self.fig = plt.figure(figsize=(3.5, 3.5))
+        self.ax = self.fig.add_subplot(111)
+        self.ax.grid(True)
 
         # Draw the bars
-        ax.bar(self.xs, self.hist, width=self.widths)
+        self.ax.bar(self.xs, self.hist, width=self.widths)
 
         # Set the labels
-        ax.set_xlabel(x_label)
-        ax.set_ylabel("$N$")
+        self.ax.set_xlabel(x_label)
+        self.ax.set_ylabel("$N$")
 
         # Set the scale
-        ax.set_xscale(x_scale)
-        ax.set_yscale(y_scale)
+        self.ax.set_xscale(x_scale)
+        self.ax.set_yscale(y_scale)
 
-        plt.show()
-
-    def reset_hist(self):
+    def reset(self):
         """Reset the histogram."""
         self.hist = None
         self.xs = None
         self.widths = None
         self.plot_text = self.default_plot_text
+        self.fig = None
+        self.ax = None
         return self.plot_text
