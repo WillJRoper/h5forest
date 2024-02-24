@@ -68,15 +68,19 @@ class Plotter:
         def save_callback():
             """Get the filepath and save the plot."""
             # Strip the user input
-            out_path = self.user_input.strip()
+            out_path = H5Forest().user_input.strip()
 
             self.fig.savefig(out_path, dpi=100, bbox_inches="tight")
             self.reset()
 
+            H5Forest().print("Plot saved!")
+            H5Forest().default_focus()
+            H5Forest().return_to_normal_mode()
+
         H5Forest().input(
             "Enter the filepath to save the plot: ",
             save_callback,
-            mini_buffer_text=os.getcwd(),
+            mini_buffer_text=os.getcwd() + "/",
         )
 
 

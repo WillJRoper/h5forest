@@ -1257,9 +1257,6 @@ class H5Forest:
 
             self.density_plotter.save()
 
-            self.return_to_normal_mode()
-            self.default_focus()
-
         @self.kb.add("c-s", filter=Condition(lambda: self.flag_plotting_mode))
         def save_sum(event):
             """Plot and save the density sum."""
@@ -1267,18 +1264,12 @@ class H5Forest:
 
             self.density_plotter.save()
 
-            self.return_to_normal_mode()
-            self.default_focus()
-
         @self.kb.add("c-m", filter=Condition(lambda: self.flag_plotting_mode))
         def save_mean(event):
             """Plot and save the density mean."""
             self.density_plotter.plot_mean_density(self.plot_content.text)
 
             self.density_plotter.save()
-
-            self.return_to_normal_mode()
-            self.default_focus()
 
         @self.kb.add("r", filter=Condition(lambda: self.flag_plotting_mode))
         def reset(event):
@@ -1375,9 +1366,6 @@ class H5Forest:
             self.histogram_plotter.plot_hist(self.hist_content.text)
 
             self.histogram_plotter.save()
-
-            self.return_to_normal_mode()
-            self.default_focus()
 
         @self.kb.add("r", filter=Condition(lambda: self.flag_hist_mode))
         def reset_hist(event):
@@ -1656,7 +1644,9 @@ class H5Forest:
 
         # Set the input read-only text
         self.input_buffer_content.text = prompt
-        self.mini_buffer_content.text = mini_buffer_text
+        self.mini_buffer_content.document = Document(
+            mini_buffer_text, cursor_position=len(mini_buffer_text)
+        )
         self.app.invalidate()
 
         # Shift focus to the mini buffer to await input
