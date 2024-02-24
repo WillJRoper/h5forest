@@ -70,6 +70,8 @@ class Node:
             The compression options of a dataset, None for a Group.
         chunks (tuple):
             The chunk shape of a dataset, None for a Group.
+        is_chunked (bool):
+            Whether a dataset is chunked, None for a Group.
         fillvalue (int):
             The fillvalue of a dataset, None for a Group.
         nbytes (int):
@@ -148,6 +150,7 @@ class Node:
             self.compression = obj.compression
             self.compression_opts = obj.compression_opts
             self.chunks = obj.chunks
+            self.is_chunked = obj.chunks != obj.shape
             self.fillvalue = obj.fillvalue
             self.nbytes = obj.nbytes
             self.ndim = obj.ndim
@@ -158,6 +161,7 @@ class Node:
             self.compression = None
             self.compression_opts = None
             self.chunks = None
+            self.is_chunked = None
             self.fillvalue = None
             self.nbytes = None
             self.ndim = None
@@ -397,7 +401,7 @@ class Node:
                 dataset = hdf[self.path]
 
                 # If chunks and shape are equal just get the min and max
-                if self.chunks == self.shape:
+                if not self.is_chunked:
                     arr = dataset[:]
                     return arr.min(axis=0), arr.max(axis=0)
 
@@ -414,7 +418,9 @@ class Node:
                     n_chunks = int(self.shape[0] / self.chunks[0])
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="Min/Max"
+                    ) as pb:
                         for chunk_index in range(n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -454,7 +460,9 @@ class Node:
                     ]
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="Min/Max"
+                    ) as pb:
                         for chunk_index in np.ndindex(*n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -510,7 +518,7 @@ class Node:
                 dataset = hdf[self.path]
 
                 # If chunks and shape are equal just get the min and max
-                if self.chunks == self.shape:
+                if not self.is_chunked:
                     arr = dataset[:]
                     return arr.mean(axis=0)
 
@@ -526,7 +534,9 @@ class Node:
                     n_chunks = int(self.shape[0] / self.chunks[0])
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="Mean"
+                    ) as pb:
                         for chunk_index in range(n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -565,7 +575,9 @@ class Node:
                     ]
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="Mean"
+                    ) as pb:
                         for chunk_index in np.ndindex(*n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -615,7 +627,7 @@ class Node:
                 dataset = hdf[self.path]
 
                 # If chunks and shape are equal just get the min and max
-                if self.chunks == self.shape:
+                if not self.is_chunked:
                     arr = dataset[:]
                     return arr.std(axis=0)
 
@@ -635,7 +647,9 @@ class Node:
                     n_chunks = int(self.shape[0] / self.chunks[0])
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="StDev"
+                    ) as pb:
                         for chunk_index in range(n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
@@ -674,7 +688,9 @@ class Node:
                     ]
 
                     # Loop over all possible chunks
-                    with ProgressBar(total=self.size) as pb:
+                    with ProgressBar(
+                        total=self.size, description="StDev"
+                    ) as pb:
                         for chunk_index in np.ndindex(*n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
