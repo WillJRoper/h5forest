@@ -24,7 +24,8 @@ requires-python = ">=3.6"
 dependencies = [
   "h5py",
   "numpy",
-  "prompt_toolkit"
+  "prompt_toolkit",
+  "matplotlib",
 ]
 
 [project.urls]
