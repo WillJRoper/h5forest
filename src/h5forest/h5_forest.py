@@ -228,34 +228,59 @@ class H5Forest:
                     filter=Condition(
                         lambda: "x" in self.density_plotter.plot_params
                         and "y" in self.density_plotter.plot_params
+                        and self.density_plotter.count_density is None
                     ),
                 ),
                 ConditionalContainer(
                     Label("s → Compute Density (Sum)"),
                     filter=Condition(
-                        lambda: "color" in self.density_plotter.plot_params
+                        lambda: "x" in self.density_plotter.plot_params
+                        and "y" in self.density_plotter.plot_params
+                        and "color" in self.density_plotter.plot_params
+                        and self.density_plotter.sum_density is None
                     ),
                 ),
                 ConditionalContainer(
                     Label("m → Compute Density (Mean)"),
                     filter=Condition(
-                        lambda: "color" in self.density_plotter.plot_params
+                        lambda: "x" in self.density_plotter.plot_params
+                        and "y" in self.density_plotter.plot_params
+                        and "color" in self.density_plotter.plot_params
+                        and self.density_plotter.mean_density is None
                     ),
                 ),
                 ConditionalContainer(
-                    Label("C → Plot Density (Count)"),
+                    Label("C → Show Density (Count)"),
                     filter=Condition(
                         lambda: self.density_plotter.count_density is not None
                     ),
                 ),
                 ConditionalContainer(
-                    Label("S → Plot Density (Sum)"),
+                    Label("S → Show Density (Sum)"),
                     filter=Condition(
                         lambda: self.density_plotter.sum_density is not None
                     ),
                 ),
                 ConditionalContainer(
-                    Label("M → Plot Density (Mean)"),
+                    Label("M → Show Density (Mean)"),
+                    filter=Condition(
+                        lambda: self.density_plotter.mean_density is not None
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("CTRL-c → Save Density (Count)"),
+                    filter=Condition(
+                        lambda: self.density_plotter.count_density is not None
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("CTRL-s → Save Density (Sum)"),
+                    filter=Condition(
+                        lambda: self.density_plotter.sum_density is not None
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("CTRL-M → Save Density (Mean)"),
                     filter=Condition(
                         lambda: self.density_plotter.mean_density is not None
                     ),
@@ -283,10 +308,17 @@ class H5Forest:
                     Label("h → Compute Histogram"),
                     filter=Condition(
                         lambda: "data" in self.histogram_plotter.plot_params
+                        and self.histogram_plotter.hist is None
                     ),
                 ),
                 ConditionalContainer(
-                    Label("H → Plot Histogram"),
+                    Label("H → Show Histogram"),
+                    filter=Condition(
+                        lambda: self.histogram_plotter.hist is not None
+                    ),
+                ),
+                ConditionalContainer(
+                    Label("CTRL-h → Save Histogram"),
                     filter=Condition(
                         lambda: self.histogram_plotter.hist is not None
                     ),
@@ -1185,11 +1217,7 @@ class H5Forest:
 
         @self.kb.add("C", filter=Condition(lambda: self.flag_plotting_mode))
         def plot_count_density(event):
-            """
-            Plot pcolormesh with counts in bins.
-
-            This will plot the pcolormesh with histograms along the axes.
-            """
+            """Plot and show pcolormesh with counts in bins."""
             self.density_plotter.plot_count_density(self.plot_content.text)
 
             # Show it (this resets the plotter class)
@@ -1200,7 +1228,7 @@ class H5Forest:
 
         @self.kb.add("S", filter=Condition(lambda: self.flag_plotting_mode))
         def plot_sum_density(event):
-            """Plot hexbin with sum in bins."""
+            """Plot and show pcolormesh with sum in bins."""
             # Make the plot
             self.density_plotter.plot_sum_density(self.plot_content.text)
 
@@ -1212,12 +1240,42 @@ class H5Forest:
 
         @self.kb.add("M", filter=Condition(lambda: self.flag_plotting_mode))
         def plot_mean_density(event):
-            """Plot hexbin with mean in bins."""
+            """Plot and show pcolormesh with mean in bins."""
             # Make the plot
             self.density_plotter.plot_mean_density(self.plot_content.text)
 
             # Show it (this resets the plotter class)
             self.density_plotter.show()
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("c-c", filter=Condition(lambda: self.flag_plotting_mode))
+        def save_count(event):
+            """Plot and save the density count."""
+            self.density_plotter.plot_count_density(self.plot_content.text)
+
+            self.density_plotter.save()
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("c-s", filter=Condition(lambda: self.flag_plotting_mode))
+        def save_sum(event):
+            """Plot and save the density sum."""
+            self.density_plotter.plot_sum_density(self.plot_content.text)
+
+            self.density_plotter.save()
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("c-m", filter=Condition(lambda: self.flag_plotting_mode))
+        def save_mean(event):
+            """Plot and save the density mean."""
+            self.density_plotter.plot_mean_density(self.plot_content.text)
+
+            self.density_plotter.save()
 
             self.return_to_normal_mode()
             self.default_focus()
@@ -1291,7 +1349,12 @@ class H5Forest:
         @self.kb.add("h", filter=Condition(lambda: self.flag_hist_mode))
         def compute_hist(event):
             """Compute the histogram."""
-            self.histogram_plotter.compute_hist(self.hist_content.text)
+
+            def run_in_thread():
+                """Make the plot."""
+                self.histogram_plotter.compute_hist(self.hist_content.text)
+
+            threading.Thread(target=run_in_thread, daemon=True).start()
 
             self.return_to_normal_mode()
             self.default_focus()
@@ -1302,6 +1365,16 @@ class H5Forest:
             self.histogram_plotter.plot_hist(self.hist_content.text)
 
             self.histogram_plotter.show()
+
+            self.return_to_normal_mode()
+            self.default_focus()
+
+        @self.kb.add("c-h", filter=Condition(lambda: self.flag_hist_mode))
+        def save_hist(event):
+            """Plot the histogram."""
+            self.histogram_plotter.plot_hist(self.hist_content.text)
+
+            self.histogram_plotter.save()
 
             self.return_to_normal_mode()
             self.default_focus()
@@ -1562,7 +1635,7 @@ class H5Forest:
         self.mini_buffer_content.text = " ".join(args)
         self.app.invalidate()
 
-    def input(self, prompt, callback):
+    def input(self, prompt, callback, mini_buffer_text=""):
         """
         Accept input from the user.
 
@@ -1583,7 +1656,7 @@ class H5Forest:
 
         # Set the input read-only text
         self.input_buffer_content.text = prompt
-        self.mini_buffer_content.text = ""
+        self.mini_buffer_content.text = mini_buffer_text
         self.app.invalidate()
 
         # Shift focus to the mini buffer to await input
