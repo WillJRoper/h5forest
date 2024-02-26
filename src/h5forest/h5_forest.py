@@ -449,8 +449,9 @@ class H5Forest:
         """
         # Create a new tree_content document with the updated cursor
         # position
-        self.tree_buffer.document = Document(
-            text=text, cursor_position=new_cursor_pos
+        self.tree_buffer.set_document(
+            Document(text=text, cursor_position=new_cursor_pos),
+            bypass_readonly=True,
         )
 
     def cursor_moved_action(self, event):
