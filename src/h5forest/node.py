@@ -213,7 +213,7 @@ class Node:
                 f"{'▼' if self.is_expanded else '▶'} {self.name}"
             )
         else:
-            out = f"{'    ' * self.depth} { self.name}"
+            out = f"{'    ' * self.depth}  {self.name}"
 
         return out
 
