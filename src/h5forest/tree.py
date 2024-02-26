@@ -171,7 +171,7 @@ class Tree:
 
         return text
 
-    def update_tree_text(self, parent, current_row, tree_text_area):
+    def update_tree_text(self, parent, current_row):
         """
         Update the tree text for the parent node.
 
@@ -180,8 +180,6 @@ class Tree:
                 The parent node to update.
             current_row (int):
                 The row in the tree text where the parent is.
-            tree_text_area (TextArea):
-                The TextArea widget to update.
         """
         # Open the parent
         self.parse_level(parent)
@@ -201,9 +199,10 @@ class Tree:
 
         # Update the tree text area
         self.tree_text = "\n".join(self.tree_text_split)
-        tree_text_area.text = self.tree_text
 
-    def close_node(self, node, current_row, tree_text_area):
+        return self.tree_text
+
+    def close_node(self, node, current_row):
         """
         Close the node.
 
@@ -212,8 +211,6 @@ class Tree:
                 The node to close.
             current_row (int):
                 The row in the tree text where the node is.
-            tree_text_area (TextArea):
-                The TextArea widget to update.
         """
         # Close the node itself
         node.close_node()
@@ -236,7 +233,8 @@ class Tree:
 
         # Update the tree text area
         self.tree_text = "\n".join(self.tree_text_split)
-        tree_text_area.text = self.tree_text
+
+        return self.tree_text
 
     def get_current_node(self, row):
         """
