@@ -150,7 +150,10 @@ class Node:
             self.compression = obj.compression
             self.compression_opts = obj.compression_opts
             self.chunks = obj.chunks
-            self.is_chunked = obj.chunks != obj.shape
+            if obj.chunks is not None:
+                self.is_chunked = obj.chunks != obj.shape
+            else:
+                self.is_chunked = False
             self.fillvalue = obj.fillvalue
             self.nbytes = obj.nbytes
             self.ndim = obj.ndim
@@ -213,7 +216,7 @@ class Node:
                 f"{'▼' if self.is_expanded else '▶'} {self.name}"
             )
         else:
-            out = f"{'    ' * self.depth} {self.name}"
+            out = f"{'    ' * self.depth}  {self.name}"
 
         return out
 

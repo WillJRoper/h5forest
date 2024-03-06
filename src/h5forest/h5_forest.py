@@ -8,9 +8,10 @@ Example Usage:
 
 """
 import sys
-import threading
 
 from prompt_toolkit import Application
+from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.layout.controls import BufferControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.layout import HSplit, VSplit, ConditionalContainer
 from prompt_toolkit.filters import Condition
@@ -18,6 +19,7 @@ from prompt_toolkit.widgets import Frame, TextArea
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import get_app
 from prompt_toolkit.document import Document
+from prompt_toolkit.layout.containers import Window
 
 from h5forest.bindings import (
     _init_app_bindings,
@@ -169,6 +171,7 @@ class H5Forest:
         self.histogram_plotter = HistogramPlotter()
 
         # Set up the text areas that will populate the layout
+        self.tree_buffer = None
         self.tree_content = None
         self.metadata_content = None
         self.attributes_content = None
@@ -219,7 +222,7 @@ class H5Forest:
                 The row under the cursor.
         """
         # Get the tree content
-        doc = self.tree_content.document
+        doc = self.tree_buffer.document
 
         # Get the current cursor row
         current_row = doc.cursor_position_row
@@ -236,7 +239,7 @@ class H5Forest:
                 The column under the cursor.
         """
         # Get the tree content
-        doc = self.tree_content.document
+        doc = self.tree_buffer.document
 
         # Get the current cursor row
         current_col = doc.cursor_position_col
@@ -252,7 +255,7 @@ class H5Forest:
             int:
                 The current position in the tree.
         """
-        return self.tree_content.document.cursor_position
+        return self.tree_buffer.document.cursor_position
 
     @property
     def flag_normal_mode(self):
@@ -360,12 +363,23 @@ class H5Forest:
         self._flag_hist_mode = False
 
     def _init_text_areas(self):
-        """Initialise the text areas which will contain all information."""
-        # Text area for the tree itself
-        self.tree_content = TextArea(
-            text=self.tree.get_tree_text(),
-            scrollbar=True,
-            read_only=True,
+        """Initialise the content for each frame."""
+        # Buffer for the tree content itself
+        self.tree_buffer = Buffer(
+            on_cursor_position_changed=self.cursor_moved_action, read_only=True
+        )
+
+        # Set the text of the buffer
+        self.tree_buffer.set_document(
+            Document(
+                text=self.tree.get_tree_text(),
+                cursor_position=0,
+            ),
+            bypass_readonly=True,
+        )
+
+        self.tree_content = Window(
+            content=BufferControl(buffer=self.tree_buffer),
         )
 
         #
@@ -435,40 +449,34 @@ class H5Forest:
         """
         # Create a new tree_content document with the updated cursor
         # position
-        self.tree_content.document = Document(
-            text=text, cursor_position=new_cursor_pos
+        self.tree_buffer.set_document(
+            Document(text=text, cursor_position=new_cursor_pos),
+            bypass_readonly=True,
         )
 
-    def cursor_moved_action(self):
+    def cursor_moved_action(self, event):
         """
         Apply changes when the cursor has been moved.
 
         This will update the metadata and attribute outputs to display
         what is currently under the cursor.
         """
-        while True:
-            # Check if we even have to update anything
-            if self.current_row == self.prev_row:
-                continue
-            else:
-                self.prev_row = self.current_row
+        # Get the current node
+        try:
+            node = self.tree.get_current_node(self.current_row)
+            self.metadata_content.text = node.get_meta_text()
+            self.attributes_content.text = node.get_attr_text()
 
-            # Get the current node
-            try:
-                node = self.tree.get_current_node(self.current_row)
-                self.metadata_content.text = node.get_meta_text()
-                self.attributes_content.text = node.get_attr_text()
+        except IndexError:
+            self.set_cursor_position(
+                self.tree.tree_text,
+                new_cursor_pos=self.tree.length
+                - len(self.tree.tree_text_split[self.tree.height - 1]),
+            )
+            self.metadata_content.text = ""
+            self.attributes_content.text = ""
 
-            except IndexError:
-                self.set_cursor_position(
-                    self.tree.tree_text,
-                    new_cursor_pos=self.tree.length
-                    - len(self.tree.tree_text_split[self.tree.height - 1]),
-                )
-                self.metadata_content.text = ""
-                self.attributes_content.text = ""
-
-            get_app().invalidate()
+        get_app().invalidate()
 
     def _init_layout(self):
         """Intialise the layout."""
@@ -711,12 +719,6 @@ def main():
 
     # Set up the app
     app = H5Forest(filepath)
-
-    # Kick off a thread to track changes to the automatically populated
-    # frames
-    thread1 = threading.Thread(target=app.cursor_moved_action)
-    thread1.daemon = True
-    thread1.start()
 
     # Lets get going!
     app.run()

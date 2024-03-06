@@ -7,6 +7,7 @@ the application.
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
+from prompt_toolkit.document import Document
 
 
 def _init_tree_bindings(app):
@@ -19,46 +20,12 @@ def _init_tree_bindings(app):
     @app.error_handler
     def move_up_ten(event):
         """Move up ten lines."""
-        # Get the current position
-        pos = app.current_position
-
-        # Move up 10 lines
-        for row in range(app.current_row - 1, app.current_row - 11, -1):
-            # Compute the position at this row
-            pos -= len(app.tree.tree_text_split[row]) + 1
-
-            if pos < 0:
-                pos = 0
-                break
-
-        # Move the cursor
-        app.set_cursor_position(app.tree.tree_text, pos)
+        app.tree_buffer.cursor_up(10)
 
     @app.error_handler
     def move_down_ten(event):
         """Move down ten lines."""
-        # Get the current position
-        pos = app.current_position
-
-        # Move down 10 lines
-        for row in range(app.current_row, app.current_row + 10):
-            # Compute the position at this row
-            pos += len(app.tree.tree_text_split[row]) + 1
-
-            if row + 1 > app.tree.height - 1:
-                pos = app.tree.length - len(
-                    app.tree.tree_text_split[app.tree.height - 1]
-                )
-                break
-
-        # Ensure we don't overshoot
-        if pos > app.tree.length:
-            pos = app.tree.length - len(
-                app.tree.tree_text_split[app.tree.height - 1]
-            )
-
-        # Move the cursor
-        app.set_cursor_position(app.tree.tree_text, pos)
+        app.tree_buffer.cursor_down(10)
 
     @app.error_handler
     def expand_collapse_node(event):
@@ -87,12 +54,24 @@ def _init_tree_bindings(app):
 
         # If the node is already open, close it
         if node.is_expanded:
-            app.tree.close_node(node, current_row, app.tree_content)
+            app.tree_buffer.set_document(
+                Document(
+                    app.tree.close_node(node, current_row),
+                    cursor_position=current_pos,
+                ),
+                bypass_readonly=True,
+            )
         else:  # Otherwise, open it
-            app.tree.update_tree_text(node, current_row, app.tree_content)
+            app.tree_buffer.set_document(
+                Document(
+                    app.tree.update_tree_text(node, current_row),
+                    cursor_position=current_pos,
+                ),
+                bypass_readonly=True,
+            )
 
-        # Reset the cursor position post update
-        app.set_cursor_position(app.tree.tree_text, new_cursor_pos=current_pos)
+        # # Reset the cursor position post update
+        # app.set_cursor_position(app.tree.tree_text, new_cursor_pos=current_pos)
 
     # Bind the functions
     app.kb.add(
