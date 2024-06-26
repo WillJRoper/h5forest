@@ -156,6 +156,7 @@ class H5Forest:
         app_keys = _init_app_bindings(self)
         tree_keys = _init_tree_bindings(self)
         self.hot_keys = VSplit([*tree_keys, *app_keys])
+
         # Set up the rest of the keybindings and attach hot keys
         self.dataset_keys = _init_dataset_bindings(self)
         self.jump_keys = _init_jump_bindings(self)
@@ -382,13 +383,17 @@ class H5Forest:
             content=BufferControl(buffer=self.tree_buffer),
         )
 
-        #
+        # Get the root node, we'll need to to populate the initial metadata
+        # and attributes
+        root_node = self.tree.root
+
         self.metadata_content = TextArea(
             text="Metadata details here...",
             scrollbar=False,
             focusable=False,
             read_only=True,
         )
+        self.metadata_content.text = root_node.get_meta_text()
 
         self.attributes_content = TextArea(
             text="Attributes here...",
@@ -396,6 +401,7 @@ class H5Forest:
             scrollbar=True,
             focusable=True,
         )
+        self.attributes_content.text = root_node.get_attr_text()
 
         self.values_content = TextArea(
             text="Values here...",
