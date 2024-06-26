@@ -44,6 +44,9 @@ class Tree:
         """
         # Store the file path we're working with
         self.filepath = filepath
+        self.filename = (
+            filepath.split("/")[-1].replace(".h5", "").replace(".hdf5", "")
+        )
 
         # Store the root level of the tree
         self.roots = []
@@ -82,6 +85,9 @@ class Tree:
     def parse_roots(self):
         """Parse the root level of the HDF5 file."""
         with h5py.File(self.filepath, "r") as hdf:
+            # Add the root
+            self.roots.append(Node(self.filename, hdf, self.filepath))
+
             # Loop over root keys
             for key in hdf.keys():
                 item = hdf[key]
