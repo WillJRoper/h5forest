@@ -179,6 +179,10 @@ class Node:
         self._attr_text = None
         self._meta_text = None
 
+        # Start with the root node open
+        if self.depth == 0:
+            self.open_node()
+
     @property
     def is_expanded(self):
         """
