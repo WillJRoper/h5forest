@@ -104,10 +104,16 @@ class Node:
 
         # Store the full path of the node
         if parent is not None:
-            self.path = f"{parent.path}/{name}"
+            self.path = f"{parent.path}/{self.name}"
 
         else:
-            self.path = name
+            self.path = "/"
+
+        # For the print path we don't want to treat the root as a /
+        if parent is not None:
+            self.print_path = f"{parent.print_path}/{self.name}"
+        else:
+            self.print_path = f"/{self.name}"
 
         # Set up a container to hold the child nodes
         self.children = []
@@ -116,7 +122,7 @@ class Node:
         self.parent = parent
 
         # Compute the depth of the tree here
-        self.depth = len(self.path.split("/")) - 1
+        self.depth = len(self.print_path.split("/")) - 2
 
         # Store the type of the obj
         self.obj_type = type(obj)
@@ -249,9 +255,9 @@ class Node:
                 The metadata text for the node.
         """
         if self.is_group:
-            text = f"Group:              {self.path}\n"
+            text = f"Group:              {self.print_path}\n"
         else:
-            text = f"Dataset:            {self.path}\n"
+            text = f"Dataset:            {self.print_path}\n"
 
         # For a group there isn't much to display
         if self.is_group:

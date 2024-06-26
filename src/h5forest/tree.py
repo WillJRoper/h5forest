@@ -48,9 +48,6 @@ class Tree:
             filepath.split("/")[-1].replace(".h5", "").replace(".hdf5", "")
         )
 
-        # Store the root level of the tree
-        self.roots = []
-
         # Initialise a container to store nodes by row in the tree output
         self.nodes_by_row = []
 
@@ -59,8 +56,9 @@ class Tree:
         self.tree_text = ""
         self.tree_text_split = []
 
-        # Parse the root level
-        self.parse_roots()
+        # Get the root of the level
+        with h5py.File(self.filepath, "r") as hdf:
+            self.root = Node(self.filename, hdf, self.filepath)
 
     @property
     def length(self):
@@ -81,18 +79,6 @@ class Tree:
         the same length.
         """
         return len(self.tree_text_split[0])
-
-    def parse_roots(self):
-        """Parse the root level of the HDF5 file."""
-        with h5py.File(self.filepath, "r") as hdf:
-            # Add the root
-            self.roots.append(Node(self.filename, hdf, self.filepath))
-
-            # Loop over root keys
-            for key in hdf.keys():
-                item = hdf[key]
-                node = Node(key, item, self.filepath)
-                self.roots.append(node)
 
     def parse_level(self, parent):
         """
@@ -161,12 +147,11 @@ class Tree:
         """
         text = ""
         nodes_by_row = []
-        for root in self.roots:
-            text, nodes_by_row = self._get_tree_text_recursive(
-                root,
-                text,
-                nodes_by_row,
-            )
+        text, nodes_by_row = self._get_tree_text_recursive(
+            self.root,
+            text,
+            nodes_by_row,
+        )
 
         # Store the nodes by row
         self.nodes_by_row = nodes_by_row
