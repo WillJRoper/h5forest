@@ -354,6 +354,22 @@ class H5Forest:
             self.mini_buffer_content
         )
 
+    @property
+    def flag_img_mode(self):
+        """
+        Return the image mode flag.
+
+        This accounts for whether we are awaiting user input in the mini
+        buffer.
+
+        Returns:
+            bool:
+                The flag for image mode.
+        """
+        return self._flag_img_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
+
     def return_to_normal_mode(self):
         """Return to normal mode."""
         self._flag_normal_mode = True
@@ -362,6 +378,7 @@ class H5Forest:
         self._flag_window_mode = False
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
+        self._flag_img_mode = False
 
     def _init_text_areas(self):
         """Initialise the content for each frame."""
@@ -643,7 +660,7 @@ class H5Forest:
                 # Re-raise the KeyboardInterrupt to ensure it's not caught here
                 raise
             except Exception as e:
-                self.print(f"ERROR: {e}")
+                self.print(f"ERROR ({func.__name__}): {e}")
 
         return wrapper
 
