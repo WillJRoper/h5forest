@@ -70,9 +70,6 @@ def _init_tree_bindings(app):
                 bypass_readonly=True,
             )
 
-        # # Reset the cursor position post update
-        # app.set_cursor_position(app.tree.tree_text, new_cursor_pos=current_pos)
-
     # Bind the functions
     app.kb.add(
         "{",
@@ -96,13 +93,7 @@ def _init_tree_bindings(app):
             ),
         ),
         ConditionalContainer(
-            Label("{ → Move Up 10 Lines"),
-            filter=Condition(
-                lambda: app.app.layout.has_focus(app.tree_content)
-            ),
-        ),
-        ConditionalContainer(
-            Label("} → Move Down 10 Lines"),
+            Label("{/} → Move Up/Down 10 Lines"),
             filter=Condition(
                 lambda: app.app.layout.has_focus(app.tree_content)
             ),
