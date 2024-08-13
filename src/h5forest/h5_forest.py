@@ -660,7 +660,7 @@ class H5Forest:
                 # Re-raise the KeyboardInterrupt to ensure it's not caught here
                 raise
             except Exception as e:
-                self.print(f"ERROR ({func.__name__}): {e}")
+                self.print(f"ERROR@{func.__name__}: {e}")
 
         return wrapper
 
