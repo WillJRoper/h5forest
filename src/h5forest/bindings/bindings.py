@@ -46,6 +46,11 @@ def _init_app_bindings(app):
         app._flag_normal_mode = False
         app._flag_hist_mode = True
 
+    def img_leader_mode(event):
+        """Enter image mode."""
+        app._flag_normal_mode = False
+        app._flag_img_mode = True
+
     @app.error_handler
     def exit_leader_mode(event):
         """Exit leader mode."""
@@ -71,6 +76,9 @@ def _init_app_bindings(app):
     app.kb.add("h", filter=Condition(lambda: app.flag_normal_mode))(
         hist_leader_mode
     )
+    app.kb.add("i", filter=Condition(lambda: app.flag_normal_mode))(
+        img_leader_mode
+    )
     app.kb.add("q", filter=Condition(lambda: not app.flag_normal_mode))(
         exit_leader_mode
     )
@@ -81,6 +89,7 @@ def _init_app_bindings(app):
         Label("h → Hist Mode"),
         Label("j → Jump Mode"),
         Label("p → Plotting Mode"),
+        Label("i → Image Mode"),
         Label("w → Window Mode"),
         Label("q → Exit"),
     ]
