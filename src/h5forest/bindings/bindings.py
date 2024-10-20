@@ -10,6 +10,8 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
 
+from h5forest.errors import error_handler
+
 
 def _init_app_bindings(app):
     """
@@ -48,7 +50,7 @@ def _init_app_bindings(app):
         app._flag_normal_mode = False
         app._flag_hist_mode = True
 
-    @app.error_handler
+    @error_handler
     def exit_leader_mode(event):
         """Exit leader mode."""
         app.return_to_normal_mode()

@@ -12,11 +12,13 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import VSplit
 from prompt_toolkit.widgets import Label
 
+from h5forest.errors import error_handler
+
 
 def _init_jump_bindings(app):
     """Set up the keybindings for the jump mode."""
 
-    @app.error_handler
+    @error_handler
     def jump_to_top(event):
         """Jump to the top of the tree."""
         app.set_cursor_position(app.tree.tree_text, new_cursor_pos=0)
@@ -24,7 +26,7 @@ def _init_jump_bindings(app):
         # Exit jump mode
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def jump_to_bottom(event):
         """Jump to the bottom of the tree."""
         app.set_cursor_position(
@@ -34,7 +36,7 @@ def _init_jump_bindings(app):
         # Exit jump mode
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def jump_to_parent(event):
         """Jump to the parent of the current node."""
         # Get the current node
@@ -70,7 +72,7 @@ def _init_jump_bindings(app):
 
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def jump_to_next(event):
         """Jump to the next node."""
         # Get the current node
@@ -109,7 +111,7 @@ def _init_jump_bindings(app):
 
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def jump_to_key(event):
         """Jump to next key containing user input."""
 
