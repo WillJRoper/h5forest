@@ -14,11 +14,13 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout.containers import VSplit
 from prompt_toolkit.widgets import Label
 
+from h5forest.errors import error_handler
+
 
 def _init_dataset_bindings(app):
     """Set up the keybindings for the dataset mode."""
 
-    @app.error_handler
+    @error_handler
     def show_values(event):
         """
         Show the values of a dataset.
@@ -52,7 +54,7 @@ def _init_dataset_bindings(app):
         # Exit values mode
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def show_values_in_range(event):
         """Show the values of a dataset in an index range."""
         # Get the node under the cursor
@@ -114,7 +116,7 @@ def _init_dataset_bindings(app):
             values_in_range_callback,
         )
 
-    @app.error_handler
+    @error_handler
     def close_values(event):
         """Close the value pane."""
         app.flag_values_visible = False
@@ -123,7 +125,7 @@ def _init_dataset_bindings(app):
         # Exit values mode
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def minimum_maximum(event):
         """Show the minimum and maximum values of a dataset."""
         # Get the node under the cursor
@@ -150,7 +152,7 @@ def _init_dataset_bindings(app):
         # Start the operation in a new thread
         threading.Thread(target=run_in_thread, daemon=True).start()
 
-    @app.error_handler
+    @error_handler
     def mean(event):
         """Show the mean of a dataset."""
         # Get the node under the cursor
@@ -177,7 +179,7 @@ def _init_dataset_bindings(app):
         # Start the operation in a new thread
         threading.Thread(target=run_in_thread, daemon=True).start()
 
-    @app.error_handler
+    @error_handler
     def std(event):
         """Show the standard deviation of a dataset."""
         # Get the node under the cursor

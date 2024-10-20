@@ -694,29 +694,6 @@ class H5Forest:
         self.mini_buffer_content.text = " ".join(args)
         self.app.invalidate()
 
-    def error_handler(self, func):
-        """
-        Wrap a function in a try/except block to catch errors.
-
-        Errors are printed to the mini buffer.
-
-        Args:
-            func (function):
-                The function to wrap.
-        """
-
-        def wrapper(*args, **kwargs):
-            """Wrap the function."""
-            try:
-                return func(*args, **kwargs)
-            except KeyboardInterrupt:
-                # Re-raise the KeyboardInterrupt to ensure it's not caught here
-                raise
-            except Exception as e:
-                self.print(f"ERROR@{func.__name__}: {e}")
-
-        return wrapper
-
     def input(self, prompt, callback, mini_buffer_text=""):
         """
         Accept input from the user.

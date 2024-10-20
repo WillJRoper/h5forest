@@ -9,11 +9,13 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import ConditionalContainer, VSplit
 from prompt_toolkit.widgets import Label
 
+from h5forest.errors import error_handler
+
 
 def _init_hist_bindings(app):
     """Set up the bindings for histogram mode."""
 
-    @app.error_handler
+    @error_handler
     def edit_hist_entry(event):
         """Edit histogram param under cursor."""
         # Get the current position and row in the plot content
@@ -76,7 +78,7 @@ def _init_hist_bindings(app):
         # Get the modified entry from the user
         app.input(split_line[0], edit_hist_entry_callback)
 
-    @app.error_handler
+    @error_handler
     def plot_hist(event):
         """Plot the histogram."""
         # Don't update if we already have everything
@@ -100,7 +102,7 @@ def _init_hist_bindings(app):
         # Get the plot
         app.histogram_plotter.plot_and_show(app.hist_content.text)
 
-    @app.error_handler
+    @error_handler
     def save_hist(event):
         """Plot the histogram."""
         # Don't update if we already have everything
@@ -124,14 +126,14 @@ def _init_hist_bindings(app):
         # Get the plot
         app.histogram_plotter.plot_and_save(app.hist_content.text)
 
-    @app.error_handler
+    @error_handler
     def reset_hist(event):
         """Reset the histogram content."""
         app.hist_content.text = app.histogram_plotter.reset()
         app.return_to_normal_mode()
         app.default_focus()
 
-    @app.error_handler
+    @error_handler
     def edit_hist(event):
         """Edit the histogram."""
         app.shift_focus(app.hist_content)
