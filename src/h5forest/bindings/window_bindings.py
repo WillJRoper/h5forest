@@ -9,29 +9,31 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout.containers import ConditionalContainer, VSplit
 from prompt_toolkit.widgets import Label
 
+from h5forest.errors import error_handler
+
 
 def _init_window_bindings(app):
     """Set up the keybindings for the window mode."""
 
-    @app.error_handler
+    @error_handler
     def move_tree(event):
         """Move focus to the tree."""
         app.shift_focus(app.tree_content)
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def move_attr(event):
         """Move focus to the attributes."""
         app.shift_focus(app.attributes_content)
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def move_values(event):
         """Move focus to values."""
         app.shift_focus(app.values_content)
         app.return_to_normal_mode()
 
-    @app.error_handler
+    @error_handler
     def move_plot(event):
         """Move focus to the plot."""
         app.shift_focus(app.plot_content)
@@ -42,7 +44,7 @@ def _init_window_bindings(app):
         app._flag_window_mode = False
         app._flag_plotting_mode = True
 
-    @app.error_handler
+    @error_handler
     def move_hist(event):
         """Move focus to the plot."""
         app.shift_focus(app.hist_content)
@@ -53,7 +55,7 @@ def _init_window_bindings(app):
         app._flag_window_mode = False
         app._flag_hist_mode = True
 
-    @app.error_handler
+    @error_handler
     def move_to_default(event):
         """
         Move focus to the default area.

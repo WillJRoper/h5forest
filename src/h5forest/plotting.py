@@ -118,9 +118,9 @@ class Plotter:
         self.save()
 
 
-class DensityPlotter(Plotter):
+class ScatterPlotter(Plotter):
     """
-    The density grid plotting class.
+    The scatter plotting class.
 
     Attributes:
         plot_params (dict):
@@ -137,24 +137,14 @@ class DensityPlotter(Plotter):
             The minimum value for the y-axis.
         y_max (float):
             The maximum value for the y-axis.
-        c_min (float):
-            The minimum value for the color-axis.
-        c_max (float):
-            The maximum value for the color-axis.
-        count_density (np.ndarray):
-            The grid of counts.
-        sum_density (np.ndarray):
-            The grid of sums.
-        mean_density (np.ndarray):
-            The grid of means.
-        xs (np.ndarray):
-            The x-axis grid.
-        ys (np.ndarray):
-            The y-axis grid.
+        x_data (np.ndarray):
+            The x-axis data.
+        y_data (np.ndarray):
+            The y-axis data.
     """
 
     def __init__(self):
-        """Initialise the density plotter."""
+        """Initialise the scatter plotter."""
         # Call the parent class
         super().__init__()
 
@@ -162,15 +152,11 @@ class DensityPlotter(Plotter):
         self.default_plot_text = (
             "x-axis:      <key>\n"
             "y-axis:      <key>\n"
-            "weights:     <key>\n"
-            "x-bins:      100\n"
-            "y-bins:      100\n"
             "x-label:     <label>\n"
             "y-label:     <label>\n"
-            "w-label:     <label>\n"
-            "x-scale:     log\n"
-            "y-scale:     log\n"
-            "w-scale:     log\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
         )
 
         # Define the text for the plotting TextArea
@@ -181,15 +167,15 @@ class DensityPlotter(Plotter):
         self.x_max = None
         self.y_min = None
         self.y_max = None
-        self.c_min = None
-        self.c_max = None
 
-        # Initialise the container for the density grid
-        self.count_density = None
-        self.sum_density = None
-        self.mean_density = None
-        self.xs = None
-        self.ys = None
+        # Initialise the container for the scatter data
+        self.x_data = None
+        self.y_data = None
+
+        # Attributes for working with threads
+        self.assignx_thread = None
+        self.assigny_thread = None
+        self.plot_thread = None
 
     def set_x_key(self, node):
         """
@@ -221,14 +207,15 @@ class DensityPlotter(Plotter):
         # Set the text in the plotting area
         split_text = self.plot_text.split("\n")
         split_text[0] = f"x-axis:      {node.path}"
-        split_text[5] = f"x-label:     {node.path}"
+        split_text[2] = f"x-label:     {node.path}"
         self.plot_text = "\n".join(split_text)
 
         def run_in_thread():
             # Get the minimum and maximum values for the x and y axes
             self.x_min, self.x_max = node.get_min_max()
 
-        threading.Thread(target=run_in_thread, daemon=True).start()
+        self.assignx_thread = threading.Thread(target=run_in_thread)
+        self.assignx_thread.start()
 
         return self.plot_text
 
@@ -262,55 +249,15 @@ class DensityPlotter(Plotter):
         # Set the text in the plotting area
         split_text = self.plot_text.split("\n")
         split_text[1] = f"y-axis:      {node.path}"
-        split_text[6] = f"y-label:     {node.path}"
+        split_text[3] = f"y-label:     {node.path}"
         self.plot_text = "\n".join(split_text)
 
         def run_in_thread():
             # Get the minimum and maximum values for the x and y axes
             self.y_min, self.y_max = node.get_min_max()
 
-        threading.Thread(target=run_in_thread, daemon=True).start()
-
-        return self.plot_text
-
-    def set_color_key(self, node):
-        """
-        Set the weights-axis key for the plot.
-
-        This will set the plot parameter for the weights-axis key and update
-        the plotting text.
-
-        Args:
-            node (h5forest.h5_forest.Node):
-                The node to use for the weights-axis.
-        """
-        from h5forest.h5_forest import H5Forest
-
-        # Check the node is 1D
-        if node.ndim > 1:
-            H5Forest().print("Dataset must be 1D!")
-            return self.plot_text
-
-        # If we have any datasets already check we have a compatible shape
-        for key in self.plot_params:
-            if node.shape != self.plot_params[key].shape:
-                H5Forest().print("Datasets must have the same shape!")
-                return self.plot_text
-
-        # Set the plot parameter for the weights-axis key
-        self.plot_params["weights"] = node
-
-        # Set the text in the plotting area
-        split_text = self.plot_text.split("\n")
-        split_text[2] = f"weights:     {node.path}"
-        split_text[7] = f"w-label:     {node.path}"
-        self.plot_text = "\n".join(split_text)
-
-        def run_in_thread():
-            # Get the minimum and maximum values for the x and y axes
-            self.c_min, self.c_max = node.get_min_max()
-
-        threading.Thread(target=run_in_thread, daemon=True).start()
+        self.assigny_thread = threading.Thread(target=run_in_thread)
+        self.assigny_thread.start()
 
         return self.plot_text
 
@@ -322,274 +269,97 @@ class DensityPlotter(Plotter):
         self.mean_density = None
         self.xs = None
         self.ys = None
+        self.plot_params = {}
         return self.plot_text
 
-    def compute_counts(self, text):
+    def _plot(self, text):
         """
-        Compute a density plot of the datasets.
-
-        If the nodes have chunks we will calculate the density chunk by chunk.
+        Compute a scatter plot of the datasets.
 
         Args:
             text (str):
                 The text to extract the plot parameters from.
         """
+        # Don't move on until the data is assigned
+        if self.assignx_thread is not None:
+            self.assignx_thread.join()
+            self.assignx_thread = None
+        if self.assigny_thread is not None:
+            self.assigny_thread.join()
+            self.assigny_thread = None
+
         # Unpack the nodes
         x_node = self.plot_params["x"]
         y_node = self.plot_params["y"]
 
         # Unpack the labels scales
         split_text = text.split("\n")
-        x_scale = split_text[8].split(": ")[1].strip()
-        y_scale = split_text[9].split(": ")[1].strip()
-        w_scale = split_text[10].split(": ")[1].strip()
-
-        # Unpack the bins
-        x_bins = int(split_text[3].split(": ")[1].strip())
-        y_bins = int(split_text[4].split(": ")[1].strip())
-
-        # Define the bins
-        if x_scale == "log":
-            self.xs = np.logspace(
-                np.log10(self.x_min), np.log10(self.x_max), x_bins + 1
-            )
-        else:
-            self.xs = np.linspace(self.x_min, self.x_max, x_bins + 1)
-        if y_scale == "log":
-            self.ys = np.logspace(
-                np.log10(self.y_min), np.log10(self.y_max), y_bins + 1
-            )
-        else:
-            self.ys = np.linspace(self.y_min, self.y_max, y_bins + 1)
-
-        # Get the chunk shape
-        chunk_shape = min((x_node.chunks[0], y_node.chunks[0]))
-
-        # Get the number of chunks
-        chunks = (
-            x_node.shape[0] // chunk_shape if chunk_shape is not None else 1
-        )
-
-        # If neither node is not chunked we can just read and grid the data
-        if chunks == 1:
-            # Get the data
-            with h5py.File(x_node.filepath, "r") as hdf:
-                x_data = hdf[x_node.path][...]
-                y_data = hdf[y_node.path][...]
-
-            # Compute the grid
-            self.count_density, _, _ = np.histogram2d(
-                x_data,
-                y_data,
-                bins=(self.xs, self.ys),
-                range=[[self.x_min, self.x_max], [self.y_min, self.y_max]],
-            )
-
-        # Otherwise we need to read in the data chunk by chunk and add each
-        # chunks grid to the total grid
-        else:
-            # Initialise the grid
-            self.count_density = np.zeros((x_bins, y_bins))
-
-            # Get the data
-            with h5py.File(x_node.filepath, "r") as hdf:
-                x_data = hdf[x_node.path]
-                y_data = hdf[y_node.path]
-
-                # Get the shape of the data
-                x_shape = x_data.shape[0]
-
-                # Loop over the chunks
-                with ProgressBar(
-                    total=x_node.size, description="2DHist"
-                ) as pb:
-                    for i in range(chunks):
-                        # Define the slice
-                        _slice = slice(
-                            i * chunk_shape,
-                            min(((i + 1) * chunk_shape, x_shape)),
-                        )
-
-                        # Compute the grid for the chunk
-                        chunk_density, _, _ = np.histogram2d(
-                            x_data[_slice],
-                            y_data[_slice],
-                            bins=(self.xs, self.ys),
-                            range=[
-                                [self.x_min, self.x_max],
-                                [self.y_min, self.y_max],
-                            ],
-                        )
-
-                        # Add it to the total
-                        self.count_density += chunk_density
-
-                        pb.advance(step=chunk_shape)
-
-        # Apply log to z axis if desired
-        if w_scale == "log":
-            self.count_density[self.count_density > 0] = np.log10(
-                self.count_density[self.count_density > 0]
-            )
-
-            # Remove any zeros
-            self.count_density[self.count_density <= 0] = np.nan
-
-    def compute_sums(self, text):
-        """
-        Compute a density plot of the datasets collecting the sum.
-
-        If the nodes have chunks we will calculate the density chunk by chunk.
-
-        Args:
-            text (str):
-                The text to extract the plot parameters from.
-        """
-        # Unpack the nodes
-        x_node = self.plot_params["x"]
-        y_node = self.plot_params["y"]
-        w_node = self.plot_params["weights"]
-
-        # Unpack the labels scales
-        split_text = text.split("\n")
-        x_scale = split_text[8].split(": ")[1].strip()
-        y_scale = split_text[9].split(": ")[1].strip()
-        w_scale = split_text[10].split(": ")[1].strip()
-
-        # Unpack the bins
-        x_bins = int(split_text[3].split(": ")[1].strip())
-        y_bins = int(split_text[4].split(": ")[1].strip())
-
-        # Define the bins
-        if x_scale == "log":
-            self.xs = np.logspace(
-                np.log10(self.x_min), np.log10(self.x_max), x_bins + 1
-            )
-        else:
-            self.xs = np.linspace(self.x_min, self.x_max, x_bins + 1)
-        if y_scale == "log":
-            self.ys = np.logspace(
-                np.log10(self.y_min), np.log10(self.y_max), y_bins + 1
-            )
-        else:
-            self.ys = np.linspace(self.y_min, self.y_max, y_bins + 1)
-
-        # Get the chunk shape
-        chunk_shape = min((x_node.chunks[0], y_node.chunks[0]))
-
-        # Get the number of chunks
-        chunks = x_node.shape[0] // chunk_shape
-
-        # If neither node is not chunked we can just read and grid the data
-        if chunks == 1:
-            # Get the data
-            with h5py.File(x_node.filepath, "r") as hdf:
-                x_data = hdf[x_node.path][...]
-                y_data = hdf[y_node.path][...]
-                w_data = hdf[w_node.path][...]
-
-            # Compute the grid
-            self.sum_density, _, _ = np.histogram2d(
-                x_data,
-                y_data,
-                weights=w_data,
-                bins=(self.xs, self.ys),
-                range=[[self.x_min, self.x_max], [self.y_min, self.y_max]],
-            )
-
-        # Otherwise we need to read in the data chunk by chunk and add each
-        # chunks grid to the total grid
-        else:
-            # Initialise the grid
-            self.sum_density = np.zeros((x_bins, y_bins))
-
-            # Get the data
-            with h5py.File(x_node.filepath, "r") as hdf:
-                x_data = hdf[x_node.path]
-                y_data = hdf[y_node.path]
-                w_data = hdf[w_node.path]
-
-                # Get the shape of the data
-                x_shape = x_data.shape[0]
-
-                # Loop over the chunks
-                with ProgressBar(
-                    total=x_node.size, description="2DHist"
-                ) as pb:
-                    for i in range(chunks):
-                        # Define the slice
-                        _slice = slice(
-                            i * chunk_shape,
-                            min(((i + 1) * chunk_shape, x_shape)),
-                        )
-
-                        # Compute the grid for the chunk
-                        chunk_density, _, _ = np.histogram2d(
-                            x_data[_slice],
-                            y_data[_slice],
-                            weights=w_data[_slice],
-                            bins=(self.xs, self.ys),
-                            range=[
-                                [self.x_min, self.x_max],
-                                [self.y_min, self.y_max],
-                            ],
-                        )
-
-                        # Add it to the total
-                        self.sum_density += chunk_density
-
-                        pb.advance(step=chunk_shape)
-
-        # Apply log to z axis if desired
-        if w_scale == "log":
-            self.sum_density[self.sum_density > 0] = np.log10(
-                self.sum_density[self.sum_density > 0]
-            )
-
-            # Remove any zeros
-            self.sum_density[self.sum_density <= 0] = np.nan
-
-    def compute_means(self, text):
-        """
-        Compute a density plot of the datasets collecting the mean.
-
-        If the nodes have chunks we will calculate the density chunk by chunk.
-
-        Args:
-            text (str):
-                The text to extract the plot parameters from.
-        """
-        # Get the sum and counts
-        self.compute_counts(text)
-        self.compute_sums(text)
-
-        # Calculate the mean
-        self.mean_density = self.sum_density / self.count_density
-
-    def plot_count_density(self, text):
-        """
-        Plot pcolormesh with counts in bins.
-
-        This will plot the pcolormesh with histograms along the axes.
-        """
-        # Unpack the labels scales
-        split_text = text.split("\n")
-        x_label = split_text[5].split(": ")[1].strip()
-        y_label = split_text[6].split(": ")[1].strip()
-        x_scale = split_text[8].split(": ")[1].strip()
-        y_scale = split_text[9].split(": ")[1].strip()
+        x_label = split_text[2].split(": ")[1].strip()
+        y_label = split_text[3].split(": ")[1].strip()
+        x_scale = split_text[4].split(": ")[1].strip()
+        y_scale = split_text[5].split(": ")[1].strip()
+        marker = split_text[6].split(": ")[1].strip()
 
         # Create the figure
         self.fig = plt.figure(figsize=(3.5, 3.5))
         self.ax = self.fig.add_subplot(111)
 
-        # Visulise the grid
-        self.ax.pcolormesh(
-            self.xs,
-            self.ys,
-            self.count_density.T,
-            cmap="plasma",
-        )
+        # Draw a grid and make sure its behind everything
+        self.ax.grid(True)
+        self.ax.set_axisbelow(True)
+
+        def run_in_thread():
+            # Now lets plot the data, if we have chunked data we will plot each
+            # chunk separately
+            if (
+                x_node.chunks == (1,)
+                and y_node.chunks == (1,)
+                or x_node.chunks != y_node.chunks
+            ):
+                # Get the data
+                with h5py.File(x_node.filepath, "r") as hdf:
+                    self.x_data = hdf[x_node.path][...]
+                    self.y_data = hdf[y_node.path][...]
+
+                # Plot the data
+                self.ax.scatter(
+                    self.x_data,
+                    self.y_data,
+                    marker=marker,
+                    color="r",
+                )
+
+            else:
+                # Loop over chunks and plot each one
+                with h5py.File(x_node.filepath, "r") as hdf:
+                    with ProgressBar(
+                        total=x_node.size, description="Scatter"
+                    ) as pb:
+                        for chunk_index in np.ndindex(*x_node.chunks):
+                            # Get the current slice for each dimension
+                            slices = tuple(
+                                slice(
+                                    c_idx * c_size,
+                                    min((c_idx + 1) * c_size, s),
+                                )
+                                for c_idx, c_size, s in zip(
+                                    chunk_index, x_node.chunks, x_node.shape
+                                )
+                            )
+
+                            # Get the data
+                            x_data = hdf[x_node.path][slices]
+                            y_data = hdf[y_node.path][slices]
+
+                            # Plot the data
+                            self.ax.scatter(
+                                x_data,
+                                y_data,
+                                marker=marker,
+                                color="r",
+                            )
+
+                            pb.advance(step=x_data.size)
 
         # Set the labels
         self.ax.set_xlabel(x_label)
@@ -599,89 +369,10 @@ class DensityPlotter(Plotter):
         self.ax.set_xscale(x_scale)
         self.ax.set_yscale(y_scale)
 
-    def plot_sum_density(self, text):
-        """
-        Plot pcolormesh with sums in bins.
-
-        This will plot the pcolormesh with histograms along the axes.
-        """
-        # Unpack the labels scales
-        split_text = text.split("\n")
-        x_label = split_text[5].split(": ")[1].strip()
-        y_label = split_text[6].split(": ")[1].strip()
-        w_label = split_text[7].split(": ")[1].strip()
-        x_scale = split_text[8].split(": ")[1].strip()
-        y_scale = split_text[9].split(": ")[1].strip()
-        w_scale = split_text[10].split(": ")[1].strip()
-
-        # Create the figure
-        self.fig = plt.figure(figsize=(3.5, 3.5))
-        self.ax = self.fig.add_subplot(111)
-
-        # Visulise the grid
-        im = self.ax.pcolormesh(
-            self.xs,
-            self.ys,
-            self.sum_density.T,
-            cmap="plasma",
-        )
-
-        # Set the labels
-        self.ax.set_xlabel(x_label)
-        self.ax.set_ylabel(y_label)
-
-        # Set the scale
-        self.ax.set_xscale(x_scale)
-        self.ax.set_yscale(y_scale)
-
-        # Draw the colorbar and label it
-        cbar = self.fig.colorbar(im)
-        if w_scale == "log" and "log" not in w_label:
-            cbar.set_label(r"$\log_{10}$" f"({w_label})")
-        else:
-            cbar.set_label(w_label)
-
-    def plot_mean_density(self, text):
-        """
-        Plot pcolormesh with sums in bins.
-
-        This will plot the pcolormesh with histograms along the self.axes.
-        """
-        # Unpack the labels scales
-        split_text = text.split("\n")
-        x_label = split_text[5].split(": ")[1].strip()
-        y_label = split_text[6].split(": ")[1].strip()
-        w_label = split_text[7].split(": ")[1].strip()
-        x_scale = split_text[8].split(": ")[1].strip()
-        y_scale = split_text[9].split(": ")[1].strip()
-        w_scale = split_text[10].split(": ")[1].strip()
-
-        # Create the figure
-        self.fig = plt.figure(figsize=(3.5, 3.5))
-        self.ax = self.fig.add_subplot(111)
-
-        # Visulise the grid
-        im = self.ax.pcolormesh(
-            self.xs,
-            self.ys,
-            self.mean_density.T,
-            cmap="plasma",
-        )
-
-        # Set the labels
-        self.ax.set_xlabel(x_label)
-        self.ax.set_ylabel(y_label)
-
-        # Set the scale
-        self.ax.set_xscale(x_scale)
-        self.ax.set_yscale(y_scale)
-
-        # Draw the colorbar and label it
-        cbar = self.fig.colorbar(im)
-        if w_scale == "log" and "log" not in w_label:
-            cbar.set_label(r"<$\log_{10}$" f"({w_label})>")
-        else:
-            cbar.set_label(f"<{w_label}>")
+        self.plot_thread = threading.Thread(target=run_in_thread)
+        self.plot_thread.start()
+        self.plot_thread.join()
+        self.plot_thread = None
 
 
 class HistogramPlotter(Plotter):
@@ -737,7 +428,7 @@ class HistogramPlotter(Plotter):
         self.xs = None
         self.widths = None
 
-        # Flags for working with threads
+        # Attributes for working with threads
         self.assign_data_thread = None
         self.compute_hist_thread = None
 
@@ -836,12 +527,6 @@ class HistogramPlotter(Plotter):
                 # Initialise the grid
                 self.hist = np.zeros(nbins)
 
-                # Compute the number of chunks in each dimension
-                n_chunks = [
-                    int(np.ceil(s / c))
-                    for s, c in zip(node.shape, node.chunks)
-                ]
-
                 # Get the data
                 with h5py.File(node.filepath, "r") as hdf:
                     data = hdf[node.path]
@@ -850,7 +535,7 @@ class HistogramPlotter(Plotter):
                     with ProgressBar(
                         total=node.size, description="Hist"
                     ) as pb:
-                        for chunk_index in np.ndindex(*n_chunks):
+                        for chunk_index in np.ndindex(*node.n_chunks):
                             # Get the current slice for each dimension
                             slices = tuple(
                                 slice(

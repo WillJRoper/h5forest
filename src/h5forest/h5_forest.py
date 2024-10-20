@@ -34,7 +34,7 @@ from h5forest.bindings import (
     _init_tree_bindings,
     _init_window_bindings,
 )
-from h5forest.plotting import DensityPlotter, HistogramPlotter
+from h5forest.plotting import HistogramPlotter, ScatterPlotter
 from h5forest.styles import style
 from h5forest.tree import Tree, TreeProcessor
 from h5forest.utils import DynamicTitle, get_window_size
@@ -176,7 +176,7 @@ class H5Forest:
         self.value_title = DynamicTitle("Values")
 
         # Attach the hexbin plotter
-        self.density_plotter = DensityPlotter()
+        self.scatter_plotter = ScatterPlotter()
         self.histogram_plotter = HistogramPlotter()
 
         # Set up the text areas that will populate the layout
@@ -452,7 +452,7 @@ class H5Forest:
         )
 
         self.plot_content = TextArea(
-            text=self.density_plotter.default_plot_text,
+            text=self.scatter_plotter.default_plot_text,
             scrollbar=True,
             focusable=True,
             read_only=True,
@@ -515,7 +515,7 @@ class H5Forest:
             # the full width
             if self.flag_values_visible:
                 return columns // 2
-            elif self.flag_plotting_mode or len(self.density_plotter) > 0:
+            elif self.flag_plotting_mode or len(self.scatter_plotter) > 0:
                 return columns // 2
             elif self.flag_hist_mode or len(self.histogram_plotter) > 0:
                 return columns // 2
@@ -635,7 +635,7 @@ class H5Forest:
             ),
             filter=Condition(
                 lambda: self.flag_plotting_mode
-                or len(self.density_plotter) > 0
+                or len(self.scatter_plotter) > 0
             ),
         )
 
@@ -693,29 +693,6 @@ class H5Forest:
         args = [str(a) for a in args]
         self.mini_buffer_content.text = " ".join(args)
         self.app.invalidate()
-
-    def error_handler(self, func):
-        """
-        Wrap a function in a try/except block to catch errors.
-
-        Errors are printed to the mini buffer.
-
-        Args:
-            func (function):
-                The function to wrap.
-        """
-
-        def wrapper(*args, **kwargs):
-            """Wrap the function."""
-            try:
-                return func(*args, **kwargs)
-            except KeyboardInterrupt:
-                # Re-raise the KeyboardInterrupt to ensure it's not caught here
-                raise
-            except Exception as e:
-                self.print(f"ERROR@{func.__name__}: {e}")
-
-        return wrapper
 
     def input(self, prompt, callback, mini_buffer_text=""):
         """
