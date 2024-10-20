@@ -664,6 +664,9 @@ class H5Forest:
             callback (function):
                 The function using user input.
         """
+        # Store the current focus
+        current_focus = self.app.layout.current_window
+
         # Prepare to recieve an input
         self.user_input = None
 
@@ -673,9 +676,6 @@ class H5Forest:
             mini_buffer_text, cursor_position=len(mini_buffer_text)
         )
         self.app.invalidate()
-
-        # Store the current focus
-        current_focus = self.app.layout.current_window
 
         # Shift focus to the mini buffer to await input
         self.shift_focus(self.mini_buffer_content)

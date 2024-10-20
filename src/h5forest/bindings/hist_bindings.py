@@ -27,6 +27,30 @@ def _init_hist_bindings(app):
         # Split the current plot content into lines
         split_text = app.hist_content.text.split("\n")
 
+        # If we're on a toggle option (i.e. scaling is linear or log) lets
+        # toggle it rather than edit it
+        if "scale" in split_line[0]:
+            if split_line[1].strip() == "linear":
+                split_text[current_row] = (
+                    f"{split_line[0]}:  ".ljust(13) + "log"
+                )
+            else:
+                split_text[current_row] = (
+                    f"{split_line[0]}:  ".ljust(13) + "linear"
+                )
+
+            app.hist_content.text = "\n".join(split_text)
+
+            # And put the cursor back where it was
+            app.hist_content.document = Document(
+                text=app.hist_content.text, cursor_position=current_pos
+            )
+            app.histogram_plotter.plot_text = app.hist_content.text
+
+            app.app.invalidate()
+
+            return
+
         def edit_hist_entry_callback():
             """Edit the plot param under cursor."""
             # Strip the user input
@@ -55,16 +79,18 @@ def _init_hist_bindings(app):
     @app.error_handler
     def plot_hist(event):
         """Plot the histogram."""
-        # Get the node under the cursor
-        node = app.tree.get_current_node(app.current_row)
+        # Don't update if we already have everything
+        if len(app.histogram_plotter.plot_params) == 0:
+            # Get the node under the cursor
+            node = app.tree.get_current_node(app.current_row)
 
-        # Exit if the node is not a Dataset
-        if node.is_group:
-            app.print(f"{node.path} is not a Dataset")
-            return
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                app.print(f"{node.path} is not a Dataset")
+                return
 
-        # Set the text in the plotting area
-        app.hist_content.text = app.histogram_plotter.set_data_key(node)
+            # Set the text in the plotting area
+            app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
         # Compute the histogram
         app.hist_content.text = app.histogram_plotter.compute_hist(
@@ -81,16 +107,18 @@ def _init_hist_bindings(app):
     @app.error_handler
     def save_hist(event):
         """Plot the histogram."""
-        # Get the node under the cursor
-        node = app.tree.get_current_node(app.current_row)
+        # Don't update if we already have everything
+        if len(app.histogram_plotter.plot_params) == 0:
+            # Get the node under the cursor
+            node = app.tree.get_current_node(app.current_row)
 
-        # Exit if the node is not a Dataset
-        if node.is_group:
-            app.print(f"{node.path} is not a Dataset")
-            return
+            # Exit if the node is not a Dataset
+            if node.is_group:
+                app.print(f"{node.path} is not a Dataset")
+                return
 
-        # Set the text in the plotting area
-        app.hist_content.text = app.histogram_plotter.set_data_key(node)
+            # Set the text in the plotting area
+            app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
         # Compute the histogram
         app.hist_content.text = app.histogram_plotter.compute_hist(
@@ -99,10 +127,6 @@ def _init_hist_bindings(app):
 
         # Get the plot
         app.histogram_plotter.plot_and_save(app.hist_content.text)
-
-        # Return to normal mode
-        app.return_to_normal_mode()
-        app.default_focus()
 
     @app.error_handler
     def reset_hist(event):

@@ -800,8 +800,9 @@ class HistogramPlotter(Plotter):
             x_scale = split_text[3].split(": ")[1].strip()
 
             # We need to wait for the data assignment thread to finish
-            self.assign_data_thread.join()
-            self.assign_data_thread = None
+            if self.assign_data_thread is not None:
+                self.assign_data_thread.join()
+                self.assign_data_thread = None
 
             # If we got this far we're ready to go so force a redraw
             get_app().invalidate()
