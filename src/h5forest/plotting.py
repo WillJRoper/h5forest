@@ -785,6 +785,7 @@ class HistogramPlotter(Plotter):
                 The text to extract the plot parameters from.
         """
 
+        @error_handler
         def run_in_thread():
             """Compute the histogram."""
             # Unpack the node
