@@ -7,33 +7,34 @@ Example Usage:
     h5forest /path/to/file.hdf5
 
 """
+
 import sys
 
 from prompt_toolkit import Application
+from prompt_toolkit.application import get_app
 from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.document import Document
+from prompt_toolkit.filters import Condition
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
+from prompt_toolkit.layout.containers import Window
 from prompt_toolkit.layout.controls import BufferControl
 from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.layout import HSplit, VSplit, ConditionalContainer
-from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Frame, TextArea
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.application import get_app
-from prompt_toolkit.document import Document
-from prompt_toolkit.layout.containers import Window
 
+from h5forest._version import __version__
 from h5forest.bindings import (
     _init_app_bindings,
-    _init_tree_bindings,
-    _init_hist_bindings,
-    _init_plot_bindings,
-    _init_window_bindings,
-    _init_jump_bindings,
     _init_dataset_bindings,
+    _init_hist_bindings,
+    _init_jump_bindings,
+    _init_plot_bindings,
+    _init_tree_bindings,
+    _init_window_bindings,
 )
 from h5forest.plotting import DensityPlotter, HistogramPlotter
 from h5forest.tree import Tree
 from h5forest.utils import DynamicTitle, get_window_size
-from h5forest._version import __version__
 
 
 class H5Forest:
@@ -495,9 +496,7 @@ class H5Forest:
             self.tree_content,
             title="HDF5 File Tree",
         )
-        self.metadata_frame = Frame(
-            self.metadata_content, title="Metadata", height=10
-        )
+        self.metadata_frame = Frame(self.metadata_content, title="Metadata", height=10)
         self.attrs_frame = Frame(self.attributes_content, title="Attributes")
         self.values_frame = Frame(
             self.values_content,
@@ -569,8 +568,7 @@ class H5Forest:
         self.plot_frame = ConditionalContainer(
             Frame(self.plot_content, title="Plotting", height=10),
             filter=Condition(
-                lambda: self.flag_plotting_mode
-                or len(self.density_plotter) > 0
+                lambda: self.flag_plotting_mode or len(self.density_plotter) > 0
             ),
         )
 
@@ -643,7 +641,7 @@ class H5Forest:
                 # Re-raise the KeyboardInterrupt to ensure it's not caught here
                 raise
             except Exception as e:
-                self.print(f"ERROR: {e}")
+                self.print(f"ERROR@{func.__name__}: {e}")
 
         return wrapper
 
