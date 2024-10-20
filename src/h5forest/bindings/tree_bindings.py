@@ -10,6 +10,8 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
 
+from h5forest.errors import error_handler
+
 
 def _init_tree_bindings(app):
     """
@@ -18,17 +20,17 @@ def _init_tree_bindings(app):
     These are always active and are not dependent on any leader key.
     """
 
-    @app.error_handler
+    @error_handler
     def move_up_ten(event):
         """Move up ten lines."""
         app.tree_buffer.cursor_up(10)
 
-    @app.error_handler
+    @error_handler
     def move_down_ten(event):
         """Move down ten lines."""
         app.tree_buffer.cursor_down(10)
 
-    @app.error_handler
+    @error_handler
     def expand_collapse_node(event):
         """
         Expand the node under the cursor.
