@@ -674,6 +674,9 @@ class H5Forest:
         )
         self.app.invalidate()
 
+        # Store the current focus
+        current_focus = self.app.layout.current_window
+
         # Shift focus to the mini buffer to await input
         self.shift_focus(self.mini_buffer_content)
 
@@ -688,6 +691,13 @@ class H5Forest:
             # Run the callback function
             callback()
 
+        def on_esc(event):
+            """Return to normal mode."""
+            # Clear buffers_content TextArea after processing
+            self.input_buffer_content.text = ""
+            self.return_to_normal_mode()
+            self.shift_focus(current_focus)
+
         # Add a temporary keybinding for Enter specific to this input action
         self.kb.add(
             "enter",
@@ -695,6 +705,12 @@ class H5Forest:
                 lambda: self.app.layout.has_focus(self.mini_buffer_content)
             ),
         )(on_enter)
+        self.kb.add(
+            "escape",
+            filter=Condition(
+                lambda: self.app.layout.has_focus(self.mini_buffer_content)
+            ),
+        )(on_esc)
 
         # Update the app
         get_app().invalidate()
