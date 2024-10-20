@@ -14,7 +14,7 @@ Well, `h5forest` brings interactivity and new functionality not available in its
 - Generation of quick diagnostics.
 - Fully asynchronous operation for a blazingly fast (🔥) and responsive feel.
 
-![SCR-20240217-pnoi](https://github.com/WillJRoper/h5forest/assets/40025495/365a9a54-95ce-4642-8e60-b3c176b40201)
+![SCR-20241020-ronq](https://github.com/user-attachments/assets/a77dd720-aadc-4a19-b41a-fe8debf3441f)
 
 The following features are coming soon:
 - A search function.
