@@ -158,7 +158,7 @@ class Node:
             self.compression_opts = obj.compression_opts
             self.chunks = obj.chunks if obj.chunks is not None else obj.shape
             self.is_chunked = obj.chunks != obj.shape
-            self.nchunks = (
+            self.n_chunks = (
                 1
                 if not self.is_chunked
                 else (
