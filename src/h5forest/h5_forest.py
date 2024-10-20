@@ -145,6 +145,7 @@ class H5Forest:
         # Define flags we need to control behaviour
         self.flag_values_visible = False
         self.flag_progress_bar = False
+        self.flag_expanded_attrs = False
 
         # Define the leader key mode flags
         # NOTE: These must be unset when the leader mode is exited, and in
@@ -518,6 +519,8 @@ class H5Forest:
                 return columns // 2
             elif self.flag_hist_mode or len(self.histogram_plotter) > 0:
                 return columns // 2
+            elif self.flag_expanded_attrs:
+                return columns // 2
             else:
                 return columns
 
@@ -536,12 +539,23 @@ class H5Forest:
             self.metadata_content,
             title="Metadata",
             height=10,
-            width=columns // 2,
         )
-        self.attrs_frame = Frame(
-            self.attributes_content,
-            title="Attributes",
-            height=10,
+        self.attrs_frame = ConditionalContainer(
+            Frame(
+                self.attributes_content,
+                title="Attributes",
+                height=10,
+                width=columns // 2,
+            ),
+            filter=Condition(lambda: not self.flag_expanded_attrs),
+        )
+        self.expanded_attrs_frame = ConditionalContainer(
+            Frame(
+                self.attributes_content,
+                title="Attributes",
+                width=columns // 2,
+            ),
+            filter=Condition(lambda: self.flag_expanded_attrs),
         )
 
         # Set up the values frame (this is where we'll display the values of
@@ -652,6 +666,7 @@ class H5Forest:
                             self.tree_frame,
                             HSplit(
                                 [
+                                    self.expanded_attrs_frame,
                                     self.values_frame,
                                     self.plot_frame,
                                     self.hist_frame,
