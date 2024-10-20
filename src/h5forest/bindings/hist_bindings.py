@@ -158,7 +158,7 @@ def _init_hist_bindings(app):
     app.kb.add(
         "q",
         filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
-    )(edit_hist)
+    )(exit_edit_hist)
 
     # Add the hot keys
     hot_keys = VSplit(
