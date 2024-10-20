@@ -127,6 +127,8 @@ def _init_plot_bindings(app):
         app.plot_content.text = app.scatter_plotter.reset()
 
         app.app.invalidate()
+        app.return_to_normal_mode()
+        app.default_focus()
 
     @error_handler
     def edit_plot(event):
