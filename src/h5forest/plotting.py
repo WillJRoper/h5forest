@@ -61,28 +61,6 @@ class Plotter:
         plt.show()
         self.reset()
 
-    def save(self):
-        """Save the plot and reset everything."""
-        from h5forest.h5_forest import H5Forest
-
-        def save_callback():
-            """Get the filepath and save the plot."""
-            # Strip the user input
-            out_path = H5Forest().user_input.strip()
-
-            self.fig.savefig(out_path, dpi=100, bbox_inches="tight")
-            self.reset()
-
-            H5Forest().print("Plot saved!")
-            H5Forest().default_focus()
-            H5Forest().return_to_normal_mode()
-
-        H5Forest().input(
-            "Enter the filepath to save the plot: ",
-            save_callback,
-            mini_buffer_text=os.getcwd() + "/",
-        )
-
 
 class DensityPlotter(Plotter):
     """
@@ -332,7 +310,9 @@ class DensityPlotter(Plotter):
         chunk_shape = min((x_node.chunks[0], y_node.chunks[0]))
 
         # Get the number of chunks
-        chunks = x_node.shape[0] // chunk_shape
+        chunks = (
+            x_node.shape[0] // chunk_shape if chunk_shape is not None else 1
+        )
 
         # If neither node is not chunked we can just read and grid the data
         if chunks == 1:
@@ -755,11 +735,8 @@ class HistogramPlotter(Plotter):
         self.widths = bins[1:] - bins[:-1]
         self.xs = (bins[1:] + bins[:-1]) / 2
 
-        # Get the chunk shape
-        chunk_shape = node.chunks
-
         # Get the number of chunks
-        chunks = node.shape[0] // chunk_shape[0]
+        chunks = node.chunks if node.chunks is not None else 1
 
         # If neither node is not chunked we can just read and grid the data
         if chunks == 1:
@@ -850,3 +827,22 @@ class HistogramPlotter(Plotter):
         self.ax = None
         self.plot_params = {}
         return self.plot_text
+
+
+class ImagePlotter(Plotter):
+    def __init__(self):
+        """Initialise the image plotter."""
+        # Call the parent class
+        super().__init__()
+
+        # Define the default text for the plotting TextArea
+        self.default_plot_text = (
+            "data:        <key>\n"
+            "x-label:     <label>\n"
+            "y-label:     <label>\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
+
+        # Define the text for the image TextArea
+        self.plot_text = self.default_plot_text
