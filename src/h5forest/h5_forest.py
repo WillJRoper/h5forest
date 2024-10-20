@@ -33,7 +33,8 @@ from h5forest.bindings import (
     _init_window_bindings,
 )
 from h5forest.plotting import DensityPlotter, HistogramPlotter
-from h5forest.tree import Tree
+from h5forest.styles import style
+from h5forest.tree import Tree, TreeProcessor
 from h5forest.utils import DynamicTitle, get_window_size
 
 
@@ -136,6 +137,9 @@ class H5Forest:
         # tree text area
         self.tree = Tree(hdf5_filepath)
 
+        # Set up the tree processor
+        self.tree_processor = TreeProcessor(self.tree)
+
         # Define flags we need to control behaviour
         self.flag_values_visible = False
         self.flag_progress_bar = False
@@ -208,6 +212,7 @@ class H5Forest:
             key_bindings=self.kb,
             full_screen=True,
             mouse_support=True,
+            style=style,
         )
 
     def run(self):
@@ -368,7 +373,8 @@ class H5Forest:
         """Initialise the content for each frame."""
         # Buffer for the tree content itself
         self.tree_buffer = Buffer(
-            on_cursor_position_changed=self.cursor_moved_action, read_only=True
+            on_cursor_position_changed=self.cursor_moved_action,
+            read_only=True,
         )
 
         # Set the text of the buffer
@@ -381,7 +387,11 @@ class H5Forest:
         )
 
         self.tree_content = Window(
-            content=BufferControl(buffer=self.tree_buffer),
+            content=BufferControl(
+                buffer=self.tree_buffer,
+                input_processors=[self.tree_processor],
+                focusable=True,
+            ),
         )
 
         # Get the root node, we'll need to to populate the initial metadata

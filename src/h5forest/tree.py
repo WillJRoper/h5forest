@@ -11,8 +11,38 @@ Example usage:
 """
 
 import h5py
+from prompt_toolkit.layout.processors import Processor, Transformation
 
 from h5forest.node import Node
+
+
+class TreeProcessor(Processor):
+    def __init__(self, tree):
+        self.tree = tree
+
+    def apply_transformation(self, ti):
+        lineno = ti.lineno
+        fragments = ti.fragments
+
+        # Access the node corresponding to the current line
+        if lineno < len(self.tree.nodes_by_row):
+            node = self.tree.nodes_by_row[lineno]
+            style = ""
+
+            if node.is_group:
+                style += " class:group"
+            if node.is_highlighted:
+                style += " class:highlighted"
+            if node.is_under_cursor:
+                style += " class:under_cursor"
+
+            # Apply the style to the entire line
+            new_fragments = [(style, text) for _style, text in fragments]
+            return Transformation(new_fragments)
+        else:
+            # Line number exceeds the number of nodes, return original
+            # fragments
+            return Transformation(fragments)
 
 
 class Tree:
@@ -60,6 +90,11 @@ class Tree:
         # Get the root of the level
         with h5py.File(self.filepath, "r") as hdf:
             self.root = Node(self.filename, hdf, self.filepath)
+            self.root.is_under_cursor = True
+
+        # Store the previous node under the cursor (we need some memory for
+        # correct highlighting)
+        self.prev_node = self.root
 
     @property
     def length(self):
@@ -232,6 +267,9 @@ class Tree:
         """
         Return the current node.
 
+        This will also unhighlight the previous node, and highlight the new
+        node.
+
         Args:
             row (int):
                 The row in the tree.
@@ -240,4 +278,14 @@ class Tree:
             Node:
                 The node at row.
         """
-        return self.nodes_by_row[row]
+        # Unhighlight the previous node
+        self.prev_node.is_under_cursor = False
+
+        # Get the new node and highlight it
+        new_node = self.nodes_by_row[row]
+        new_node.is_under_cursor = True
+
+        # New node will now be the previous node
+        self.prev_node = new_node
+
+        return new_node
