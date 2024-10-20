@@ -19,7 +19,9 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
 from prompt_toolkit.layout.containers import Window
 from prompt_toolkit.layout.controls import BufferControl
+from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.mouse_events import MouseEventType
 from prompt_toolkit.widgets import Frame, TextArea
 
 from h5forest._version import __version__
@@ -143,6 +145,7 @@ class H5Forest:
         # Define flags we need to control behaviour
         self.flag_values_visible = False
         self.flag_progress_bar = False
+        self.flag_expanded_attrs = False
 
         # Define the leader key mode flags
         # NOTE: These must be unset when the leader mode is exited, and in
@@ -393,6 +396,9 @@ class H5Forest:
                 focusable=True,
             ),
         )
+        self.tree_content.content.mouse_handler = self._create_mouse_handler(
+            self.tree_content
+        )
 
         # Get the root node, we'll need to to populate the initial metadata
         # and attributes
@@ -413,6 +419,9 @@ class H5Forest:
             focusable=True,
         )
         self.attributes_content.text = root_node.get_attr_text()
+        self.attributes_content.control.mouse_handler = (
+            self._create_mouse_handler(self.attributes_content)
+        )
 
         self.values_content = TextArea(
             text="Values here...",
@@ -500,22 +509,64 @@ class H5Forest:
         # Get the window size
         rows, columns = get_window_size()
 
+        def tree_width():
+            """Return the width of the tree."""
+            # If values, hist, or plot are visible, the tree should fill half
+            # the full width
+            if self.flag_values_visible:
+                return columns // 2
+            elif self.flag_plotting_mode or len(self.density_plotter) > 0:
+                return columns // 2
+            elif self.flag_hist_mode or len(self.histogram_plotter) > 0:
+                return columns // 2
+            elif self.flag_expanded_attrs:
+                return columns // 2
+            else:
+                return columns
+
         # Create each individual element of the UI before packaging it
         # all into the layout
         self.tree_frame = Frame(
             self.tree_content,
             title="HDF5 File Tree",
+            width=tree_width,
         )
+
+        # Set up the metadata and attributes frames with their shared height
+        # function controlling their height (these are placed next to each
+        # other in a VSplit below)
         self.metadata_frame = Frame(
-            self.metadata_content, title="Metadata", height=10
+            self.metadata_content,
+            title="Metadata",
+            height=10,
         )
-        self.attrs_frame = Frame(self.attributes_content, title="Attributes")
+        self.attrs_frame = ConditionalContainer(
+            Frame(
+                self.attributes_content,
+                title="Attributes",
+                height=10,
+                width=columns // 2,
+            ),
+            filter=Condition(lambda: not self.flag_expanded_attrs),
+        )
+        self.expanded_attrs_frame = ConditionalContainer(
+            Frame(
+                self.attributes_content,
+                title="Attributes",
+                width=columns // 2,
+            ),
+            filter=Condition(lambda: self.flag_expanded_attrs),
+        )
+
+        # Set up the values frame (this is where we'll display the values of
+        # a dataset)
         self.values_frame = Frame(
             self.values_content,
             title=self.value_title,
         )
 
-        # Set up the mini buffer and input buffer
+        # Set up the mini buffer and input buffer (these are where we'll
+        # display messages to the user and accept input)
         self.mini_buffer = Frame(
             self.mini_buffer_content,
             height=3,
@@ -578,7 +629,10 @@ class H5Forest:
 
         # Set up the plot frame
         self.plot_frame = ConditionalContainer(
-            Frame(self.plot_content, title="Plotting", height=10),
+            Frame(
+                self.plot_content,
+                title="Plotting",
+            ),
             filter=Condition(
                 lambda: self.flag_plotting_mode
                 or len(self.density_plotter) > 0
@@ -587,7 +641,10 @@ class H5Forest:
 
         # Set up the plot frame
         self.hist_frame = ConditionalContainer(
-            Frame(self.hist_content, title="Histogram", height=10),
+            Frame(
+                self.hist_content,
+                title="Histogram",
+            ),
             filter=Condition(
                 lambda: self.flag_hist_mode or len(self.histogram_plotter) > 0
             ),
@@ -606,21 +663,23 @@ class H5Forest:
                 [
                     VSplit(
                         [
+                            self.tree_frame,
                             HSplit(
                                 [
-                                    self.tree_frame,
-                                    self.metadata_frame,
-                                ]
-                            ),
-                            HSplit(
-                                [
-                                    self.attrs_frame,
+                                    self.expanded_attrs_frame,
                                     self.values_frame,
                                     self.plot_frame,
                                     self.hist_frame,
-                                ]
+                                ],
+                                width=Dimension(min=0, max=columns // 2),
                             ),
                         ]
+                    ),
+                    VSplit(
+                        [
+                            self.metadata_frame,
+                            self.attrs_frame,
+                        ],
                     ),
                     self.hotkeys_frame,
                     self.progress_frame,
@@ -738,6 +797,13 @@ class H5Forest:
                 The text area to focus on.
         """
         self.app.layout.focus(focused_area)
+
+    def _create_mouse_handler(self, content_area):
+        def mouse_handler(mouse_event):
+            if mouse_event.event_type == MouseEventType.MOUSE_UP:
+                get_app().layout.focus(content_area)
+
+        return mouse_handler
 
 
 def main():
