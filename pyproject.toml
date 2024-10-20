@@ -14,7 +14,7 @@ version_file = "src/h5forest/_version.py"
 [project]
 dynamic = ["version"]
 
-name = "hdf5-forest"
+name = "h5forest"
 description = "A tool to view HDF5 file structures in the terminal."
 authors = [{name = "Will Roper", email = "w.roper@sussex.ac.uk"}]
 license = {file = "LICENSE"}
@@ -27,6 +27,10 @@ dependencies = [
   "prompt_toolkit",
   "matplotlib",
 ]
+
+# Add special dependencies for development
+[project.optional-dependencies]
+dev = ["ruff", ]
 
 [project.urls]
 "Homepage" = "https://github.com/WillJRoper/h5forest"
