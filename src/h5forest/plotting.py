@@ -3,15 +3,16 @@
 This is only ever called from the h5forest module and is not intended to be
 used directly by the user.
 """
+
 import os
-import h5py
 import threading
-import numpy as np
-import matplotlib.pyplot as plt
 import warnings
 
-from h5forest.progress import ProgressBar
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
 
+from h5forest.progress import ProgressBar
 
 # Supress warnings related to numpy
 warnings.filterwarnings("ignore")
@@ -60,6 +61,28 @@ class Plotter:
         """Show the plot and reset everything."""
         plt.show()
         self.reset()
+
+    def save(self):
+        """Save the plot and reset everything."""
+        from h5forest.h5_forest import H5Forest
+
+        def save_callback():
+            """Get the filepath and save the plot."""
+            # Strip the user input
+            out_path = H5Forest().user_input.strip()
+
+            self.fig.savefig(out_path, dpi=100, bbox_inches="tight")
+            self.reset()
+
+            H5Forest().print("Plot saved!")
+            H5Forest().default_focus()
+            H5Forest().return_to_normal_mode()
+
+        H5Forest().input(
+            "Enter the filepath to save the plot: ",
+            save_callback,
+            mini_buffer_text=os.getcwd() + "/",
+        )
 
 
 class DensityPlotter(Plotter):
@@ -310,9 +333,7 @@ class DensityPlotter(Plotter):
         chunk_shape = min((x_node.chunks[0], y_node.chunks[0]))
 
         # Get the number of chunks
-        chunks = (
-            x_node.shape[0] // chunk_shape if chunk_shape is not None else 1
-        )
+        chunks = x_node.shape[0] // chunk_shape if chunk_shape is not None else 1
 
         # If neither node is not chunked we can just read and grid the data
         if chunks == 1:
@@ -344,9 +365,7 @@ class DensityPlotter(Plotter):
                 x_shape = x_data.shape[0]
 
                 # Loop over the chunks
-                with ProgressBar(
-                    total=x_node.size, description="2DHist"
-                ) as pb:
+                with ProgressBar(total=x_node.size, description="2DHist") as pb:
                     for i in range(chunks):
                         # Define the slice
                         _slice = slice(
@@ -457,9 +476,7 @@ class DensityPlotter(Plotter):
                 x_shape = x_data.shape[0]
 
                 # Loop over the chunks
-                with ProgressBar(
-                    total=x_node.size, description="2DHist"
-                ) as pb:
+                with ProgressBar(total=x_node.size, description="2DHist") as pb:
                     for i in range(chunks):
                         # Define the slice
                         _slice = slice(
@@ -727,9 +744,7 @@ class HistogramPlotter(Plotter):
 
         # Define the bins
         if x_scale == "log":
-            bins = np.logspace(
-                np.log10(self.x_min), np.log10(self.x_max), nbins + 1
-            )
+            bins = np.logspace(np.log10(self.x_min), np.log10(self.x_max), nbins + 1)
         else:
             bins = np.linspace(self.x_min, self.x_max, nbins + 1)
         self.widths = bins[1:] - bins[:-1]
@@ -754,9 +769,7 @@ class HistogramPlotter(Plotter):
             self.hist = np.zeros(nbins)
 
             # Compute the number of chunks in each dimension
-            n_chunks = [
-                int(np.ceil(s / c)) for s, c in zip(node.shape, node.chunks)
-            ]
+            n_chunks = [int(np.ceil(s / c)) for s, c in zip(node.shape, node.chunks)]
 
             # Get the data
             with h5py.File(node.filepath, "r") as hdf:
@@ -827,22 +840,3 @@ class HistogramPlotter(Plotter):
         self.ax = None
         self.plot_params = {}
         return self.plot_text
-
-
-class ImagePlotter(Plotter):
-    def __init__(self):
-        """Initialise the image plotter."""
-        # Call the parent class
-        super().__init__()
-
-        # Define the default text for the plotting TextArea
-        self.default_plot_text = (
-            "data:        <key>\n"
-            "x-label:     <label>\n"
-            "y-label:     <label>\n"
-            "x-scale:     linear\n"
-            "y-scale:     linear\n"
-        )
-
-        # Define the text for the image TextArea
-        self.plot_text = self.default_plot_text

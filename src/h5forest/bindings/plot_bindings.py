@@ -176,6 +176,27 @@ def _init_plot_bindings(app):
         app.default_focus()
 
     @app.error_handler
+    def save_count(event):
+        """Plot and save the density count."""
+        app.density_plotter.plot_count_density(app.plot_content.text)
+
+        app.density_plotter.save()
+
+    @app.error_handler
+    def save_sum(event):
+        """Plot and save the density sum."""
+        app.density_plotter.plot_sum_density(app.plot_content.text)
+
+        app.density_plotter.save()
+
+    @app.error_handler
+    def save_mean(event):
+        """Plot and save the density mean."""
+        app.density_plotter.plot_mean_density(app.plot_content.text)
+
+        app.density_plotter.save()
+
+    @app.error_handler
     def reset(event):
         """Reset the plot content."""
         app.plot_content.text = app.density_plotter.reset()
@@ -207,6 +228,15 @@ def _init_plot_bindings(app):
     )
     app.kb.add("M", filter=Condition(lambda: app.flag_plotting_mode))(
         plot_mean_density
+    )
+    app.kb.add("c-c", filter=Condition(lambda: app.flag_plotting_mode))(
+        save_count
+    )
+    app.kb.add("c-s", filter=Condition(lambda: app.flag_plotting_mode))(
+        save_sum
+    )
+    app.kb.add("c-m", filter=Condition(lambda: app.flag_plotting_mode))(
+        save_mean
     )
     app.kb.add("r", filter=Condition(lambda: app.flag_plotting_mode))(reset)
 
@@ -275,6 +305,24 @@ def _init_plot_bindings(app):
             ),
             ConditionalContainer(
                 Label("M → Show Density (Mean)"),
+                filter=Condition(
+                    lambda: app.density_plotter.mean_density is not None
+                ),
+            ),
+            ConditionalContainer(
+                Label("CTRL-c → Save Density (Count)"),
+                filter=Condition(
+                    lambda: app.density_plotter.count_density is not None
+                ),
+            ),
+            ConditionalContainer(
+                Label("CTRL-s → Save Density (Sum)"),
+                filter=Condition(
+                    lambda: app.density_plotter.sum_density is not None
+                ),
+            ),
+            ConditionalContainer(
+                Label("CTRL-M → Save Density (Mean)"),
                 filter=Condition(
                     lambda: app.density_plotter.mean_density is not None
                 ),
