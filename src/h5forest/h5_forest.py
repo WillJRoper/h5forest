@@ -19,6 +19,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
 from prompt_toolkit.layout.containers import Window
 from prompt_toolkit.layout.controls import BufferControl
+from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.widgets import Frame, TextArea
 
@@ -505,17 +506,53 @@ class H5Forest:
         self.tree_frame = Frame(
             self.tree_content,
             title="HDF5 File Tree",
+            width=columns // 2,
         )
+
+        def get_shared_height():
+            """Calculate the shared height for the metadata and attributes."""
+            # Calculate the content heights of both frames
+            metadata_lines = self.metadata_content.text.count("\n") + 1
+            attributes_lines = self.attributes_content.text.count("\n") + 1
+
+            # Determine the maximum content height
+            max_content_height = max(metadata_lines, attributes_lines)
+
+            # Constrain the height within min and max limits
+            min_height = 10
+            max_height = 40
+            preferred_height = max(
+                min_height, min(max_content_height, max_height)
+            )
+
+            # Return a Dimension with the calculated height
+            return Dimension(
+                preferred=preferred_height, min=min_height, max=max_height
+            )
+
+        # Set up the metadata and attributes frames with their shared height
+        # function controlling their height (these are placed next to each
+        # other in a VSplit below)
         self.metadata_frame = Frame(
-            self.metadata_content, title="Metadata", height=10
+            self.metadata_content,
+            title="Metadata",
+            height=get_shared_height,
         )
-        self.attrs_frame = Frame(self.attributes_content, title="Attributes")
+        self.attrs_frame = Frame(
+            self.attributes_content,
+            title="Attributes",
+            height=get_shared_height,
+        )
+
+        # Set up the values frame (this is where we'll display the values of
+        # a dataset)
         self.values_frame = Frame(
             self.values_content,
             title=self.value_title,
         )
 
-        # Set up the mini buffer and input buffer
+        # Set up the mini buffer and input buffer (these are where we'll
+        # display messages to the user and accept input)
         self.mini_buffer = Frame(
             self.mini_buffer_content,
             height=3,
@@ -606,21 +643,21 @@ class H5Forest:
                 [
                     VSplit(
                         [
+                            self.tree_frame,
                             HSplit(
                                 [
-                                    self.tree_frame,
-                                    self.metadata_frame,
-                                ]
-                            ),
-                            HSplit(
-                                [
-                                    self.attrs_frame,
                                     self.values_frame,
                                     self.plot_frame,
                                     self.hist_frame,
                                 ]
                             ),
                         ]
+                    ),
+                    VSplit(
+                        [
+                            self.metadata_frame,
+                            self.attrs_frame,
+                        ],
                     ),
                     self.hotkeys_frame,
                     self.progress_frame,
