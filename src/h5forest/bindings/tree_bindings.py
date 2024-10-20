@@ -4,10 +4,11 @@ This module contains the keybinding functions for the file tree. The functions
 in this module should not be called directly, but are intended to be used by
 the application.
 """
+
+from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
-from prompt_toolkit.document import Document
 
 
 def _init_tree_bindings(app):

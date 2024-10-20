@@ -4,6 +4,7 @@ This module contains the functions for binding window events to functions. This
 should not be used directly, but instead provides the functions for the
 application.
 """
+
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout.containers import ConditionalContainer, VSplit
 from prompt_toolkit.widgets import Label

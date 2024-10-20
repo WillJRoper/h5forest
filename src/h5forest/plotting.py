@@ -244,8 +244,8 @@ class DensityPlotter(Plotter):
         """
         Set the weights-axis key for the plot.
 
-        This will set the plot parameter for the weights-axis key and update the
-        plotting text.
+        This will set the plot parameter for the weights-axis key and update
+        the plotting text.
 
         Args:
             node (h5forest.h5_forest.Node):
@@ -333,7 +333,9 @@ class DensityPlotter(Plotter):
         chunk_shape = min((x_node.chunks[0], y_node.chunks[0]))
 
         # Get the number of chunks
-        chunks = x_node.shape[0] // chunk_shape if chunk_shape is not None else 1
+        chunks = (
+            x_node.shape[0] // chunk_shape if chunk_shape is not None else 1
+        )
 
         # If neither node is not chunked we can just read and grid the data
         if chunks == 1:
@@ -365,7 +367,9 @@ class DensityPlotter(Plotter):
                 x_shape = x_data.shape[0]
 
                 # Loop over the chunks
-                with ProgressBar(total=x_node.size, description="2DHist") as pb:
+                with ProgressBar(
+                    total=x_node.size, description="2DHist"
+                ) as pb:
                     for i in range(chunks):
                         # Define the slice
                         _slice = slice(
@@ -476,7 +480,9 @@ class DensityPlotter(Plotter):
                 x_shape = x_data.shape[0]
 
                 # Loop over the chunks
-                with ProgressBar(total=x_node.size, description="2DHist") as pb:
+                with ProgressBar(
+                    total=x_node.size, description="2DHist"
+                ) as pb:
                     for i in range(chunks):
                         # Define the slice
                         _slice = slice(
@@ -744,7 +750,9 @@ class HistogramPlotter(Plotter):
 
         # Define the bins
         if x_scale == "log":
-            bins = np.logspace(np.log10(self.x_min), np.log10(self.x_max), nbins + 1)
+            bins = np.logspace(
+                np.log10(self.x_min), np.log10(self.x_max), nbins + 1
+            )
         else:
             bins = np.linspace(self.x_min, self.x_max, nbins + 1)
         self.widths = bins[1:] - bins[:-1]
@@ -769,7 +777,9 @@ class HistogramPlotter(Plotter):
             self.hist = np.zeros(nbins)
 
             # Compute the number of chunks in each dimension
-            n_chunks = [int(np.ceil(s / c)) for s, c in zip(node.shape, node.chunks)]
+            n_chunks = [
+                int(np.ceil(s / c)) for s, c in zip(node.shape, node.chunks)
+            ]
 
             # Get the data
             with h5py.File(node.filepath, "r") as hdf:

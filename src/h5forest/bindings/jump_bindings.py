@@ -7,6 +7,7 @@ This module defines the functions for binding jump mode events to functions.
 This should not be used directly, but instead provides the functions for the
 application.
 """
+
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import VSplit
 from prompt_toolkit.widgets import Label

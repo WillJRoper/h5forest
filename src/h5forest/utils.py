@@ -1,4 +1,5 @@
 """A module containing utility functions and classes for the HDF5 viewer."""
+
 import os
 
 
