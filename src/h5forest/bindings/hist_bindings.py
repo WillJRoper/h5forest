@@ -3,6 +3,7 @@
 This module contains the function that defines the bindings for the histogram
 and attaches them to the application. It should not be used directly.
 """
+
 import threading
 
 from prompt_toolkit.document import Document

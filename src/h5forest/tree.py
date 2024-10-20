@@ -9,6 +9,7 @@ Example usage:
     tree = Tree("example.h5")
     print(tree.get_tree_text())
 """
+
 import h5py
 
 from h5forest.node import Node
@@ -184,9 +185,9 @@ class Tree:
 
         # Insert the children into the tree text and nodes by row list
         self.tree_text_split[current_row + 1 : current_row + 1] = child_test
-        self.nodes_by_row[
-            current_row + 1 : current_row + 1
-        ] = child_nodes_by_row
+        self.nodes_by_row[current_row + 1 : current_row + 1] = (
+            child_nodes_by_row
+        )
 
         # Update the tree text area
         self.tree_text = "\n".join(self.tree_text_split)

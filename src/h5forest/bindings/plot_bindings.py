@@ -1,8 +1,10 @@
 """This module contains the keybindings for the plotting mode.
 
-The functions in this module are used to define the keybindings for the plotting
-mode and attach them to the application. It should not be used directly.
+The functions in this module are used to define the keybindings for the
+plotting mode and attach them to the application. It should not be used
+directly.
 """
+
 import threading
 
 from prompt_toolkit.document import Document
