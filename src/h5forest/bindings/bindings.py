@@ -7,6 +7,7 @@ application.
 """
 
 from prompt_toolkit.filters import Condition
+from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
 
 
@@ -54,6 +55,16 @@ def _init_app_bindings(app):
         app.default_focus()
         event.app.invalidate()
 
+    def expand_attributes(event):
+        """Expand the attributes."""
+        app.flag_expanded_attrs = True
+        event.app.invalidate()
+
+    def collapse_attributes(event):
+        """Collapse the attributes."""
+        app.flag_expanded_attrs = False
+        event.app.invalidate()
+
     # Bind the functions
     app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
     app.kb.add("c-q")(exit_app)
@@ -75,9 +86,29 @@ def _init_app_bindings(app):
     app.kb.add("q", filter=Condition(lambda: not app.flag_normal_mode))(
         exit_leader_mode
     )
+    app.kb.add(
+        "A",
+        filter=Condition(
+            lambda: app.flag_normal_mode and not app.flag_expanded_attrs
+        ),
+    )(expand_attributes)
+    app.kb.add(
+        "A",
+        filter=Condition(
+            lambda: app.flag_normal_mode and app.flag_expanded_attrs
+        ),
+    )(collapse_attributes)
 
     # Add the hot keys
     hot_keys = [
+        ConditionalContainer(
+            Label("A → Expand Attributes"),
+            filter=Condition(lambda: not app.flag_expanded_attrs),
+        ),
+        ConditionalContainer(
+            Label("A → Shrink Attributes"),
+            filter=Condition(lambda: app.flag_expanded_attrs),
+        ),
         Label("d → Dataset Mode"),
         Label("h → Hist Mode"),
         Label("j → Jump Mode"),
