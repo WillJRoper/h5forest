@@ -21,6 +21,7 @@ from prompt_toolkit.layout.containers import Window
 from prompt_toolkit.layout.controls import BufferControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.widgets import Frame, TextArea
+from prompt_toolkit.widgets.base import Float, FloatContainer
 
 from h5forest._version import __version__
 from h5forest.bindings import (
@@ -355,6 +356,28 @@ class H5Forest:
             self.mini_buffer_content
         )
 
+    @property
+    def _app_width(self):
+        """
+        Return the width of the application.
+
+        Returns:
+            int:
+                The width of the application.
+        """
+        return get_window_size()[1]
+
+    @property
+    def _app_height(self):
+        """
+        Return the height of the application.
+
+        Returns:
+            int:
+                The height of the application.
+        """
+        return get_window_size()[0]
+
     def return_to_normal_mode(self):
         """Return to normal mode."""
         self._flag_normal_mode = True
@@ -576,11 +599,18 @@ class H5Forest:
         )
 
         # Set up the plot frame
-        self.hist_frame = ConditionalContainer(
-            Frame(self.hist_content, title="Histogram", height=10),
-            filter=Condition(
-                lambda: self.flag_hist_mode or len(self.histogram_plotter) > 0
+        self.hist_frame = Float(
+            content=ConditionalContainer(
+                content=Frame(
+                    self.hist_content, title="Histogram", height=30, width=80
+                ),
+                filter=Condition(
+                    lambda: self.flag_hist_mode
+                    or len(self.histogram_plotter) > 0
+                ),
             ),
+            left=(self._app_width - 80) // 2,
+            top=(self._app_height - 30) // 2,
         )
 
         # Set up the progress bar and buffer conditional containers
@@ -591,31 +621,36 @@ class H5Forest:
         buffers = HSplit([self.input_buffer, self.mini_buffer])
 
         # Layout using split views
+        main_content = HSplit(
+            [
+                VSplit(
+                    [
+                        HSplit(
+                            [
+                                self.tree_frame,
+                                self.metadata_frame,
+                            ]
+                        ),
+                        HSplit(
+                            [
+                                self.attrs_frame,
+                                self.values_frame,
+                                self.plot_frame,
+                            ]
+                        ),
+                    ]
+                ),
+                self.hotkeys_frame,
+                self.progress_frame,
+                buffers,
+            ]
+        )
         self.layout = Layout(
-            HSplit(
-                [
-                    VSplit(
-                        [
-                            HSplit(
-                                [
-                                    self.tree_frame,
-                                    self.metadata_frame,
-                                ]
-                            ),
-                            HSplit(
-                                [
-                                    self.attrs_frame,
-                                    self.values_frame,
-                                    self.plot_frame,
-                                    self.hist_frame,
-                                ]
-                            ),
-                        ]
-                    ),
-                    self.hotkeys_frame,
-                    self.progress_frame,
-                    buffers,
-                ]
+            FloatContainer(
+                content=main_content,
+                floats=[
+                    self.hist_frame,
+                ],
             )
         )
 
