@@ -185,6 +185,10 @@ class Node:
         self._attr_text = None
         self._meta_text = None
 
+        # Define a flags for syntax highlighting
+        self.is_under_cursor = False
+        self.is_highlighted = False
+
         # Start with the root node open
         if self.depth == 0:
             self.open_node()
