@@ -1,21 +1,24 @@
 # h5forest
-HDF5 Forest (`h5forest`) is an interactive CLI application for exploring HDF5 files.
+HDF5 Forest (`h5forest`) is a Text-based User Interface (TUI) for exploring HDF5 files.
 
-`h5ls` works, and `h5glance` is a great improvement on it. So "Why bother?" I hear you say. 
+`h5ls` works, and `h5glance` is a great improvement, so "Why bother?" I hear you ask. 
 
-Well, `h5forest` brings interactivity and functionality not available in its long-standing brethren. `h5forest` includes:
+Well, `h5forest` brings interactivity and new functionality not available in its long-standing brethren. `h5forest` includes:
 
-- An interactive interface capable of handling files with deep hierarchies and large numbers of groups.
+- An interactive interface capable of handling large files with deep hierarchies.
 - Real-time metadata and attribute displays.
-- The ability to display the contents of a Dataset.
-- The ability to get basic statistics from a Dataset.
-- The ability to quickly plot datasets against each other.
-
-The following features will be coming soon:
-- A search function.
-- Renaming of Datasets and Groups.
+- A modal system for interacting with the file (I use Neovim by the way).
+- Lazy loading, making the most of chunked data.
+- Peeking inside Datasets.
+- Computing statistics on the fly.
+- Generation of quick diagnostics.
+- Fully asynchronous operation for a blazingly fast (🔥) and responsive feel.
 
 ![SCR-20240217-pnoi](https://github.com/WillJRoper/h5forest/assets/40025495/365a9a54-95ce-4642-8e60-b3c176b40201)
+
+The following features are coming soon:
+- A search function.
+- Renaming of Datasets and Groups.
 
 ## Getting started
 
