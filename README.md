@@ -22,13 +22,11 @@ The following features are coming soon:
 
 ## Getting started
 
-To install `h5forest` simply clone this repo and run
+`h5forest` can be installed through `pip`:
 
+```bash
+pip install h5forest
 ```
-pip install .
-```
-
-at the root level of the repo (PyPi install coming soon). 
 
 You will now have the `h5forest` command installed. Simply run
 
