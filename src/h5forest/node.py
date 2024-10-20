@@ -15,6 +15,7 @@ Example usage:
     print(node.is_expanded)
 
 """
+
 import h5py
 import numpy as np
 
@@ -413,7 +414,7 @@ class Node:
                 # If chunks and shape are equal just get the min and max
                 if not self.is_chunked:
                     arr = dataset[:]
-                    return arr.min(axis=0), arr.max(axis=0)
+                    return arr.min(), arr.max()
 
                 # OK, we have chunks. Now we need to have slightly different
                 # behaviours based on dimensions
@@ -448,7 +449,8 @@ class Node:
                             # Read the chunk data
                             chunk_data = dataset[slices]
 
-                            # Get the minimum and maximum for the final dimension
+                            # Get the minimum and maximum for the final
+                            # dimension
                             min_val = np.min((min_val, np.min(chunk_data)))
                             max_val = np.max((max_val, np.max(chunk_data)))
 
@@ -488,7 +490,8 @@ class Node:
                             # Read the chunk data
                             chunk_data = dataset[slices]
 
-                            # Get the minimum and maximum for the final dimension
+                            # Get the minimum and maximum for the final
+                            # dimension
                             min_val = np.minimum(
                                 min_val,
                                 np.min(

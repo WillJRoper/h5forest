@@ -7,6 +7,7 @@ values, getting the minimum and maximum, mean, and standard deviation.
 The functions in this module should not be called directly, but are
 intended to be used by the main application.
 """
+
 import threading
 
 from prompt_toolkit.filters import Condition
