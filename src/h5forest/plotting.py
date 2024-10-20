@@ -11,7 +11,9 @@ import warnings
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+from prompt_toolkit.application import get_app
 
+from h5forest.errors import error_handler
 from h5forest.progress import ProgressBar
 
 # Supress warnings related to numpy
@@ -43,6 +45,7 @@ class Plotter:
         self.fig = None
         self.ax = None
 
+    @error_handler
     def get_row(self, row):
         """
         Return the current row in the plot text.
@@ -57,11 +60,12 @@ class Plotter:
         """Return the number of plot parameters."""
         return len(self.plot_params)
 
+    @error_handler
     def show(self):
         """Show the plot and reset everything."""
         plt.show()
-        self.reset()
 
+    @error_handler
     def save(self):
         """Save the plot and reset everything."""
         from h5forest.h5_forest import H5Forest
@@ -72,7 +76,6 @@ class Plotter:
             out_path = H5Forest().user_input.strip()
 
             self.fig.savefig(out_path, dpi=100, bbox_inches="tight")
-            self.reset()
 
             H5Forest().print("Plot saved!")
             H5Forest().default_focus()
@@ -83,6 +86,36 @@ class Plotter:
             save_callback,
             mini_buffer_text=os.getcwd() + "/",
         )
+
+    @error_handler
+    def plot_and_show(self, text):
+        """
+        Plot the data and show the plot.
+
+        Args:
+            text (str):
+                The text to extract the plot parameters from.
+        """
+        # Compute the plot
+        self._plot(text)
+
+        # Show the plot
+        self.show()
+
+    @error_handler
+    def plot_and_save(self, text):
+        """
+        Plot the data and save the plot.
+
+        Args:
+            text (str):
+                The text to extract the plot parameters from.
+        """
+        # Compute the plot
+        self._plot(text)
+
+        # Save the plot
+        self.save()
 
 
 class DensityPlotter(Plotter):
@@ -695,11 +728,20 @@ class HistogramPlotter(Plotter):
         self.x_min = None
         self.x_max = None
 
+        # Initialise the scaling of each axis (we'll assume linear for now)
+        self.x_scale = "linear"
+        self.y_scale = "linear"
+
         # Plotting data containers
         self.hist = None
         self.xs = None
         self.widths = None
 
+        # Flags for working with threads
+        self.assign_data_thread = None
+        self.compute_hist_thread = None
+
+    @error_handler
     def set_data_key(self, node):
         """
         Set the data key for the plot.
@@ -724,10 +766,16 @@ class HistogramPlotter(Plotter):
             # Get the minimum and maximum values for the x and y axes
             self.x_min, self.x_max = node.get_min_max()
 
-        threading.Thread(target=run_in_thread, daemon=True).start()
+        # Run the thread but don't move on until it's finished
+        self.assign_data_thread = threading.Thread(target=run_in_thread)
+
+        # Start the thread (we'll join later to ensure its finished when we
+        # need it)
+        self.assign_data_thread.start()
 
         return self.plot_text
 
+    @error_handler
     def compute_hist(self, text):
         """
         Compute the histogram.
@@ -736,81 +784,102 @@ class HistogramPlotter(Plotter):
             text (str):
                 The text to extract the plot parameters from.
         """
-        # Unpack the node
-        node = self.plot_params["data"]
 
-        # Split the text
-        split_text = text.split("\n")
+        def run_in_thread():
+            """Compute the histogram."""
+            # Unpack the node
+            node = self.plot_params["data"]
 
-        # Unpack the number of bins
-        nbins = int(split_text[1].split(": ")[1].strip())
+            # Split the text
+            split_text = text.split("\n")
 
-        # Unpack scales
-        x_scale = split_text[3].split(": ")[1].strip()
+            # Unpack the number of bins
+            nbins = int(split_text[1].split(": ")[1].strip())
 
-        # Define the bins
-        if x_scale == "log":
-            bins = np.logspace(
-                np.log10(self.x_min), np.log10(self.x_max), nbins + 1
-            )
-        else:
-            bins = np.linspace(self.x_min, self.x_max, nbins + 1)
-        self.widths = bins[1:] - bins[:-1]
-        self.xs = (bins[1:] + bins[:-1]) / 2
+            # Unpack scales
+            x_scale = split_text[3].split(": ")[1].strip()
 
-        # Get the number of chunks
-        chunks = node.chunks if node.chunks is not None else 1
+            # We need to wait for the data assignment thread to finish
+            self.assign_data_thread.join()
+            self.assign_data_thread = None
 
-        # If neither node is not chunked we can just read and grid the data
-        if chunks == 1:
-            # Get the data
-            with h5py.File(node.filepath, "r") as hdf:
-                data = hdf[node.path][...]
+            # If we got this far we're ready to go so force a redraw
+            get_app().invalidate()
 
-            # Compute the grid
-            self.hist, _ = np.histogram(data, bins=bins)
+            # Define the bins
+            if x_scale == "log":
+                bins = np.logspace(
+                    np.log10(self.x_min), np.log10(self.x_max), nbins + 1
+                )
+            else:
+                bins = np.linspace(self.x_min, self.x_max, nbins + 1)
+            self.widths = bins[1:] - bins[:-1]
+            self.xs = (bins[1:] + bins[:-1]) / 2
 
-        # Otherwise we need to read in the data chunk by chunk and add each
-        # chunks grid to the total grid
-        else:
-            # Initialise the grid
-            self.hist = np.zeros(nbins)
+            # Get the number of chunks
+            chunks = node.chunks if node.is_chunked else 1
 
-            # Compute the number of chunks in each dimension
-            n_chunks = [
-                int(np.ceil(s / c)) for s, c in zip(node.shape, node.chunks)
-            ]
+            # If neither node is not chunked we can just read and grid the data
+            if chunks == 1:
+                # Get the data
+                with h5py.File(node.filepath, "r") as hdf:
+                    data = hdf[node.path][...]
 
-            # Get the data
-            with h5py.File(node.filepath, "r") as hdf:
-                data = hdf[node.path]
+                # Compute the grid
+                self.hist, _ = np.histogram(data, bins=bins)
 
-                # Loop over the chunks
-                with ProgressBar(total=node.size, description="Hist") as pb:
-                    for chunk_index in np.ndindex(*n_chunks):
-                        # Get the current slice for each dimension
-                        slices = tuple(
-                            slice(
-                                c_idx * c_size,
-                                min((c_idx + 1) * c_size, s),
+            # Otherwise we need to read in the data chunk by chunk and add each
+            # chunks grid to the total grid
+            else:
+                # Initialise the grid
+                self.hist = np.zeros(nbins)
+
+                # Compute the number of chunks in each dimension
+                n_chunks = [
+                    int(np.ceil(s / c))
+                    for s, c in zip(node.shape, node.chunks)
+                ]
+
+                # Get the data
+                with h5py.File(node.filepath, "r") as hdf:
+                    data = hdf[node.path]
+
+                    # Loop over the chunks
+                    with ProgressBar(
+                        total=node.size, description="Hist"
+                    ) as pb:
+                        for chunk_index in np.ndindex(*n_chunks):
+                            # Get the current slice for each dimension
+                            slices = tuple(
+                                slice(
+                                    c_idx * c_size,
+                                    min((c_idx + 1) * c_size, s),
+                                )
+                                for c_idx, c_size, s in zip(
+                                    chunk_index, node.chunks, node.shape
+                                )
                             )
-                            for c_idx, c_size, s in zip(
-                                chunk_index, node.chunks, node.shape
+
+                            # Get the chunk
+                            chunk_data = data[slices]
+
+                            # Compute the grid for the chunk
+                            chunk_density, _ = np.histogram(
+                                chunk_data, bins=bins
                             )
-                        )
 
-                        # Get the chunk
-                        chunk_data = data[slices]
+                            # Add it to the total
+                            self.hist += chunk_density
 
-                        # Compute the grid for the chunk
-                        chunk_density, _ = np.histogram(chunk_data, bins=bins)
+                            pb.advance(step=chunk_data.size)
 
-                        # Add it to the total
-                        self.hist += chunk_density
+        self.compute_hist_thread = threading.Thread(target=run_in_thread)
+        self.compute_hist_thread.start()
 
-                        pb.advance(step=chunk_data.size)
+        return self.plot_text
 
-    def plot_hist(self, text):
+    @error_handler
+    def _plot(self, text):
         """
         Plot the histogram.
 
@@ -818,6 +887,10 @@ class HistogramPlotter(Plotter):
             text (str):
                 The text to extract the plot parameters from.
         """
+        # Don't move on until the histogram is computed
+        self.compute_hist_thread.join()
+        self.compute_hist_thread = None
+
         # Unpack the labels scales
         split_text = text.split("\n")
         x_label = split_text[2].split(": ")[1].strip()
@@ -827,7 +900,10 @@ class HistogramPlotter(Plotter):
         # Create the figure
         self.fig = plt.figure(figsize=(3.5, 3.5))
         self.ax = self.fig.add_subplot(111)
+
+        # Draw a grid and make sure its behind everything
         self.ax.grid(True)
+        self.ax.set_axisbelow(True)
 
         # Draw the bars
         self.ax.bar(self.xs, self.hist, width=self.widths)

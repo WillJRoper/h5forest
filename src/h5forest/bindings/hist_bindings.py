@@ -4,8 +4,6 @@ This module contains the function that defines the bindings for the histogram
 and attaches them to the application. It should not be used directly.
 """
 
-import threading
-
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import ConditionalContainer, VSplit
@@ -55,8 +53,8 @@ def _init_hist_bindings(app):
         app.input(split_line[0], edit_hist_entry_callback)
 
     @app.error_handler
-    def select_data(event):
-        """Select the data to sort into bins."""
+    def plot_hist(event):
+        """Plot the histogram."""
         # Get the node under the cursor
         node = app.tree.get_current_node(app.current_row)
 
@@ -68,88 +66,104 @@ def _init_hist_bindings(app):
         # Set the text in the plotting area
         app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
-        app.return_to_normal_mode()
-        app.default_focus()
+        # Compute the histogram
+        app.hist_content.text = app.histogram_plotter.compute_hist(
+            app.hist_content.text
+        )
 
-    @app.error_handler
-    def compute_hist(event):
-        """Compute the histogram."""
+        # Get the plot
+        app.histogram_plotter.plot_and_show(app.hist_content.text)
 
-        def run_in_thread():
-            """Make the plot."""
-            app.histogram_plotter.compute_hist(app.hist_content.text)
-
-        threading.Thread(target=run_in_thread, daemon=True).start()
-
-        app.return_to_normal_mode()
-        app.default_focus()
-
-    @app.error_handler
-    def plot_hist(event):
-        """Plot the histogram."""
-        app.histogram_plotter.plot_hist(app.hist_content.text)
-
-        app.histogram_plotter.show()
-
+        # Return to normal mode
         app.return_to_normal_mode()
         app.default_focus()
 
     @app.error_handler
     def save_hist(event):
         """Plot the histogram."""
-        app.histogram_plotter.plot_hist(app.hist_content.text)
+        # Get the node under the cursor
+        node = app.tree.get_current_node(app.current_row)
 
-        app.histogram_plotter.save()
+        # Exit if the node is not a Dataset
+        if node.is_group:
+            app.print(f"{node.path} is not a Dataset")
+            return
+
+        # Set the text in the plotting area
+        app.hist_content.text = app.histogram_plotter.set_data_key(node)
+
+        # Compute the histogram
+        app.hist_content.text = app.histogram_plotter.compute_hist(
+            app.hist_content.text
+        )
+
+        # Get the plot
+        app.histogram_plotter.plot_and_save(app.hist_content.text)
+
+        # Return to normal mode
+        app.return_to_normal_mode()
+        app.default_focus()
 
     @app.error_handler
     def reset_hist(event):
         """Reset the histogram content."""
         app.hist_content.text = app.histogram_plotter.reset()
+        app.return_to_normal_mode()
+        app.default_focus()
+
+    @app.error_handler
+    def edit_hist(event):
+        """Edit the histogram."""
+        app.shift_focus(app.hist_content)
+
+    def exit_edit_hist(event):
+        """Exit the edit mode."""
+        app.shift_focus(app.tree_content)
 
     # Bind the functions
-    app.kb.add("enter", filter=Condition(lambda: app.flag_hist_mode))(
-        edit_hist_entry
-    )
-    app.kb.add("d", filter=Condition(lambda: app.flag_hist_mode))(select_data)
-    app.kb.add("h", filter=Condition(lambda: app.flag_hist_mode))(compute_hist)
-    app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(plot_hist)
-    app.kb.add("c-h", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
+    app.kb.add(
+        "enter",
+        filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
+    )(edit_hist_entry)
+    app.kb.add("h", filter=Condition(lambda: app.flag_hist_mode))(plot_hist)
+    app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
     app.kb.add("r", filter=Condition(lambda: app.flag_hist_mode))(reset_hist)
+    app.kb.add(
+        "e",
+        filter=Condition(
+            lambda: app.flag_hist_mode
+            and len(app.histogram_plotter.plot_params) > 0
+        ),
+    )(edit_hist)
+    app.kb.add(
+        "q",
+        filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
+    )(edit_hist)
 
     # Add the hot keys
     hot_keys = VSplit(
         [
             ConditionalContainer(
+                Label("e → Edit Config"),
+                Condition(lambda: len(app.histogram_plotter.plot_params) > 0),
+            ),
+            ConditionalContainer(
                 Label("Enter → Edit entry"),
                 Condition(lambda: app.app.layout.has_focus(app.hist_content)),
             ),
-            ConditionalContainer(
-                Label("d → Select data"),
-                filter=Condition(
-                    lambda: "data" not in app.histogram_plotter.plot_params
-                ),
-            ),
-            ConditionalContainer(
-                Label("h → Compute Histogram"),
-                filter=Condition(
-                    lambda: "data" in app.histogram_plotter.plot_params
-                    and app.histogram_plotter.hist is None
-                ),
-            ),
-            ConditionalContainer(
-                Label("H → Show Histogram"),
-                filter=Condition(
-                    lambda: app.histogram_plotter.hist is not None
-                ),
-            ),
-            ConditionalContainer(
-                Label("CTRL-h → Save Histogram"),
-                filter=Condition(
-                    lambda: app.histogram_plotter.hist is not None
-                ),
-            ),
+            Label("h → Show Histogram"),
+            Label("H → Save Histogram"),
             Label("r → Reset"),
-            Label("q → Exit Hist Mode"),
+            ConditionalContainer(
+                Label("q → Exit Hist Mode"),
+                Condition(
+                    lambda: not app.app.layout.has_focus(app.hist_content)
+                ),
+            ),
+            ConditionalContainer(
+                Label("q → Exit Config"),
+                Condition(lambda: app.app.layout.has_focus(app.hist_content)),
+            ),
         ]
     )
 
