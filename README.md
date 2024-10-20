@@ -14,7 +14,6 @@ Well, `h5forest` brings interactivity and functionality not available in its lon
 The following features will be coming soon:
 - A search function.
 - Renaming of Datasets and Groups.
-- An emacs plugin to probe HDF5 natively in emacs.
 
 ![SCR-20240217-pnoi](https://github.com/WillJRoper/h5forest/assets/40025495/365a9a54-95ce-4642-8e60-b3c176b40201)
 
