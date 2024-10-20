@@ -155,11 +155,8 @@ class Node:
             self.datatype = str(obj.dtype)
             self.compression = obj.compression
             self.compression_opts = obj.compression_opts
-            self.chunks = obj.chunks
-            if obj.chunks is not None:
-                self.is_chunked = obj.chunks != obj.shape
-            else:
-                self.is_chunked = False
+            self.chunks = obj.chunks if obj.chunks is not None else obj.shape
+            self.is_chunked = obj.chunks != obj.shape
             self.fillvalue = obj.fillvalue
             self.nbytes = obj.nbytes
             self.ndim = obj.ndim
@@ -282,7 +279,7 @@ class Node:
                 text += f"Compressed Memory:  {self.nbytes / 10**9} GB\n"
             text += f"Compression:        {self.compression}\n"
             text += f"Compression_opts:   {self.compression_opts}\n"
-            if self.chunks is not None:
+            if self.chunks != self.shape:
                 text += f"Chunks:             {self.chunks}\n"
             if self.fillvalue is not None:
                 text += f"Fillvalue:          {self.fillvalue}\n"
