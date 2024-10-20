@@ -100,10 +100,6 @@ def _init_hist_bindings(app):
         # Get the plot
         app.histogram_plotter.plot_and_show(app.hist_content.text)
 
-        # Return to normal mode
-        app.return_to_normal_mode()
-        app.default_focus()
-
     @app.error_handler
     def save_hist(event):
         """Plot the histogram."""
