@@ -496,7 +496,9 @@ class H5Forest:
             self.tree_content,
             title="HDF5 File Tree",
         )
-        self.metadata_frame = Frame(self.metadata_content, title="Metadata", height=10)
+        self.metadata_frame = Frame(
+            self.metadata_content, title="Metadata", height=10
+        )
         self.attrs_frame = Frame(self.attributes_content, title="Attributes")
         self.values_frame = Frame(
             self.values_content,
@@ -568,7 +570,8 @@ class H5Forest:
         self.plot_frame = ConditionalContainer(
             Frame(self.plot_content, title="Plotting", height=10),
             filter=Condition(
-                lambda: self.flag_plotting_mode or len(self.density_plotter) > 0
+                lambda: self.flag_plotting_mode
+                or len(self.density_plotter) > 0
             ),
         )
 

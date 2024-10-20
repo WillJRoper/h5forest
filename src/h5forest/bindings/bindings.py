@@ -5,6 +5,7 @@ always active and are not dependent on any leader key. The functions in this
 module should not be called directly, but are intended to be used by the main
 application.
 """
+
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 

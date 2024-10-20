@@ -11,6 +11,7 @@ Example usage:
         for i in range(100):
             bar.advance()
 """
+
 from h5forest.utils import get_window_size
 
 
