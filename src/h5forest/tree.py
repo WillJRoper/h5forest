@@ -10,6 +10,8 @@ Example usage:
     print(tree.get_tree_text())
 """
 
+import threading
+
 import h5py
 from prompt_toolkit.layout.processors import Processor, Transformation
 
@@ -95,6 +97,12 @@ class Tree:
         # Store the previous node under the cursor (we need some memory for
         # correct highlighting)
         self.prev_node = self.root
+
+        # We'll collect a list of all the nodes in the background to
+        # faciliate searches
+        self.unpack_thread = None  # we'll do the unpacking on this thread
+        self.all_node_paths = []
+        self.get_all_paths()
 
     @property
     def length(self):
@@ -289,3 +297,39 @@ class Tree:
         self.prev_node = new_node
 
         return new_node
+
+    def get_all_paths(self):
+        """Collect all the paths in the HDF5 file."""
+
+        def run_in_thread():
+            with h5py.File(self.filepath, "r") as hdf:
+
+                def visitor(name, obj):
+                    self.all_node_paths.append(name)
+
+                hdf.visititems(visitor)
+
+        self.unpack_thread = threading.Thread(target=run_in_thread)
+        self.unpack_thread.start()
+
+        # We'll join this thread in the search function (search_tree)
+        # to ensure we have all the paths before we start searching without
+        # holding things up here
+
+    def search_tree(self):
+        """Search the HDF5 file for the user input."""
+        from h5forest import H5Forest as app
+
+        # Wait for the unpack thread to finish
+        self.unpack_thread.join()
+
+        def search_callback():
+            """Search the HDF5 file for the user input."""
+            pass
+
+        # Get the user input
+        search_str = app.input("Search for:", search_callback)
+
+        # Check if the search string is empty
+        if not search_str:
+            return
