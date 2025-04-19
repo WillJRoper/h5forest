@@ -146,6 +146,7 @@ class H5Forest:
         self.flag_values_visible = False
         self.flag_progress_bar = False
         self.flag_expanded_attrs = False
+        self.flag_searching = False
 
         # Define the leader key mode flags
         # NOTE: These must be unset when the leader mode is exited, and in
@@ -451,6 +452,16 @@ class H5Forest:
             read_only=True,
         )
 
+        # A buffer that will be used for searching
+        self.search_content = TextArea(
+            text="",
+            scrollbar=False,
+            focusable=True,
+            read_only=False,
+            height=1,
+            multiline=False,
+        )
+
         self.plot_content = TextArea(
             text=self.scatter_plotter.default_plot_text,
             scrollbar=True,
@@ -571,13 +582,21 @@ class H5Forest:
             self.mini_buffer_content,
             height=3,
         )
-        self.input_buffer = Frame(
-            self.input_buffer_content,
-            height=3,
-        )
         self.input_buffer = ConditionalContainer(
-            self.input_buffer,
+            Frame(
+                self.input_buffer_content,
+                height=3,
+            ),
             filter=Condition(lambda: len(self.input_buffer_content.text) > 0),
+        )
+
+        # Search buffer
+        self.search_buffer = ConditionalContainer(
+            Frame(
+                self.search_content,
+                height=3,
+            ),
+            filter=Condition(lambda: self.flag_searching),
         )
 
         # Wrap those frames that need it in conditional containers
@@ -655,7 +674,13 @@ class H5Forest:
             Frame(self.progress_bar_content, height=3),
             filter=Condition(lambda: self.flag_progress_bar),
         )
-        buffers = HSplit([self.input_buffer, self.mini_buffer])
+        buffers = HSplit(
+            [
+                self.input_buffer,
+                self.mini_buffer,
+                self.search_buffer,
+            ]
+        )
 
         # Layout using split views
         self.layout = Layout(
