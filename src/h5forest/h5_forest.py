@@ -214,7 +214,7 @@ class H5Forest:
             layout=self.layout,
             key_bindings=self.kb,
             full_screen=True,
-            mouse_support=True,
+            mouse_support=False,
             style=style,
         )
 
