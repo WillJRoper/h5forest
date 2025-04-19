@@ -67,6 +67,15 @@ def _init_app_bindings(app):
         app.flag_expanded_attrs = False
         event.app.invalidate()
 
+    def search_leader_mode(event):
+        """Enter search mode."""
+        app._flag_normal_mode = False
+        app._flag_search_mode = True
+        app.search_content.text = ""
+        app.search_content.buffer.cursor_position = 0
+        app.shift_focus(app.search_content)
+        event.app.invalidate()
+
     # Bind the functions
     app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
     app.kb.add("c-q")(exit_app)
@@ -101,6 +110,15 @@ def _init_app_bindings(app):
         ),
     )(collapse_attributes)
 
+    # Only including the search if the tree has focus
+    app.kb.add(
+        "s",
+        filter=Condition(
+            lambda: app.flag_normal_mode
+            and app.app.layout.has_focus(app.tree_content.content)
+        ),
+    )(search_leader_mode)
+
     # Add the hot keys
     hot_keys = [
         ConditionalContainer(
@@ -116,6 +134,12 @@ def _init_app_bindings(app):
         Label("j → Jump Mode"),
         Label("p → Plotting Mode"),
         Label("w → Window Mode"),
+        ConditionalContainer(
+            Label("s → Search"),
+            filter=Condition(
+                lambda: app.app.layout.has_focus(app.tree_content.content)
+            ),
+        ),
         Label("q → Exit"),
     ]
 
