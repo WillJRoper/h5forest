@@ -51,8 +51,8 @@ HDF5 files are organized hierarchically:
 ```
 ↑/k    Move up one line
 ↓/j    Move down one line  
-←/h    Move left (no effect in tree)
-→/l    Move right (no effect in tree)
+←/h    Move left
+→/l    Move right
 ```
 
 **Fast Movement**:

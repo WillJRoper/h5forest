@@ -7,7 +7,7 @@ h5forest uses a modal interface system inspired by Vim, where different keyboard
 The interface has six primary modes:
 
 1. **Normal Mode** - Default navigation and basic operations
-2. **Jump Mode** - Quick navigation commands
+2. **Goto Mode** - Quick navigation commands
 3. **Dataset Mode** - Data analysis and statistics
 4. **Window Mode** - Panel and focus management
 5. **Plotting Mode** - Scatter plot creation
@@ -21,11 +21,11 @@ From Normal Mode, press the following keys to enter other modes:
 
 | Key | Mode | Purpose |
 |-----|------|---------|
-| **`j`** | Jump Mode | Quick navigation |
+| **`g`** | Goto Mode | Quick navigation |
 | **`d`** | Dataset Mode | Data analysis |
 | **`w`** | Window Mode | Window management |
 | **`p`** | Plotting Mode | Create scatter plots |
-| **`h`** | Histogram Mode | Generate histograms |
+| **`H`** | Histogram Mode | Generate histograms |
 
 ### Exiting Modes
 
@@ -57,10 +57,10 @@ These commands work in all modes:
 - Basic file exploration
 - Mode switching hub
 
-### Jump Mode
+### Goto Mode
 - Fast tree navigation
-- Jump to specific locations
-- Search functionality (future feature)
+- Go to specific locations
+- Search functionality
 
 ### Dataset Mode  
 - Value inspection

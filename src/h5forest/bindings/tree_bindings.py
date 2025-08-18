@@ -7,6 +7,8 @@ the application.
 
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
+from prompt_toolkit.key_binding.key_processor import KeyPress
+from prompt_toolkit.keys import Keys
 from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
 
@@ -29,6 +31,26 @@ def _init_tree_bindings(app):
     def move_down_ten(event):
         """Move down ten lines."""
         app.tree_buffer.cursor_down(10)
+
+    @error_handler
+    def move_left(event):
+        """Move cursor left (vim h) - works app-wide."""
+        event.app.key_processor.feed(KeyPress(Keys.Left))
+
+    @error_handler
+    def move_down(event):
+        """Move cursor down (vim j) - works app-wide."""
+        event.app.key_processor.feed(KeyPress(Keys.Down))
+
+    @error_handler
+    def move_up(event):
+        """Move cursor up (vim k) - works app-wide."""
+        event.app.key_processor.feed(KeyPress(Keys.Up))
+
+    @error_handler
+    def move_right(event):
+        """Move cursor right (vim l) - works app-wide."""
+        event.app.key_processor.feed(KeyPress(Keys.Right))
 
     @error_handler
     def expand_collapse_node(event):
@@ -86,6 +108,12 @@ def _init_tree_bindings(app):
         "enter",
         filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
     )(expand_collapse_node)
+
+    # Add vim-style navigation (hjkl) - these work app-wide
+    app.kb.add("h")(move_left)
+    app.kb.add("j")(move_down)
+    app.kb.add("k")(move_up)
+    app.kb.add("l")(move_right)
 
     # Add hot keys
     hot_keys = [
