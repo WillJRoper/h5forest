@@ -31,6 +31,11 @@ dependencies = [
 # Add special dependencies for development
 [project.optional-dependencies]
 dev = ["ruff", ]
+docs = [
+  "mkdocs>=1.5.0",
+  "mkdocs-material>=9.0.0",
+  "mkdocs-material[imaging]",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/WillJRoper/h5forest"

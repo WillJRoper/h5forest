@@ -1,0 +1,93 @@
+site_name: h5forest Documentation
+site_description: A Text-based User Interface (TUI) for exploring HDF5 files
+site_author: Will Roper
+site_url: https://willjroper.github.io/h5forest
+
+repo_name: WillJRoper/h5forest
+repo_url: https://github.com/WillJRoper/h5forest
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: green
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.keys
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+
+plugins:
+  - search
+  - social
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: installation.md
+    - Quick Start: quickstart.md
+    - Basic Usage: usage.md
+  - Mode Reference:
+    - Overview: modes/overview.md
+    - Normal Mode: modes/normal.md
+    - Jump Mode: modes/jump.md
+    - Dataset Mode: modes/dataset.md
+    - Window Mode: modes/window.md
+    - Plotting Mode: modes/plotting.md
+    - Histogram Mode: modes/histogram.md
+  - Examples:
+    - Basic Navigation: examples/navigation.md
+    - Data Analysis: examples/analysis.md
+    - Visualization: examples/visualization.md
+  - FAQ: faq.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/WillJRoper/h5forest
