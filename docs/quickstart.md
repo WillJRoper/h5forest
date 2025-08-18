@@ -103,10 +103,10 @@ h5forest uses a modal interface. The available modes are:
 |-----|------|---------|
 | **Default** | Normal Mode | Basic navigation |
 | **`d`** | Dataset Mode | Data analysis |
-| **`j`** | Jump Mode | Quick navigation |
+| **`g`** | Goto Mode | Quick navigation |
 | **`w`** | Window Mode | Panel management |
 | **`p`** | Plotting Mode | Create scatter plots |
-| **`h`** | Histogram Mode | Generate histograms |
+| **`H`** | Histogram Mode | Generate histograms |
 
 Each mode shows different hotkeys at the bottom of the screen.
 
@@ -122,10 +122,10 @@ Each mode shows different hotkeys at the bottom of the screen.
 ### Mode Switching
 
 - **`d`** - Dataset analysis mode
-- **`j`** - Jump navigation mode  
+- **`g`** - Goto navigation mode  
 - **`w`** - Window management mode
 - **`p`** - Plotting mode
-- **`h`** - Histogram mode
+- **`H`** - Histogram mode
 
 ### Dataset Mode
 
