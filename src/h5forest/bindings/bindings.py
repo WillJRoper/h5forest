@@ -25,8 +25,8 @@ def _init_app_bindings(app):
         """Exit the app."""
         event.app.exit()
 
-    def jump_leader_mode(event):
-        """Enter jump mode."""
+    def goto_leader_mode(event):
+        """Enter goto mode."""
         app._flag_normal_mode = False
         app._flag_jump_mode = True
 
@@ -70,8 +70,8 @@ def _init_app_bindings(app):
     # Bind the functions
     app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
     app.kb.add("c-q")(exit_app)
-    app.kb.add("j", filter=Condition(lambda: app.flag_normal_mode))(
-        jump_leader_mode
+    app.kb.add("g", filter=Condition(lambda: app.flag_normal_mode))(
+        goto_leader_mode
     )
     app.kb.add("d", filter=Condition(lambda: app.flag_normal_mode))(
         dataset_leader_mode
@@ -82,7 +82,7 @@ def _init_app_bindings(app):
     app.kb.add("p", filter=Condition(lambda: app.flag_normal_mode))(
         plotting_leader_mode
     )
-    app.kb.add("h", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add("H", filter=Condition(lambda: app.flag_normal_mode))(
         hist_leader_mode
     )
     app.kb.add("q", filter=Condition(lambda: not app.flag_normal_mode))(
@@ -112,8 +112,8 @@ def _init_app_bindings(app):
             filter=Condition(lambda: app.flag_expanded_attrs),
         ),
         Label("d → Dataset Mode"),
-        Label("h → Hist Mode"),
-        Label("j → Jump Mode"),
+        Label("g → Goto Mode"),
+        Label("H → Histogram Mode"),
         Label("p → Plotting Mode"),
         Label("w → Window Mode"),
         Label("q → Exit"),

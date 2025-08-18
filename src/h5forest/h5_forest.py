@@ -28,8 +28,8 @@ from h5forest._version import __version__
 from h5forest.bindings import (
     _init_app_bindings,
     _init_dataset_bindings,
+    _init_goto_bindings,
     _init_hist_bindings,
-    _init_jump_bindings,
     _init_plot_bindings,
     _init_tree_bindings,
     _init_window_bindings,
@@ -167,7 +167,7 @@ class H5Forest:
 
         # Set up the rest of the keybindings and attach hot keys
         self.dataset_keys = _init_dataset_bindings(self)
-        self.jump_keys = _init_jump_bindings(self)
+        self.goto_keys = _init_goto_bindings(self)
         self.window_keys = _init_window_bindings(self)
         self.plot_keys = _init_plot_bindings(self)
         self.hist_keys = _init_hist_bindings(self)
@@ -594,7 +594,7 @@ class H5Forest:
                     filter=Condition(lambda: self.flag_normal_mode),
                 ),
                 ConditionalContainer(
-                    content=self.jump_keys,
+                    content=self.goto_keys,
                     filter=Condition(lambda: self.flag_jump_mode),
                 ),
                 ConditionalContainer(
