@@ -4,7 +4,7 @@ h5forest uses a modal interface system inspired by Vim, where different keyboard
 
 ## Modal Interface Concept
 
-The interface has six primary modes:
+The interface has seven primary modes:
 
 1. **Normal Mode** - Default navigation and basic operations
 2. **Goto Mode** - Quick navigation commands
@@ -12,6 +12,7 @@ The interface has six primary modes:
 4. **Window Mode** - Panel and focus management
 5. **Plotting Mode** - Scatter plot creation
 6. **Histogram Mode** - Histogram generation
+7. **Edit Mode** - Rename groups and datasets
 
 ## Mode Switching
 
@@ -26,6 +27,7 @@ From Normal Mode, press the following keys to enter other modes:
 | **`w`** | Window Mode | Window management |
 | **`p`** | Plotting Mode | Create scatter plots |
 | **`H`** | Histogram Mode | Generate histograms |
+| **`e`** | Edit Mode | Rename groups and datasets |
 
 ### Exiting Modes
 
@@ -80,6 +82,11 @@ These commands work in all modes:
 - Distribution analysis
 - Statistical visualization
 - Configuration options
+
+### Edit Mode
+- Rename groups and datasets
+- Safe rename operations with confirmation
+- Progress tracking for large operations
 
 ## Workflow Integration
 
@@ -147,10 +154,11 @@ Some mode features are only available when relevant:
 Explore the detailed documentation for each mode:
 
 - [Normal Mode](normal.md) - Basic navigation and control
-- [Jump Mode](jump.md) - Quick navigation features  
+- [Goto Mode](goto.md) - Quick navigation features  
 - [Dataset Mode](dataset.md) - Data analysis tools
 - [Window Mode](window.md) - Interface management
 - [Plotting Mode](plotting.md) - Scatter plot creation
 - [Histogram Mode](histogram.md) - Distribution analysis
+- [Edit Mode](edit.md) - Rename groups and datasets
 
 Each mode page includes comprehensive keyboard reference tables and usage examples.

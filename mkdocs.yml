@@ -81,6 +81,7 @@ nav:
     - Window Mode: modes/window.md
     - Plotting Mode: modes/plotting.md
     - Histogram Mode: modes/histogram.md
+    - Edit Mode: modes/edit.md
   - Examples:
     - Basic Navigation: examples/navigation.md
     - Data Analysis: examples/analysis.md

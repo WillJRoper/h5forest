@@ -107,6 +107,7 @@ h5forest uses a modal interface. The available modes are:
 | **`w`** | Window Mode | Panel management |
 | **`p`** | Plotting Mode | Create scatter plots |
 | **`H`** | Histogram Mode | Generate histograms |
+| **`e`** | Edit Mode | Rename groups and datasets |
 
 Each mode shows different hotkeys at the bottom of the screen.
 
@@ -126,6 +127,7 @@ Each mode shows different hotkeys at the bottom of the screen.
 - **`w`** - Window management mode
 - **`p`** - Plotting mode
 - **`H`** - Histogram mode
+- **`e`** - Edit mode
 
 ### Dataset Mode
 
