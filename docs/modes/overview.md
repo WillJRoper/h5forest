@@ -1,10 +1,8 @@
 # Mode Overview
 
-h5forest uses a modal interface system inspired by Vim, where different keyboard shortcuts are active depending on the current mode. This design allows for efficient, context-specific interactions with your HDF5 files.
+h5forest uses a modal interface system inspired by Vim (yes, we know, everyone either loves it or thinks it's an elaborate prank from the 1970s). Different keyboard shortcuts are active depending on the current mode, because apparently regular menus weren't cool enough.
 
-## Modal Interface Concept
-
-The interface has seven primary modes:
+## Available Modes
 
 1. **Normal Mode** - Default navigation and basic operations
 2. **Goto Mode** - Quick navigation commands
@@ -20,14 +18,14 @@ The interface has seven primary modes:
 
 From Normal Mode, press the following keys to enter other modes:
 
-| Key | Mode | Purpose |
-|-----|------|---------|
-| **`g`** | Goto Mode | Quick navigation |
-| **`d`** | Dataset Mode | Data analysis |
-| **`w`** | Window Mode | Window management |
-| **`p`** | Plotting Mode | Create scatter plots |
-| **`H`** | Histogram Mode | Generate histograms |
-| **`e`** | Edit Mode | Rename groups and datasets |
+| Key     | Mode           | Purpose                    |
+| ------- | -------------- | -------------------------- |
+| **`g`** | Goto Mode      | Quick navigation           |
+| **`d`** | Dataset Mode   | Data analysis              |
+| **`w`** | Window Mode    | Window management          |
+| **`p`** | Plotting Mode  | Create scatter plots       |
+| **`H`** | Histogram Mode | Generate histograms        |
+| **`e`** | Edit Mode      | Rename groups and datasets |
 
 ### Exiting Modes
 
@@ -47,114 +45,28 @@ The current mode is indicated by:
 
 These commands work in all modes:
 
-| Key | Action |
-|-----|--------|
-| **`Ctrl+Q`** | Force quit application |
+| Key            | Action                     |
+| -------------- | -------------------------- |
+| **`Ctrl+Q`**   | Force quit application     |
 | **Arrow Keys** | Navigate (when applicable) |
 
-## Mode-Specific Features
+## Mode Summary
 
-### Normal Mode
-- Tree navigation and expansion
-- Basic file exploration
-- Mode switching hub
-
-### Goto Mode
-- Fast tree navigation
-- Go to specific locations
-- Search functionality
-
-### Dataset Mode  
-- Value inspection
-- Statistical analysis
-- Data validation
-
-### Window Mode
-- Panel focus management
-- Interface customization
-
-### Plotting Mode
-- Axis selection for scatter plots
-- Plot configuration
-- Data visualization
-
-### Histogram Mode
-- Distribution analysis
-- Statistical visualization
-- Configuration options
-
-### Edit Mode
-- Rename groups and datasets
-- Safe rename operations with confirmation
-- Progress tracking for large operations
-
-## Workflow Integration
-
-The modal system supports natural workflows:
-
-### Exploration Workflow
-```
-Normal Mode → Navigate tree
-     ↓
-Dataset Mode → Analyze data
-     ↓  
-Plotting Mode → Visualize relationships
-```
-
-### Analysis Workflow
-```
-Normal Mode → Find datasets
-     ↓
-Dataset Mode → Check statistics
-     ↓
-Jump Mode → Navigate to related data
-     ↓
-Dataset Mode → Compare values
-```
-
-## Context-Sensitive Help
-
-Each mode displays relevant keyboard shortcuts in the hotkey panel at the bottom of the screen. This provides just-in-time help without cluttering the interface.
-
-## Best Practices
-
-### Efficient Mode Usage
-
-1. **Stay in Normal Mode** for general navigation
-2. **Enter Dataset Mode** when you need to analyze data
-3. **Use Jump Mode** for quick navigation in large files
-4. **Switch to Window Mode** to adjust panel focus
-5. **Use Plotting/Histogram Modes** for visualization
-
-### Keyboard Efficiency
-
-- Learn the mode-switching keys (**`j`**, **`d`**, **`w`**, **`p`**, **`h`**)
-- Use **`q`** to quickly exit modes
-- Watch the hotkey display for available actions
-- Practice common workflows to build muscle memory
-
-## Advanced Features
-
-### Mode State Persistence
-
-Some modes remember your settings:
-- Plotting mode retains axis selections
-- Histogram mode keeps configuration options
-- Window mode remembers panel preferences
-
-### Contextual Availability
-
-Some mode features are only available when relevant:
-- Dataset-specific actions require a dataset to be selected
-- Plotting requires numeric datasets
-- Statistics calculations adapt to data types
+| Mode          | Key       | Purpose       | Main Features                    |
+| ------------- | --------- | ------------- | -------------------------------- |
+| **Normal**    | (default) | Navigation    | Tree traversal, file exploration |
+| **Goto**      | `g`       | Quick nav     | Fast tree navigation, search     |
+| **Dataset**   | `d`       | Data analysis | Value inspection, statistics     |
+| **Window**    | `w`       | UI control    | Panel focus, layout              |
+| **Plotting**  | `p`       | Visualization | Scatter plots                    |
+| **Histogram** | `H`       | Distribution  | Statistical plots                |
 
 ## Next Steps
 
 Explore the detailed documentation for each mode:
 
 - [Normal Mode](normal.md) - Basic navigation and control
-- [Goto Mode](goto.md) - Quick navigation features  
+- [Goto Mode](jump.md) - Quick navigation features
 - [Dataset Mode](dataset.md) - Data analysis tools
 - [Window Mode](window.md) - Interface management
 - [Plotting Mode](plotting.md) - Scatter plot creation

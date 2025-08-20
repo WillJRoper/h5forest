@@ -1,10 +1,10 @@
-# Jump Mode
+# Goto Mode
 
-Jump Mode provides quick navigation commands for efficiently moving around large HDF5 file hierarchies. It's designed for rapid repositioning within the tree structure.
+Goto Mode is for when you're lost in a labyrinthine HDF5 file and need to teleport around like some kind of data wizard. Because walking through every level like a peasant is so last century.
 
 ## Purpose
 
-Jump Mode is designed for:
+Goto Mode is designed for:
 - Quick navigation to specific locations in the tree
 - Rapid movement between related datasets
 - Efficient exploration of large, complex file structures
@@ -14,16 +14,16 @@ Jump Mode is designed for:
 
 | Key | Action | Description |
 |-----|--------|-------------|
-| **`t`** | Jump to Top | Move cursor to the root of the tree |
-| **`b`** | Jump to Bottom | Move cursor to the last item in the tree |
+| **`t`** / **`g`** | Jump to Top | Move cursor to the root of the tree |
+| **`b`** / **`G`** | Jump to Bottom | Move cursor to the last item in the tree |
 | **`p`** | Jump to Parent | Move cursor to parent of current item |
 | **`n`** | Jump to Next Sibling | Move to next item at same hierarchical level |
-| **`k`** | Jump to Key | Jump to next item containing specified text |
-| **`q`** | Exit Jump Mode | Return to Normal Mode |
+| **`K`** | Jump to Key | Jump to next item containing specified text |
+| **`q`** | Exit Goto Mode | Return to Normal Mode |
 
-## Entering Jump Mode
+## Entering Goto Mode
 
-From Normal Mode, press **`j`** to enter Jump Mode. The hotkey display will update to show Jump Mode commands.
+From Normal Mode, press **`g`** to enter Goto Mode. The hotkey display will update to show Goto Mode commands.
 
 ## Navigation Commands
 
@@ -72,14 +72,14 @@ Pressing **`n`** moves from `particles/` to `metadata/`.
 
 ### Search Navigation
 
-**Jump to Key** (**`k`**)
+**Jump to Key** (**`K`**)
 - Prompts for text input
 - Moves to the next item whose name contains the specified text
 - Case-insensitive search
 - Continues from current position
 
 Usage:
-1. Press **`k`**
+1. Press **`K`**
 2. Enter search text (e.g., "coord")
 3. Press Enter
 4. Cursor moves to next item containing "coord" in its name
@@ -93,7 +93,7 @@ Usage:
 When deep in a hierarchy:
 ```bash
 # Current position: /simulation/particles/type1/coordinates
-# Press 'j' to enter Jump Mode
+# Press 'g' to enter Goto Mode
 # Press 't' to jump to root
 # Now at: / (root)
 ```
@@ -102,7 +102,7 @@ When deep in a hierarchy:
 When examining similar datasets across different groups:
 ```bash
 # At: /simulation/particles/positions
-# Press 'j' then 'p' to go to /simulation/particles/
+# Press 'g' then 'p' to go to /simulation/particles/
 # Press 'n' to go to /simulation/forces/
 # Navigate down to /simulation/forces/positions
 ```
@@ -111,7 +111,7 @@ When examining similar datasets across different groups:
 When looking for datasets with similar names:
 ```bash
 # Looking for all "coordinates" datasets
-# Press 'j' then 'k'
+# Press 'g' then 'K'
 # Type "coord" and press Enter
 # Jumps to next dataset containing "coord"
 # Repeat as needed
@@ -120,12 +120,12 @@ When looking for datasets with similar names:
 ## Workflow Integration
 
 ### Large File Exploration
-Jump Mode is particularly useful for large files:
+Goto Mode is particularly useful for large files:
 
 1. **Orient yourself**: Use **`t`** to return to root
 2. **Survey structure**: Navigate between major groups with **`n`**  
 3. **Deep dive**: Use **`p`** to move back up when needed
-4. **Find datasets**: Use **`k`** to locate specific items
+4. **Find datasets**: Use **`K`** to locate specific items
 
 ### Comparative Analysis
 When comparing related datasets:
@@ -133,8 +133,8 @@ When comparing related datasets:
 1. Navigate to first dataset in Normal Mode
 2. Enter Dataset Mode (**`d`**) to analyze
 3. Return to Normal Mode (**`q`**)
-4. Enter Jump Mode (**`j`**)
-5. Use **`k`** or **`n`** to find related dataset
+4. Enter Goto Mode (**`g`**)
+5. Use **`K`** or **`n`** to find related dataset
 6. Repeat analysis
 
 ### File Structure Documentation
@@ -174,12 +174,12 @@ Jump Mode commands work with the currently loaded tree structure:
 
 ## Integration with Other Modes
 
-### From Jump Mode
+### From Goto Mode
 - **`q`**: Return to Normal Mode
 - Can enter Dataset Mode (**`d`**) after positioning cursor
 
-### To Jump Mode  
-- Available from Normal Mode with **`j`**
+### To Goto Mode  
+- Available from Normal Mode with **`g`**
 - Preserves current cursor position
 - Returns to exact same position when exiting
 
@@ -188,16 +188,16 @@ Jump Mode commands work with the currently loaded tree structure:
 ### Quick Dataset Access
 ```
 Normal Mode → Navigate to general area
-Jump Mode → Use 'k' to find specific dataset
+Goto Mode → Use 'K' to find specific dataset
 Normal Mode → Select dataset
 Dataset Mode → Analyze data
 ```
 
 ### Structure Exploration
 ```
-Jump Mode → 't' (go to root)
+Goto Mode → 't' (go to root)
 Normal Mode → Expand major groups
-Jump Mode → 'n' (tour top-level groups)
+Goto Mode → 'n' (tour top-level groups)
 Normal Mode → Dive into interesting areas
 ```
 
@@ -205,7 +205,7 @@ Normal Mode → Dive into interesting areas
 ```
 Normal Mode → Find first dataset
 Dataset Mode → Get statistics
-Jump Mode → 'k' (find similar dataset)
+Goto Mode → 'K' (find similar dataset)
 Dataset Mode → Compare statistics
 ```
 
@@ -225,11 +225,11 @@ Dataset Mode → Compare statistics
 
 ## Next Steps
 
-Jump Mode integrates seamlessly with other modes:
+Goto Mode integrates seamlessly with other modes:
 
 - Return to [Normal Mode](normal.md) for detailed navigation
 - Enter [Dataset Mode](dataset.md) after positioning cursor on datasets
 - Use [Window Mode](window.md) to adjust interface focus
 - Switch to [Plotting Mode](plotting.md) or [Histogram Mode](histogram.md) for visualization
 
-The combination of Jump Mode's quick positioning with other modes' specialized tools creates efficient exploration workflows.
+The combination of Goto Mode's quick positioning with other modes' specialized tools creates efficient exploration workflows.

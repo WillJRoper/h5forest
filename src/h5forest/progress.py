@@ -70,7 +70,7 @@ class ProgressBar:
 
         # Define the text that'll appear at the end
         back = (
-            f"{self.current_step/self.total_steps * 100:.2f}% "
+            f"{self.current_step / self.total_steps * 100:.2f}% "
             f"({self.current_step}/{self.total_steps})"
             f" [{self.description}]"
         )
