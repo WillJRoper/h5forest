@@ -76,7 +76,7 @@ nav:
   - Mode Reference:
     - Overview: modes/overview.md
     - Normal Mode: modes/normal.md
-    - Jump Mode: modes/jump.md
+    - Goto Mode: modes/jump.md
     - Dataset Mode: modes/dataset.md
     - Window Mode: modes/window.md
     - Plotting Mode: modes/plotting.md
@@ -85,6 +85,9 @@ nav:
     - Basic Navigation: examples/navigation.md
     - Data Analysis: examples/analysis.md
     - Visualization: examples/visualization.md
+  - Development:
+    - Testing Guide: testing.md
+    - Contributing: contributing.md
   - FAQ: faq.md
 
 extra:
