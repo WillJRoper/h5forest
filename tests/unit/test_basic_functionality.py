@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from unittest.mock import patch
 
 import h5py
 import numpy as np
@@ -102,15 +103,29 @@ class TestBasicClassCreation:
         assert hasattr(tree, "root")
         assert hasattr(tree, "nodes_by_row")
 
-    @pytest.mark.skip(
-        reason="H5Forest requires terminal for initialization - "
-        "needs deeper mocking"
-    )
-    def test_h5forest_singleton_creation(self, simple_h5_file):
+    @patch("h5forest.h5_forest.get_window_size")
+    def test_h5forest_singleton_creation(
+        self, mock_get_window_size, simple_h5_file
+    ):
         """Test H5Forest singleton can be created."""
-        # This test would need more complex mocking to work in CI environment
-        # The H5Forest class tries to get terminal size during initialization
-        pass
+        # Mock terminal size to avoid terminal dependency
+        mock_get_window_size.return_value = (24, 80)
+
+        # Import here to avoid issues with earlier imports
+        from h5forest.h5_forest import H5Forest
+
+        # Create instance (singleton) - requires file path
+        forest1 = H5Forest(simple_h5_file)
+        forest2 = H5Forest(simple_h5_file)
+
+        # Should be same instance (singleton pattern)
+        assert forest1 is forest2
+
+        # Should have the tree with file path set
+        assert forest1.tree.filepath == simple_h5_file
+
+        # Reset the singleton for cleanup
+        H5Forest._instance = None
 
 
 class TestBasicFileOperations:
