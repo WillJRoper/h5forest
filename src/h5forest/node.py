@@ -185,6 +185,9 @@ class Node:
         self._attr_text = None
         self._meta_text = None
 
+        # Create mapping from row number to attribute key for cursor tracking
+        self.attributes_by_row = []
+
         # Define a flags for syntax highlighting
         self.is_under_cursor = False
         self.is_highlighted = False
@@ -317,12 +320,20 @@ class Node:
         """
         Return the attribute text for the node.
 
+        This also builds the attributes_by_row mapping to track which
+        attribute key corresponds to each row in the display.
+
         Returns:
             str:
                 The attribute text for the node.
         """
         text = ""
+        # Reset the attributes_by_row mapping
+        self.attributes_by_row = []
+
+        # Build text and mapping simultaneously
         for key, value in self.attrs.items():
+            self.attributes_by_row.append(key)
             text += f"{key}: {value}\n"
         return text
 
@@ -341,6 +352,34 @@ class Node:
         if self._attr_text is None:
             self._attr_text = self._get_attr_text()
         return self._attr_text
+
+    def get_current_attribute(self, row):
+        """
+        Return the attribute key and value at the specified row.
+
+        This provides cursor tracking for attributes similar to how
+        the tree tracks nodes by row.
+
+        Args:
+            row (int):
+                The row number in the attributes display.
+
+        Returns:
+            tuple:
+                A tuple of (key, value) for the attribute at the specified row,
+                or (None, None) if row is invalid.
+        """
+        # Ensure attributes_by_row mapping is built
+        if self._attr_text is None:
+            self.get_attr_text()
+
+        # Check if row is valid
+        if 0 <= row < len(self.attributes_by_row):
+            key = self.attributes_by_row[row]
+            value = self.attrs.get(key)
+            return key, value
+        else:
+            return None, None
 
     def get_value_text(self, start_index=None, end_index=None):
         """

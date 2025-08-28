@@ -50,11 +50,6 @@ def _init_app_bindings(app):
         app._flag_normal_mode = False
         app._flag_hist_mode = True
 
-    def edit_leader_mode(event):
-        """Enter edit mode."""
-        app._flag_normal_mode = False
-        app._flag_edit_mode = True
-
     @error_handler
     def exit_leader_mode(event):
         """Exit leader mode."""
@@ -90,9 +85,6 @@ def _init_app_bindings(app):
     app.kb.add("H", filter=Condition(lambda: app.flag_normal_mode))(
         hist_leader_mode
     )
-    app.kb.add("e", filter=Condition(lambda: app.flag_normal_mode))(
-        edit_leader_mode
-    )
     app.kb.add("q", filter=Condition(lambda: not app.flag_normal_mode))(
         exit_leader_mode
     )
@@ -120,7 +112,7 @@ def _init_app_bindings(app):
             filter=Condition(lambda: app.flag_expanded_attrs),
         ),
         Label("d → Dataset Mode"),
-        Label("e → Edit Mode"),
+        Label("e → Edit"),
         Label("g → Goto Mode"),
         Label("H → Histogram Mode"),
         Label("p → Plotting Mode"),

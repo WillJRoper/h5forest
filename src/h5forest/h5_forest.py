@@ -157,7 +157,6 @@ class H5Forest:
         self._flag_window_mode = False
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
-        self._flag_edit_mode = False
 
         # Set up the main app and tree bindings. The hot keys for these are
         # combined into a single hot keys panel which will be shown whenever
@@ -165,6 +164,10 @@ class H5Forest:
         self.kb = KeyBindings()
         app_keys = _init_app_bindings(self)
         tree_keys = _init_tree_bindings(self)
+
+        # Initialize edit bindings (sets up 'e' key for direct editing)
+        _init_edit_bindings(self)
+
         self.hot_keys = VSplit([*tree_keys, *app_keys])
 
         # Set up the rest of the keybindings and attach hot keys
@@ -173,7 +176,6 @@ class H5Forest:
         self.window_keys = _init_window_bindings(self)
         self.plot_keys = _init_plot_bindings(self)
         self.hist_keys = _init_hist_bindings(self)
-        self.edit_keys = _init_edit_bindings(self)
 
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
@@ -211,11 +213,6 @@ class H5Forest:
 
         # Intialise a container for user input
         self.user_input = None
-
-        # Edit mode state variables
-        self.edit_node = None
-        self.original_name = None
-        self.new_name = None
 
         # With all that done we can set up the application
         self.app = Application(
@@ -371,22 +368,6 @@ class H5Forest:
             self.mini_buffer_content
         )
 
-    @property
-    def flag_edit_mode(self):
-        """
-        Return the edit mode flag.
-
-        This accounts for whether we are awaiting user input in the mini
-        buffer.
-
-        Returns:
-            bool:
-                The flag for edit mode.
-        """
-        return self._flag_edit_mode and not self.app.layout.has_focus(
-            self.mini_buffer_content
-        )
-
     def return_to_normal_mode(self):
         """Return to normal mode."""
         self._flag_normal_mode = True
@@ -395,7 +376,6 @@ class H5Forest:
         self._flag_window_mode = False
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
-        self._flag_edit_mode = False
 
     def _init_text_areas(self):
         """Initialise the content for each frame."""
@@ -638,10 +618,6 @@ class H5Forest:
                     content=self.hist_keys,
                     filter=Condition(lambda: self.flag_hist_mode),
                 ),
-                ConditionalContainer(
-                    content=self.edit_keys,
-                    filter=Condition(lambda: self.flag_edit_mode),
-                ),
             ]
         )
         self.hotkeys_frame = ConditionalContainer(
@@ -653,7 +629,6 @@ class H5Forest:
                 or self.flag_window_mode
                 or self.flag_plotting_mode
                 or self.flag_hist_mode
-                or self.flag_edit_mode
             ),
         )
 
