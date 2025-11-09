@@ -139,8 +139,8 @@ class TestH5ForestLabelProperties:
 
         # Should not include tree-specific keys when tree doesn't have focus
         # Should have: expand/shrink_attrs, dataset, goto, hist, plotting,
-        # window, restore_tree, exit (no search, no tree keys)
-        assert len(labels) == 8
+        # window, search, restore_tree, exit (no tree keys)
+        assert len(labels) == 9
 
     def test_hot_keys_with_tree_focus(self, mock_h5forest):
         """Test hot_keys when tree has focus."""
@@ -157,9 +157,9 @@ class TestH5ForestLabelProperties:
         labels = result.labels() if callable(result.labels) else result.labels
 
         # Should include tree keys and search when tree has focus
-        # At minimum should have 8 labels, ideally 11 with tree keys
+        # At minimum should have 9 labels, ideally 11 with tree keys
         # (Being lenient here due to mock complexity)
-        assert len(labels) >= 8
+        assert len(labels) >= 9
 
     def test_hot_keys_with_expanded_attrs(self, mock_h5forest):
         """Test hot_keys shows shrink_attrs when attrs are expanded."""
@@ -168,8 +168,8 @@ class TestH5ForestLabelProperties:
         result = mock_h5forest.hot_keys
         labels = result.labels() if callable(result.labels) else result.labels
 
-        # Should have 8 labels (one of which is shrink, not expand)
-        assert len(labels) == 8
+        # Should have 9 labels (one of which is shrink, not expand)
+        assert len(labels) == 9
 
     def test_hot_keys_with_collapsed_attrs(self, mock_h5forest):
         """Test hot_keys shows expand_attrs when attrs are collapsed."""
@@ -178,8 +178,8 @@ class TestH5ForestLabelProperties:
         result = mock_h5forest.hot_keys
         labels = result.labels() if callable(result.labels) else result.labels
 
-        # Should have 8 labels (one of which is expand, not shrink)
-        assert len(labels) == 8
+        # Should have 9 labels (one of which is expand, not shrink)
+        assert len(labels) == 9
 
     def test_dataset_keys_returns_dynamic_layout(self, mock_h5forest):
         """Test that dataset_keys returns a DynamicLabelLayout."""
@@ -279,7 +279,7 @@ class TestH5ForestLabelProperties:
 
         # Should have basic keys without tree-specific ones
         labels = result.labels() if callable(result.labels) else result.labels
-        assert len(labels) == 8  # No tree keys or search
+        assert len(labels) == 9  # No tree keys but search is included
 
     def test_hot_keys_without_tree_content_attribute(self, mock_h5forest):
         """Test hot_keys handles missing tree_content gracefully."""
