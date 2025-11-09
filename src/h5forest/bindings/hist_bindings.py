@@ -246,7 +246,7 @@ def _init_hist_bindings(app):
     app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
     app.kb.add("r", filter=Condition(lambda: app.flag_hist_mode))(reset_hist)
     app.kb.add(
-        "j",
+        "J",
         filter=Condition(
             lambda: app.flag_hist_mode
             and len(app.histogram_plotter.plot_params) > 0
@@ -274,10 +274,10 @@ def _init_hist_bindings(app):
         "toggle_y_scale": Label("y → Toggle y-scale"),
         "show_hist": Label("h → Show Histogram"),
         "save_hist": Label("H → Save Histogram"),
-        "jump_config": Label("j → Jump to Config"),
+        "jump_config": Label("J → Jump to Config"),
         "reset": Label("r → Reset"),
         "exit_mode": Label("q → Exit Hist Mode"),
-        "exit_config": Label("q → Exit Config"),
+        "exit_config": Label("q → Exit Hist Config"),
     }
 
     return hot_keys
