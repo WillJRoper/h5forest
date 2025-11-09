@@ -14,11 +14,11 @@ Well, `h5forest` brings interactivity and new functionality not available in its
 - Generation of quick diagnostics.
 - Fully asynchronous operation for a blazingly fast (🔥) and responsive feel.
 - A fully terminal-based interface with vim motions (did I mention?...).
+- Fuzzy search with real-time filtering to quickly find datasets and groups.
 
 ![SCR-20241021-belp](https://github.com/user-attachments/assets/38b92869-6768-41f4-833c-d8b4ad6c6ad5)
 
 The following features are coming soon:
-- A search function.
 - Renaming of Datasets and Groups.
 
 ## Getting started

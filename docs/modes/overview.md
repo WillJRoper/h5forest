@@ -5,11 +5,12 @@ h5forest uses a modal interface system inspired by Vim (yes, we know, everyone e
 ## Available Modes
 
 1. **Normal Mode** - Default navigation and basic operations
-2. **Goto Mode** - Quick navigation commands  
-3. **Dataset Mode** - Data analysis and statistics
-4. **Window Mode** - Panel and focus management
-5. **Plotting Mode** - Scatter plot creation
-6. **Histogram Mode** - Histogram generation
+2. **Search Mode** - Fuzzy search for datasets and groups
+3. **Goto Mode** - Quick navigation commands
+4. **Dataset Mode** - Data analysis and statistics
+5. **Window Mode** - Panel and focus management
+6. **Plotting Mode** - Scatter plot creation
+7. **Histogram Mode** - Histogram generation
 
 ## Mode Switching
 
@@ -19,6 +20,7 @@ From Normal Mode, press the following keys to enter other modes:
 
 | Key | Mode | Purpose |
 |-----|------|---------|
+| **`s`** | Search Mode | Fuzzy search (tree focus only) |
 | **`g`** | Goto Mode | Quick navigation |
 | **`d`** | Dataset Mode | Data analysis |
 | **`w`** | Window Mode | Window management |
@@ -53,7 +55,8 @@ These commands work in all modes:
 | Mode | Key | Purpose | Main Features |
 |------|-----|---------|---------------|
 | **Normal** | (default) | Navigation | Tree traversal, file exploration |
-| **Goto** | `g` | Quick nav | Fast tree navigation, search |
+| **Search** | `s` | Find items | Real-time fuzzy search, filtering |
+| **Goto** | `g` | Quick nav | Fast tree navigation |
 | **Dataset** | `d` | Data analysis | Value inspection, statistics |
 | **Window** | `w` | UI control | Panel focus, layout |
 | **Plotting** | `p` | Visualization | Scatter plots |
@@ -64,7 +67,8 @@ These commands work in all modes:
 Explore the detailed documentation for each mode:
 
 - [Normal Mode](normal.md) - Basic navigation and control
-- [Goto Mode](jump.md) - Quick navigation features  
+- [Search Mode](search.md) - Fuzzy search functionality
+- [Goto Mode](jump.md) - Quick navigation features
 - [Dataset Mode](dataset.md) - Data analysis tools
 - [Window Mode](window.md) - Interface management
 - [Plotting Mode](plotting.md) - Scatter plot creation
