@@ -196,7 +196,7 @@ class DynamicLabelLayout:
             width: Target width in characters.
 
         Returns:
-            Label or ConditionalContainer with padded text.
+            Label with padded text (no conditional wrapping).
         """
         from prompt_toolkit.widgets import Label
 
@@ -204,13 +204,10 @@ class DynamicLabelLayout:
         # Pad with spaces to reach target width
         padded_text = text.ljust(width)
 
-        # Create new label with padded text
-        if isinstance(label, ConditionalContainer):
-            # Preserve the conditional wrapper
-            new_label = Label(padded_text)
-            return ConditionalContainer(new_label, filter=label.filter)
-        else:
-            return Label(padded_text)
+        # Always return a regular Label without ConditionalContainer wrapping
+        # This ensures proper grid alignment without gaps from hidden labels
+        # Note: This means all labels are always visible in the grid
+        return Label(padded_text)
 
     def __pt_container__(self):
         """
