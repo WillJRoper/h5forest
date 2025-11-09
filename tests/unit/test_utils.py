@@ -134,7 +134,7 @@ class TestDynamicLabelLayout:
 
         assert layout.labels == labels
         assert layout.padding == 1
-        assert layout.min_rows == 3
+        assert layout.min_rows == 1
 
     def test_init_custom_parameters(self):
         """Test DynamicLabelLayout initialization with custom parameters."""
@@ -188,7 +188,7 @@ class TestDynamicLabelLayout:
     def test_distribute_labels_single_row(self):
         """Test label distribution when all labels fit in one row."""
         labels = [Label("A"), Label("B"), Label("C")]
-        layout = DynamicLabelLayout(labels, padding=2)
+        layout = DynamicLabelLayout(labels, padding=2, min_rows=3)
 
         # Total width needed: (1+2) + (1+2) + (1+2) = 9 characters
         # Available width: 100 (more than enough)
@@ -213,11 +213,11 @@ class TestDynamicLabelLayout:
             Label("Label 3"),
             Label("Label 4"),
         ]
-        layout = DynamicLabelLayout(labels, padding=3)
+        layout = DynamicLabelLayout(labels, padding=3, min_rows=3)
 
-        # Each label: ~10 characters with padding = ~13 total
-        # With width=25, should fit 2 labels per row in grid layout
-        rows = layout._distribute_labels(25)
+        # Each label: 7 characters + 3 padding = 10 total
+        # With width=15 and +1 in calculation: 15 // 10 + 1 = 2 labels per row
+        rows = layout._distribute_labels(15)
 
         # Should have at least 3 rows (min_rows)
         assert len(rows) >= 3
@@ -233,7 +233,7 @@ class TestDynamicLabelLayout:
     def test_distribute_labels_narrow_terminal(self):
         """Test label distribution with very narrow terminal."""
         labels = [Label("Short"), Label("Text"), Label("Here")]
-        layout = DynamicLabelLayout(labels, padding=2)
+        layout = DynamicLabelLayout(labels, padding=2, min_rows=3)
 
         # Very narrow width
         rows = layout._distribute_labels(10)
@@ -247,7 +247,7 @@ class TestDynamicLabelLayout:
     def test_distribute_labels_zero_width(self):
         """Test label distribution with zero width (fallback)."""
         labels = [Label("A"), Label("B")]
-        layout = DynamicLabelLayout(labels)
+        layout = DynamicLabelLayout(labels, min_rows=3)
 
         # Zero width should trigger fallback to 80
         rows = layout._distribute_labels(0)
@@ -260,7 +260,7 @@ class TestDynamicLabelLayout:
     def test_distribute_labels_negative_width(self):
         """Test label distribution with negative width (fallback)."""
         labels = [Label("A")]
-        layout = DynamicLabelLayout(labels)
+        layout = DynamicLabelLayout(labels, min_rows=3)
 
         # Negative width should trigger fallback to 80
         rows = layout._distribute_labels(-10)
@@ -269,7 +269,7 @@ class TestDynamicLabelLayout:
 
     def test_distribute_labels_empty_list(self):
         """Test label distribution with empty label list."""
-        layout = DynamicLabelLayout([])
+        layout = DynamicLabelLayout([], min_rows=3)
 
         rows = layout._distribute_labels(80)
 
@@ -386,7 +386,7 @@ class TestDynamicLabelLayout:
     def test_pt_container_narrow_width(self, mock_get_app):
         """Test __pt_container__ with narrow terminal width."""
         labels = [Label("Long Label Text"), Label("Another Long Label")]
-        layout = DynamicLabelLayout(labels)
+        layout = DynamicLabelLayout(labels, min_rows=3)
 
         # Mock narrow terminal
         mock_app = Mock()
@@ -408,7 +408,7 @@ class TestDynamicLabelLayout:
     def test_pt_container_wide_width(self, mock_get_app):
         """Test __pt_container__ with wide terminal width."""
         labels = [Label("A"), Label("B"), Label("C")]
-        layout = DynamicLabelLayout(labels)
+        layout = DynamicLabelLayout(labels, min_rows=3)
 
         # Mock wide terminal
         mock_app = Mock()
@@ -429,7 +429,7 @@ class TestDynamicLabelLayout:
     @patch("h5forest.utils.get_app")
     def test_pt_container_empty_labels(self, mock_get_app):
         """Test __pt_container__ with empty label list."""
-        layout = DynamicLabelLayout([])
+        layout = DynamicLabelLayout([], min_rows=3)
 
         # Mock the app
         mock_app = Mock()
@@ -472,7 +472,7 @@ class TestDynamicLabelLayout:
             rows = layout._distribute_labels(width)
 
             # Should have at least min_rows
-            assert len(rows) >= 3
+            assert len(rows) >= 1
 
             # All labels should be distributed
             total_labels = sum(len(row) for row in rows)
@@ -555,7 +555,7 @@ class TestDynamicLabelLayout:
             Label("r → Reset"),
             Label("q → Exit Plotting Mode"),
         ]
-        layout = DynamicLabelLayout(labels)
+        layout = DynamicLabelLayout(labels, min_rows=3)
 
         # Test with terminal width typical for development
         rows = layout._distribute_labels(120)
