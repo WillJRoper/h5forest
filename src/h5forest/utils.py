@@ -138,24 +138,9 @@ class DynamicLabelLayout:
         max_label_width = max(label_widths) if label_widths else 20
 
         # Calculate how many labels can fit per row based on max width
-        # This ensures even the widest label will fit
+        # All labels will be padded to max_label_width, so we can fit:
+        # available_width // max_label_width labels per row
         labels_per_row = max(1, available_width // max_label_width)
-
-        # Verify the first row actually fits with real widths
-        # If not, reduce labels_per_row until it does
-        for num_per_row in range(labels_per_row, 0, -1):
-            # Calculate actual width needed for this many labels
-            # Use a sample from the actual labels to test
-            test_labels = self.labels[:num_per_row]
-            test_width = sum(
-                self._estimate_label_width(label) for label in test_labels
-            )
-            if test_width <= available_width:
-                labels_per_row = num_per_row
-                break
-
-        # Ensure we have at least 1 label per row
-        labels_per_row = max(1, labels_per_row)
 
         # Distribute labels evenly across rows in grid fashion
         rows = []
