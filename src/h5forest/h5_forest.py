@@ -537,7 +537,7 @@ class H5Forest:
     @property
     def hist_keys(self):
         """
-        Return the hot keys for histogram mode, filtered on current state.
+        Return the hot keys for histogram mode, filtered based on current state.
 
         Filters based on plot_params and focus.
 
