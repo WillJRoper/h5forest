@@ -1,6 +1,6 @@
 # Normal Mode
 
-Normal Mode is the default mode in h5forest - the comforting home base where you start before diving into the rabbit hole of specialized modes. Think of it as the sensible friend who keeps you grounded while you're about to do something questionable with your data.
+Normal Mode is the default mode in h5forest and serves as the foundation for all file exploration. You'll return to this mode after completing tasks in specialized modes, making it the central hub for navigation and mode switching.
 
 ## Purpose
 
