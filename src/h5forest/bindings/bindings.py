@@ -80,15 +80,18 @@ def _init_app_bindings(app):
     @error_handler
     def restore_filtered_tree(event):
         """Restore the original tree when viewing filtered search results."""
-        # Restore the original tree
+        # Restore the original tree by rebuilding from root
         app.tree.restore_tree()
+
+        # Rebuild tree text from current tree state
+        tree_text = app.tree.get_tree_text()
 
         # Reset the flag
         app.flag_tree_filtered = False
 
-        # Update the tree display with restored tree text
+        # Update the tree display with rebuilt tree text
         app.tree_buffer.set_document(
-            Document(text=app.tree.tree_text, cursor_position=0),
+            Document(text=tree_text, cursor_position=0),
             bypass_readonly=True,
         )
 

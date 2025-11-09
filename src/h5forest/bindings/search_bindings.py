@@ -30,6 +30,9 @@ def _init_search_bindings(app):
         # Restore the original tree
         app.tree.restore_tree()
 
+        # Rebuild tree text from current tree state
+        tree_text = app.tree.get_tree_text()
+
         # Reset flags and return to normal mode BEFORE clearing buffer
         app.flag_tree_filtered = False
         app.return_to_normal_mode()
@@ -37,9 +40,9 @@ def _init_search_bindings(app):
         # Clear the search buffer (safe now that we're not in search mode)
         app.search_content.text = ""
 
-        # Update the tree display with restored tree text
+        # Update the tree display with rebuilt tree text
         app.tree_buffer.set_document(
-            Document(text=app.tree.tree_text, cursor_position=0),
+            Document(text=tree_text, cursor_position=0),
             bypass_readonly=True,
         )
 
