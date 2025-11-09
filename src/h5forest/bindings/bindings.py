@@ -6,6 +6,7 @@ module should not be called directly, but are intended to be used by the main
 application.
 """
 
+from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
@@ -85,9 +86,9 @@ def _init_app_bindings(app):
         # Reset the flag
         app.flag_tree_filtered = False
 
-        # Update the tree display
+        # Update the tree display with restored tree text
         app.tree_buffer.set_document(
-            app.tree_buffer.document,
+            Document(text=app.tree.tree_text, cursor_position=0),
             bypass_readonly=True,
         )
 
