@@ -1,9 +1,9 @@
-"""This module contains the keybindings for the jump mode.
+"""This module contains the keybindings for the goto mode.
 
-The jump mode is a mode that allows the user to quickly navigate the tree using
+The goto mode is a mode that allows the user to quickly navigate the tree using
 a set of keybindings. This is useful for large trees where the user knows the
-name of the node they want to jump to.
-This module defines the functions for binding jump mode events to functions.
+name of the node they want to go to.
+This module defines the functions for binding goto mode events to functions.
 This should not be used directly, but instead provides the functions for the
 application.
 """
@@ -15,30 +15,30 @@ from prompt_toolkit.widgets import Label
 from h5forest.errors import error_handler
 
 
-def _init_jump_bindings(app):
-    """Set up the keybindings for the jump mode."""
+def _init_goto_bindings(app):
+    """Set up the keybindings for the goto mode."""
 
     @error_handler
-    def jump_to_top(event):
-        """Jump to the top of the tree."""
+    def goto_top(event):
+        """Go to the top of the tree (vim gg)."""
         app.set_cursor_position(app.tree.tree_text, new_cursor_pos=0)
 
-        # Exit jump mode
+        # Exit goto mode
         app.return_to_normal_mode()
 
     @error_handler
-    def jump_to_bottom(event):
-        """Jump to the bottom of the tree."""
+    def goto_bottom(event):
+        """Go to the bottom of the tree."""
         app.set_cursor_position(
             app.tree.tree_text, new_cursor_pos=app.tree.length
         )
 
-        # Exit jump mode
+        # Exit goto mode
         app.return_to_normal_mode()
 
     @error_handler
-    def jump_to_parent(event):
-        """Jump to the parent of the current node."""
+    def goto_parent(event):
+        """Go to the parent of the current node."""
         # Get the current node
         node = app.tree.get_current_node(app.current_row)
 
@@ -73,8 +73,8 @@ def _init_jump_bindings(app):
         app.return_to_normal_mode()
 
     @error_handler
-    def jump_to_next(event):
-        """Jump to the next node."""
+    def goto_next(event):
+        """Go to the next node."""
         # Get the current node
         node = app.tree.get_current_node(app.current_row)
 
@@ -93,21 +93,25 @@ def _init_jump_bindings(app):
         # Loop forwards until we hit the next node at the level above
         # this node's depth. If at the root just move to the next
         # root group.
+        found_next = False
         for row in range(app.current_row, app.tree.height):
             # Compute the position at this row
             pos += len(app.tree.tree_text_split[row]) + 1
 
             # Ensure we don't over shoot
-            if row + 1 > app.tree.height:
-                app.return_to_normal_mode()
-                return
+            if row + 1 >= app.tree.height:
+                break
 
             # If we are at the next node stop
             if app.tree.get_current_node(row + 1).depth == target_depth:
+                found_next = True
                 break
 
-        # Move the cursor
-        app.set_cursor_position(app.tree.tree_text, pos)
+        if found_next:
+            # Move the cursor
+            app.set_cursor_position(app.tree.tree_text, pos)
+        else:
+            app.print("Next Group can't be found")
 
         app.return_to_normal_mode()
 
@@ -147,32 +151,30 @@ def _init_jump_bindings(app):
             # Move the cursor
             app.set_cursor_position(app.tree.tree_text, pos)
 
-        # Get the indices from the user
+        # Get the search string from the user
         app.input(
             "Jump to next key containing:",
             jump_to_key_callback,
         )
 
     # Bind the functions
-    app.kb.add("t", filter=Condition(lambda: app.flag_jump_mode))(jump_to_top)
-    app.kb.add("b", filter=Condition(lambda: app.flag_jump_mode))(
-        jump_to_bottom
-    )
-    app.kb.add("p", filter=Condition(lambda: app.flag_jump_mode))(
-        jump_to_parent
-    )
-    app.kb.add("n", filter=Condition(lambda: app.flag_jump_mode))(jump_to_next)
-    app.kb.add("k", filter=Condition(lambda: app.flag_jump_mode))(jump_to_key)
+    app.kb.add("t", filter=Condition(lambda: app.flag_jump_mode))(goto_top)
+    app.kb.add("g", filter=Condition(lambda: app.flag_jump_mode))(goto_top)
+    app.kb.add("b", filter=Condition(lambda: app.flag_jump_mode))(goto_bottom)
+    app.kb.add("G", filter=Condition(lambda: app.flag_jump_mode))(goto_bottom)
+    app.kb.add("p", filter=Condition(lambda: app.flag_jump_mode))(goto_parent)
+    app.kb.add("n", filter=Condition(lambda: app.flag_jump_mode))(goto_next)
+    app.kb.add("K", filter=Condition(lambda: app.flag_jump_mode))(jump_to_key)
 
     # Add the hot keys
     hot_keys = VSplit(
         [
-            Label("t → Jump to Top"),
-            Label("b → Jump to Bottom"),
-            Label("p → Jump to Parent"),
-            Label("n → Jump to Next"),
-            Label("k → Jump to Next Key"),
-            Label("q → Exit Jump Mode"),
+            Label("t/g → Go to Top"),
+            Label("b/G → Go to Bottom"),
+            Label("p → Go to Parent"),
+            Label("n → Next Parent Group"),
+            Label("K → Jump to Key Containing"),
+            Label("q → Exit Goto Mode"),
         ]
     )
 
