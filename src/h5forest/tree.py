@@ -99,7 +99,7 @@ class Tree:
         self.prev_node = self.root
 
         # We'll collect a list of all the nodes in the background to
-        # faciliate searches
+        # facilitate searches
         self.unpack_thread = None  # we'll do the unpacking on this thread
         self.all_node_paths = []
         self.get_all_paths()
