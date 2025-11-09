@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import VSplit
 
 from h5forest.bindings.dataset_bindings import _init_dataset_bindings
 
@@ -40,10 +39,14 @@ class TestDatasetBindings:
         return MagicMock()
 
     def test_init_dataset_bindings_returns_hotkeys(self, mock_app):
-        """Test that _init_dataset_bindings returns a VSplit."""
+        """Test that _init_dataset_bindings returns a list of Labels."""
+        from prompt_toolkit.widgets import Label
+
         hot_keys = _init_dataset_bindings(mock_app)
-        assert isinstance(hot_keys, VSplit)
-        assert len(hot_keys.children) == 7
+        assert isinstance(hot_keys, list)
+        assert len(hot_keys) == 7
+        for item in hot_keys:
+            assert isinstance(item, Label)
 
     def test_show_values(self, mock_app, mock_event):
         """Test showing dataset values."""

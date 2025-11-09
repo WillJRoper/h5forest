@@ -6,7 +6,6 @@ application.
 """
 
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout.containers import ConditionalContainer, VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
@@ -78,38 +77,15 @@ def _init_window_bindings(app):
     app.kb.add("h", filter=Condition(lambda: app.flag_window_mode))(move_hist)
     app.kb.add("escape")(move_to_default)
 
-    # Add the hot keys
-    hot_keys = VSplit(
-        [
-            ConditionalContainer(
-                Label("t → Move to Tree"),
-                Condition(
-                    lambda: not app.app.layout.has_focus(app.tree_content)
-                ),
-            ),
-            ConditionalContainer(
-                Label("a → Move to Attributes"),
-                Condition(
-                    lambda: not app.app.layout.has_focus(
-                        app.attributes_content
-                    )
-                ),
-            ),
-            ConditionalContainer(
-                Label("v → Move to Values"),
-                Condition(
-                    lambda: app.flag_values_visible
-                    and not app.app.layout.has_focus(app.values_content)
-                ),
-            ),
-            ConditionalContainer(
-                Label("p → Move to Plot"),
-                Condition(
-                    lambda: not app.app.layout.has_focus(app.plot_content)
-                ),
-            ),
-            Label("q → Exit Window Mode"),
-        ]
-    )
+    # Return all possible hot keys as a dict
+    # The app will use property methods to filter based on state
+    hot_keys = {
+        "move_tree": Label("t → Move to Tree"),
+        "move_attrs": Label("a → Move to Attributes"),
+        "move_values": Label("v → Move to Values"),
+        "move_plot": Label("p → Move to Plot"),
+        "move_hist": Label("h → Move to Histogram"),
+        "exit": Label("q → Exit Window Mode"),
+    }
 
     return hot_keys

@@ -11,7 +11,6 @@ intended to be used by the main application.
 import threading
 
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout.containers import VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
@@ -223,16 +222,16 @@ def _init_dataset_bindings(app):
     app.kb.add("s", filter=Condition(lambda: app.flag_dataset_mode))(std)
 
     # Add the hot keys
-    hot_keys = VSplit(
-        [
-            Label("v → Show Values"),
-            Label("V → Show Values In Range"),
-            Label("m → Get Minimum and Maximum"),
-            Label("M → Get Mean"),
-            Label("s → Get Standard Deviation"),
-            Label("c → Close Value View"),
-            Label("q → Exit Dataset Mode"),
-        ]
-    )
+    # Return all hot keys as a list
+    # No conditional labels in dataset mode
+    hot_keys = [
+        Label("v → Show Values"),
+        Label("V → Show Values In Range"),
+        Label("m → Get Minimum and Maximum"),
+        Label("M → Get Mean"),
+        Label("s → Get Standard Deviation"),
+        Label("c → Close Value View"),
+        Label("q → Exit Dataset Mode"),
+    ]
 
     return hot_keys
