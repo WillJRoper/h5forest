@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import VSplit
 
 from h5forest.bindings.hist_bindings import _init_hist_bindings
 
@@ -57,10 +56,15 @@ class TestHistBindings:
         return MagicMock()
 
     def test_init_hist_bindings_returns_hotkeys(self, mock_app):
-        """Test that _init_hist_bindings returns a VSplit."""
+        """Test that _init_hist_bindings returns a dict of Labels."""
+        from prompt_toolkit.widgets import Label
+
         hot_keys = _init_hist_bindings(mock_app)
-        assert isinstance(hot_keys, VSplit)
-        assert len(hot_keys.children) == 7
+        assert isinstance(hot_keys, dict)
+        assert len(hot_keys) == 7
+        for key, value in hot_keys.items():
+            assert isinstance(key, str)
+            assert isinstance(value, Label)
 
     def test_edit_hist_entry_toggle_linear_to_log(self, mock_app, mock_event):
         """Test toggling scale from linear to log."""
