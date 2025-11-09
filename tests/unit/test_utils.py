@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
 from prompt_toolkit.widgets import Label
@@ -158,9 +157,7 @@ class TestDynamicLabelLayout:
         """Test width estimation for a ConditionalContainer."""
         layout = DynamicLabelLayout([])
         label = Label("Test Label")
-        container = ConditionalContainer(
-            label, filter=Condition(lambda: True)
-        )
+        container = ConditionalContainer(label, filter=Condition(lambda: True))
 
         # ConditionalContainers convert Labels to Windows automatically,
         # so we can't extract the text and fall back to 20
@@ -177,7 +174,7 @@ class TestDynamicLabelLayout:
         assert width == 14
 
     def test_estimate_label_width_fallback(self):
-        """Test width estimation fallback for objects without text attribute."""
+        """Test width estimation fallback for objects without text."""
         layout = DynamicLabelLayout([])
         mock_label = Mock(spec=[])  # Mock without 'text' attribute
 
@@ -581,9 +578,10 @@ class TestDynamicLabelLayout:
             first_row_count = len(non_empty_rows[0])
             # All rows except possibly the last should match first row
             for row in non_empty_rows[:-1]:
-                assert (
-                    len(row) == first_row_count
-                ), f"Grid alignment failed: expected {first_row_count} labels per row"
+                assert len(row) == first_row_count, (
+                    f"Grid alignment failed: "
+                    f"expected {first_row_count} labels per row"
+                )
 
             # Last row should have <= first_row_count
             assert len(non_empty_rows[-1]) <= first_row_count
@@ -623,9 +621,7 @@ class TestDynamicLabelLayout:
         """Test extracting text from a ConditionalContainer."""
         layout = DynamicLabelLayout([])
         label = Label("Conditional Text")
-        container = ConditionalContainer(
-            label, filter=Condition(lambda: True)
-        )
+        container = ConditionalContainer(label, filter=Condition(lambda: True))
 
         # ConditionalContainers convert Labels to Windows automatically,
         # so we can't extract the original text and return empty string
@@ -648,16 +644,15 @@ class TestDynamicLabelLayout:
         """Test creating a padded label from ConditionalContainer."""
         layout = DynamicLabelLayout([])
         label = Label("Text")
-        container = ConditionalContainer(
-            label, filter=Condition(lambda: True)
-        )
+        container = ConditionalContainer(label, filter=Condition(lambda: True))
 
         padded = layout._create_padded_label(container, 15)
 
         # Should be a regular Label (not ConditionalContainer)
         # This ensures grid alignment without gaps
         assert isinstance(padded, Label)
-        # ConditionalContainers can't provide text, so we get empty padded string
+        # ConditionalContainers can't provide text,
+        # so we get empty padded string
         assert len(padded.text) == 15
         assert padded.text == " " * 15  # All spaces
 
@@ -699,6 +694,6 @@ class TestDynamicLabelLayout:
                 # All should have same length (padded)
                 if texts:
                     first_len = len(texts[0])
-                    assert all(
-                        len(t) == first_len for t in texts
-                    ), "All labels should be padded to same width"
+                    assert all(len(t) == first_len for t in texts), (
+                        "All labels should be padded to same width"
+                    )

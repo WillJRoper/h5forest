@@ -57,8 +57,8 @@ class DynamicLabelLayout:
     A layout container that dynamically arranges labels across multiple rows.
 
     This class wraps a list of labels or a callable that returns labels,
-    and distributes them across multiple rows based on available terminal width.
-    It ensures labels don't overlap and automatically adjusts on window resize.
+    and distributes them across multiple rows based on available terminal
+    width. It ensures labels don't overlap and adjusts on window resize.
 
     Attributes:
         labels (list or callable): List of Label widgets, or a callable that
@@ -217,7 +217,9 @@ class DynamicLabelLayout:
             available_width = 80
 
         # Get current labels (call if callable, otherwise use as-is)
-        current_labels = self.labels() if callable(self.labels) else self.labels
+        current_labels = (
+            self.labels() if callable(self.labels) else self.labels
+        )
 
         # Temporarily store current labels for distribution
         original_labels = self.labels
@@ -253,7 +255,9 @@ class DynamicLabelLayout:
         column_width = max_text_width + self.padding
 
         # Find the maximum row length to ensure all rows have same count
-        max_row_length = max(len(row) for row in rows if row) if any(rows) else 0
+        max_row_length = (
+            max(len(row) for row in rows if row) if any(rows) else 0
+        )
 
         # Create VSplit for each row with padded labels
         row_containers = []
@@ -268,6 +272,7 @@ class DynamicLabelLayout:
                 # Pad row with empty labels to match max_row_length
                 while len(padded_labels) < max_row_length:
                     from prompt_toolkit.widgets import Label
+
                     padded_labels.append(Label(" " * column_width))
 
                 row_containers.append(VSplit(padded_labels))
@@ -275,6 +280,7 @@ class DynamicLabelLayout:
                 # Empty row - add empty labels matching max_row_length
                 if max_row_length > 0:
                     from prompt_toolkit.widgets import Label
+
                     empty_labels = [
                         Label(" " * column_width)
                         for _ in range(max_row_length)
