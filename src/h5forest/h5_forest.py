@@ -8,7 +8,6 @@ Example Usage:
 
 """
 
-import signal
 import sys
 
 from prompt_toolkit import Application
@@ -160,8 +159,8 @@ class H5Forest:
         self._flag_hist_mode = False
         self._flag_search_mode = False
 
-        # Set up the main app and tree bindings. Store raw label
-        # dicts/lists so we can filter them dynamically using properties
+        # Set up the main app and tree bindings. Store the raw label dicts/lists
+        # so we can filter them dynamically using property methods
         self.kb = KeyBindings()
         self._app_keys_dict = _init_app_bindings(self)
         self._tree_keys_dict = _init_tree_bindings(self)
@@ -220,16 +219,6 @@ class H5Forest:
 
     def run(self):
         """Run the application."""
-
-        # Set up signal handler for terminal resize
-        def handle_resize(signum, frame):
-            """Handle terminal resize by invalidating the app."""
-            if self.app is not None:
-                self.app.invalidate()
-
-        # Register SIGWINCH handler (terminal window resize)
-        signal.signal(signal.SIGWINCH, handle_resize)
-
         self.app.run()
 
     @property
@@ -403,12 +392,10 @@ class H5Forest:
         labels = []
 
         # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
-        tree_has_focus = (
-            has_app
-            and hasattr(self, "tree_content")
-            and self.app.layout.has_focus(self.tree_content.content)
-        )
+        has_app = hasattr(self, 'app') and self.app is not None
+        tree_has_focus = (has_app and
+                         hasattr(self, 'tree_content') and
+                         self.app.layout.has_focus(self.tree_content.content))
 
         # Add tree keys if tree has focus
         if tree_has_focus:
@@ -474,19 +461,18 @@ class H5Forest:
         labels = []
 
         # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
+        has_app = hasattr(self, 'app') and self.app is not None
 
         # Show "move to X" only if not already focused on X
         if not has_app or not self.app.layout.has_focus(self.tree_content):
             labels.append(self._window_keys_dict["move_tree"])
 
-        if not has_app or not self.app.layout.has_focus(
-            self.attributes_content
-        ):
+        if not has_app or not self.app.layout.has_focus(self.attributes_content):
             labels.append(self._window_keys_dict["move_attrs"])
 
-        if self.flag_values_visible and (
-            not has_app or not self.app.layout.has_focus(self.values_content)
+        if (
+            self.flag_values_visible
+            and (not has_app or not self.app.layout.has_focus(self.values_content))
         ):
             labels.append(self._window_keys_dict["move_values"])
 
@@ -513,7 +499,7 @@ class H5Forest:
         labels = []
 
         # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
+        has_app = hasattr(self, 'app') and self.app is not None
 
         # Show edit config only if there are plot params
         if len(self.scatter_plotter.plot_params) > 0:
@@ -548,7 +534,7 @@ class H5Forest:
     @property
     def hist_keys(self):
         """
-        Return hot keys for histogram mode, filtered by current state.
+        Return the hot keys for histogram mode, filtered based on current state.
 
         Filters based on plot_params and focus.
 
@@ -558,7 +544,7 @@ class H5Forest:
         labels = []
 
         # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
+        has_app = hasattr(self, 'app') and self.app is not None
 
         # Show edit config only if there are plot params
         if len(self.histogram_plotter.plot_params) > 0:
