@@ -56,9 +56,9 @@ class TestTreeBindings:
         return event
 
     def test_init_tree_bindings_returns_hotkeys(self, mock_app):
-        """Test that _init_tree_bindings returns a list of hotkeys."""
+        """Test that _init_tree_bindings returns a dict of hotkeys."""
         hot_keys = _init_tree_bindings(mock_app)
-        assert isinstance(hot_keys, list)
+        assert isinstance(hot_keys, dict)
         assert len(hot_keys) == 2
 
     def test_move_up_ten_handler(self, mock_app, mock_event):
@@ -326,12 +326,13 @@ class TestTreeBindings:
         assert callable(error_handler)
 
     def test_hotkeys_structure(self, mock_app):
-        """Test that hotkeys list has correct structure."""
+        """Test that hotkeys dict has correct structure."""
         hot_keys = _init_tree_bindings(mock_app)
 
-        # Should be a list of ConditionalContainers
-        from prompt_toolkit.layout.containers import ConditionalContainer
+        # Should be a dict with Label values
+        from prompt_toolkit.widgets import Label
 
         assert len(hot_keys) == 2
-        for container in hot_keys:
-            assert isinstance(container, ConditionalContainer)
+        for key, value in hot_keys.items():
+            assert isinstance(key, str)
+            assert isinstance(value, Label)

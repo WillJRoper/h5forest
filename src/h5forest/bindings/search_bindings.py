@@ -11,7 +11,6 @@ application.
 
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout import VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
@@ -92,12 +91,11 @@ def _init_search_bindings(app):
         accept_search_results
     )
 
-    # Create hot keys display
-    hot_keys = VSplit(
-        [
-            Label("Enter → Accept"),
-            Label("Esc → Cancel"),
-        ]
-    )
+    # Return all hot keys as a list
+    # No conditional labels in search mode
+    hot_keys = [
+        Label("Enter → Accept"),
+        Label("Esc → Cancel"),
+    ]
 
     return hot_keys
