@@ -153,11 +153,13 @@ def _init_app_bindings(app):
     # Debug binding to see flag states
     @error_handler
     def debug_esc(event):
-        print("DEBUG: ESC PRESSED (debug handler)")
-        print(f"DEBUG: flag_normal_mode = {app.flag_normal_mode}")
-        print(f"DEBUG: flag_tree_filtered = {app.flag_tree_filtered}")
-        print(f"DEBUG: _flag_normal_mode = {app._flag_normal_mode}")
-        print(f"DEBUG: _flag_search_mode = {app._flag_search_mode}")
+        msg = (
+            f"ESC: normal={app.flag_normal_mode} "
+            f"filtered={app.flag_tree_filtered} "
+            f"_normal={app._flag_normal_mode} "
+            f"_search={app._flag_search_mode}"
+        )
+        app.mini_buffer_content.text = msg
 
     # Bind Esc to restore original tree when viewing filtered results
     app.kb.add(
