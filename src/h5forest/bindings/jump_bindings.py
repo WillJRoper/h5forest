@@ -13,6 +13,7 @@ from prompt_toolkit.layout import VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
+from h5forest.utils import DynamicLabelLayout
 
 
 def _init_goto_bindings(app):
@@ -167,15 +168,13 @@ def _init_goto_bindings(app):
     app.kb.add("K", filter=Condition(lambda: app.flag_jump_mode))(jump_to_key)
 
     # Add the hot keys
-    hot_keys = VSplit(
-        [
-            Label("t/g → Go to Top"),
-            Label("b/G → Go to Bottom"),
-            Label("p → Go to Parent"),
-            Label("n → Next Parent Group"),
-            Label("K → Jump to Key Containing"),
-            Label("q → Exit Goto Mode"),
-        ]
-    )
+    hot_keys = [
+        Label("t/g → Go to Top"),
+        Label("b/G → Go to Bottom"),
+        Label("p → Go to Parent"),
+        Label("n → Next Parent Group"),
+        Label("K → Jump to Key Containing"),
+        Label("q → Exit Goto Mode"),
+    ]
 
-    return hot_keys
+    return DynamicLabelLayout(hot_keys)
