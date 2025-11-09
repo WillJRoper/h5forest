@@ -12,7 +12,7 @@ Search Mode is designed for:
 
 ## Entering Search Mode
 
-From Normal Mode, with the **tree panel focused**:
+From Normal Mode:
 - Press **`s`** to enter Search Mode
 
 The search input box will appear at the bottom of the screen and receive focus.
