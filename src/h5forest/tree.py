@@ -84,7 +84,7 @@ class Tree:
         # Initialise a container to store nodes by row in the tree output
         self.nodes_by_row = []
 
-        # Intialise containers to hold the tree text and split version
+        # Initialise containers to hold the tree text and split version
         # to avoid wasted computation
         self.tree_text = ""
         self.tree_text_split = []
@@ -102,7 +102,9 @@ class Tree:
         # facilitate searches
         self.unpack_thread = None  # we'll do the unpacking on this thread
         self.all_node_paths = []
-        self.all_node_paths_lock = threading.Lock()  # Protect concurrent access
+        self.all_node_paths_lock = (
+            threading.Lock()
+        )  # Protect concurrent access
         self.get_all_paths()
 
         # Store the original tree state for search restoration
@@ -137,7 +139,7 @@ class Tree:
         """
         Open the parent group.
 
-        This will populate the chidlren dict on the node which will be parsed
+        This will populate the children dict on the node which will be parsed
         later when a text representation is requested updating the tree.
 
         Args:
