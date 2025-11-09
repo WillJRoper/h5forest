@@ -57,7 +57,8 @@ def _init_search_bindings(app):
         Accept search results and return to normal mode.
 
         Keeps the filtered tree visible and returns to normal mode,
-        allowing all other modes (d, g, w, p, H) to work on the filtered results.
+        allowing all other modes (d, g, w, p, H) to work on the
+        filtered results.
         """
         # Return to normal mode BEFORE clearing buffer
         # This prevents the text change handler from restoring the tree
@@ -79,17 +80,17 @@ def _init_search_bindings(app):
         event.app.invalidate()
 
     # Bind the keys
-    app.kb.add(
-        "escape", filter=Condition(lambda: app.flag_search_mode)
-    )(exit_search_mode)
+    app.kb.add("escape", filter=Condition(lambda: app.flag_search_mode))(
+        exit_search_mode
+    )
 
-    app.kb.add(
-        "c-c", filter=Condition(lambda: app.flag_search_mode)
-    )(exit_search_mode)
+    app.kb.add("c-c", filter=Condition(lambda: app.flag_search_mode))(
+        exit_search_mode
+    )
 
-    app.kb.add(
-        "enter", filter=Condition(lambda: app.flag_search_mode)
-    )(accept_search_results)
+    app.kb.add("enter", filter=Condition(lambda: app.flag_search_mode))(
+        accept_search_results
+    )
 
     # Create hot keys display
     hot_keys = VSplit(

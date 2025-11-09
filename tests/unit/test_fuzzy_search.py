@@ -389,8 +389,9 @@ class TestSearchIntegration:
         if tree.unpack_thread:
             tree.unpack_thread.join()
 
-        # "c" should NOT match "MassWeightedGasZ" since all chars must be in order
-        # This test verifies filtering ensures subsequence matching
+        # "c" should NOT match "MassWeightedGasZ" since all chars must
+        # be in order. This test verifies filtering ensures subsequence
+        # matching.
         filtered = tree.filter_tree("xyz")
 
         # Should have no results since xyz doesn't appear in order anywhere
