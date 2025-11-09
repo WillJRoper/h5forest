@@ -138,9 +138,10 @@ class DynamicLabelLayout:
         max_label_width = max(label_widths) if label_widths else 20
 
         # Calculate how many labels can fit per row based on max width
-        # All labels will be padded to max_label_width, so we can fit:
-        # available_width // max_label_width labels per row
-        labels_per_row = max(1, available_width // max_label_width + 1)
+        # Each label takes max_label_width, but the last one doesn't need padding
+        # For N labels: N * text + (N-1) * padding = N * max_label_width - padding
+        # So: N <= (available_width + padding) / max_label_width
+        labels_per_row = max(1, (available_width + self.padding) // max_label_width)
 
         # Distribute labels evenly across rows in grid fashion
         rows = []
