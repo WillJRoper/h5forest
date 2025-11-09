@@ -31,7 +31,7 @@ Normal Mode is designed for:
 | **`w`** | Window Mode | Panel and focus management |
 | **`p`** | Plotting Mode | Create scatter plots |
 | **`H`** | Histogram Mode | Generate histograms |
-| **`s`** | Search Mode | Fuzzy search through tree (only when tree has focus) |
+| **`s`** | Search Mode | Fuzzy search through tree |
 
 ### Interface Control
 
