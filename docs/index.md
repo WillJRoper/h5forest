@@ -66,7 +66,13 @@ Traditional HDF5 tools work well for quick inspections, but h5forest excels when
 
 ## Community
 
-h5forest is developed by [Will Roper](https://github.com/WillJRoper). Contributions, bug reports, and feature requests are welcome on [GitHub](https://github.com/WillJRoper/h5forest).
+h5forest is developed by [Will Roper](https://github.com/WillJRoper).
+
+**Get Involved:**
+- **Contribute:** See our [Contributing Guide](contributing.md) for development setup and guidelines
+- **Report Issues:** Submit bug reports and feature requests on [GitHub Issues](https://github.com/WillJRoper/h5forest/issues)
+- **Discussions:** Join conversations on [GitHub Discussions](https://github.com/WillJRoper/h5forest/discussions)
+- **Source Code:** Fork and star the project on [GitHub](https://github.com/WillJRoper/h5forest)
 
 ## License
 
