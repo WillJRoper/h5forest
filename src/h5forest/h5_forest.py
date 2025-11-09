@@ -391,8 +391,14 @@ class H5Forest:
         """
         labels = []
 
+        # Check if app exists (it won't during initialization)
+        has_app = hasattr(self, 'app') and self.app is not None
+        tree_has_focus = (has_app and
+                         hasattr(self, 'tree_content') and
+                         self.app.layout.has_focus(self.tree_content.content))
+
         # Add tree keys if tree has focus
-        if self.app.layout.has_focus(self.tree_content.content):
+        if tree_has_focus:
             labels.append(self._tree_keys_dict["open_group"])
             labels.append(self._tree_keys_dict["move_ten"])
 
@@ -410,7 +416,7 @@ class H5Forest:
         labels.append(self._app_keys_dict["window_mode"])
 
         # Add search only when tree has focus
-        if self.app.layout.has_focus(self.tree_content.content):
+        if tree_has_focus:
             labels.append(self._app_keys_dict["search"])
 
         labels.append(self._app_keys_dict["restore_tree"])
@@ -454,23 +460,26 @@ class H5Forest:
         """
         labels = []
 
+        # Check if app exists (it won't during initialization)
+        has_app = hasattr(self, 'app') and self.app is not None
+
         # Show "move to X" only if not already focused on X
-        if not self.app.layout.has_focus(self.tree_content):
+        if not has_app or not self.app.layout.has_focus(self.tree_content):
             labels.append(self._window_keys_dict["move_tree"])
 
-        if not self.app.layout.has_focus(self.attributes_content):
+        if not has_app or not self.app.layout.has_focus(self.attributes_content):
             labels.append(self._window_keys_dict["move_attrs"])
 
         if (
             self.flag_values_visible
-            and not self.app.layout.has_focus(self.values_content)
+            and (not has_app or not self.app.layout.has_focus(self.values_content))
         ):
             labels.append(self._window_keys_dict["move_values"])
 
-        if not self.app.layout.has_focus(self.plot_content):
+        if not has_app or not self.app.layout.has_focus(self.plot_content):
             labels.append(self._window_keys_dict["move_plot"])
 
-        if not self.app.layout.has_focus(self.hist_content):
+        if not has_app or not self.app.layout.has_focus(self.hist_content):
             labels.append(self._window_keys_dict["move_hist"])
 
         labels.append(self._window_keys_dict["exit"])
@@ -489,12 +498,15 @@ class H5Forest:
         """
         labels = []
 
+        # Check if app exists (it won't during initialization)
+        has_app = hasattr(self, 'app') and self.app is not None
+
         # Show edit config only if there are plot params
         if len(self.scatter_plotter.plot_params) > 0:
             labels.append(self._plot_keys_dict["edit_config"])
 
         # Show edit entry only if plot content has focus
-        if self.app.layout.has_focus(self.plot_content):
+        if has_app and self.app.layout.has_focus(self.plot_content):
             labels.append(self._plot_keys_dict["edit_entry"])
 
         # Show axis selection only if not already set
@@ -512,7 +524,7 @@ class H5Forest:
         labels.append(self._plot_keys_dict["reset"])
 
         # Show appropriate exit label based on focus
-        if self.app.layout.has_focus(self.plot_content):
+        if has_app and self.app.layout.has_focus(self.plot_content):
             labels.append(self._plot_keys_dict["exit_config"])
         else:
             labels.append(self._plot_keys_dict["exit_mode"])
@@ -531,12 +543,15 @@ class H5Forest:
         """
         labels = []
 
+        # Check if app exists (it won't during initialization)
+        has_app = hasattr(self, 'app') and self.app is not None
+
         # Show edit config only if there are plot params
         if len(self.histogram_plotter.plot_params) > 0:
             labels.append(self._hist_keys_dict["edit_config"])
 
         # Show edit entry only if hist content has focus
-        if self.app.layout.has_focus(self.hist_content):
+        if has_app and self.app.layout.has_focus(self.hist_content):
             labels.append(self._hist_keys_dict["edit_entry"])
 
         labels.append(self._hist_keys_dict["show_hist"])
@@ -544,7 +559,7 @@ class H5Forest:
         labels.append(self._hist_keys_dict["reset"])
 
         # Show appropriate exit label based on focus
-        if self.app.layout.has_focus(self.hist_content):
+        if has_app and self.app.layout.has_focus(self.hist_content):
             labels.append(self._hist_keys_dict["exit_config"])
         else:
             labels.append(self._hist_keys_dict["exit_mode"])
