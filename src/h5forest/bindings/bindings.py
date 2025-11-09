@@ -86,9 +86,6 @@ def _init_app_bindings(app):
         app.tree.original_nodes_by_row = None
         app.tree.filtered_node_rows = []
 
-        # Reset the flag
-        app.flag_tree_filtered = False
-
         # Rebuild tree from root - shows tree as when first opened
         tree_text = app.tree.get_tree_text()
 
