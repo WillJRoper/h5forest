@@ -9,6 +9,8 @@
 
 HDF5 Forest (`h5forest`) is a Text-based User Interface (TUI) for exploring HDF5 files.
 
+📚 **[Read the documentation](https://willjroper.github.io/h5forest/)** for installation, usage guides, and examples.
+
 `h5ls` works, and `h5glance` is a great improvement, so "Why bother?" I hear you ask. 
 
 Well, `h5forest` brings interactivity and new functionality not available in its long-standing brethren. `h5forest` includes:
