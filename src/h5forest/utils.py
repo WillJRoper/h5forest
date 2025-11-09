@@ -67,7 +67,7 @@ class DynamicLabelLayout:
         min_rows (int): Minimum number of rows to display (default: 1).
     """
 
-    def __init__(self, labels, padding=1, min_rows=1):
+    def __init__(self, labels, padding=5, min_rows=1):
         """
         Initialize the dynamic label layout.
 
@@ -193,8 +193,9 @@ class DynamicLabelLayout:
 
         # Always return a regular Label without ConditionalContainer wrapping.
         # This ensures proper grid alignment without gaps from hidden labels.
-        # Note: DynamicLabelLayout receives pre-filtered labels and does not perform
-        # conditional visibility itself; any filtering is done at a higher level.
+        # Note: DynamicLabelLayout receives pre-filtered labels and does not
+        # perform conditional visibility itself; any filtering is done at a
+        # higher level.
         return Label(padded_text)
 
     def __pt_container__(self):
