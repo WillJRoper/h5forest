@@ -31,13 +31,22 @@ class TestPlotBindings:
         app.scatter_plotter.plot_and_show = MagicMock()
         app.scatter_plotter.plot_and_save = MagicMock()
         app.scatter_plotter.reset = MagicMock(return_value="reset text")
+        app.scatter_plotter.close = MagicMock()
         app.scatter_plotter.plot_params = {"x": "data1", "y": "data2"}
         app.scatter_plotter.plot_text = ""
         app.scatter_plotter.__len__ = MagicMock(return_value=2)
 
         # Set up plot content
         app.plot_content = MagicMock()
-        app.plot_content.text = "x-scale:     linear\ny-scale:     log"
+        app.plot_content.text = (
+            "x-axis:      <key>\n"
+            "y-axis:      <key>\n"
+            "x-label:     <label>\n"
+            "y-label:     <label>\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
         app.plot_content.document = MagicMock()
         app.plot_content.document.cursor_position_row = 0
         app.plot_content.document.cursor_position = 10
@@ -76,7 +85,7 @@ class TestPlotBindings:
 
         hot_keys = _init_plot_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        assert len(hot_keys) == 9
+        assert len(hot_keys) == 11
         for key, value in hot_keys.items():
             assert isinstance(key, str)
             assert isinstance(value, Label)
@@ -388,7 +397,7 @@ class TestPlotBindings:
         # Should be a dict with Label values
         from prompt_toolkit.widgets import Label
 
-        assert len(hot_keys) == 9
+        assert len(hot_keys) == 11
 
         # All values should be Labels
         for key, value in hot_keys.items():

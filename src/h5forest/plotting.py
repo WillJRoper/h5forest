@@ -66,6 +66,14 @@ class Plotter:
         plt.show()
 
     @error_handler
+    def close(self):
+        """Close the figure if it exists."""
+        if self.fig is not None:
+            plt.close(self.fig)
+            self.fig = None
+            self.ax = None
+
+    @error_handler
     def save(self):
         """Save the plot and reset everything."""
         from h5forest.h5_forest import H5Forest
