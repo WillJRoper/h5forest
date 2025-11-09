@@ -1,4 +1,13 @@
 # h5forest
+
+[![PyPI version](https://badge.fury.io/py/h5forest.svg)](https://badge.fury.io/py/h5forest)
+[![PyPI downloads](https://img.shields.io/pypi/dm/h5forest.svg)](https://pypi.org/project/h5forest/)
+[![Python versions](https://img.shields.io/pypi/pyversions/h5forest.svg)](https://pypi.org/project/h5forest/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Test Suite](https://github.com/WillJRoper/h5forest/actions/workflows/test.yml/badge.svg)](https://github.com/WillJRoper/h5forest/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/WillJRoper/h5forest/branch/main/graph/badge.svg)](https://codecov.io/gh/WillJRoper/h5forest)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
 HDF5 Forest (`h5forest`) is a Text-based User Interface (TUI) for exploring HDF5 files.
 
 `h5ls` works, and `h5glance` is a great improvement, so "Why bother?" I hear you ask. 
