@@ -29,22 +29,67 @@ class TreeProcessor(Processor):
         # Access the node corresponding to the current line
         if lineno < len(self.tree.nodes_by_row):
             node = self.tree.nodes_by_row[lineno]
-            style = ""
+            base_style = ""
 
             if node.is_group:
-                style += " class:group"
-            if node.is_highlighted:
-                style += " class:highlighted"
+                base_style += " class:group"
             if node.is_under_cursor:
-                style += " class:under_cursor"
+                base_style += " class:under_cursor"
 
-            # Apply the style to the entire line
-            new_fragments = [(style, text) for _style, text in fragments]
-            return Transformation(new_fragments)
+            # If node is highlighted and has matched indices, do character-level highlighting
+            if node.is_highlighted and hasattr(node, 'matched_indices') and node.matched_indices:
+                new_fragments = self._highlight_characters(fragments, node, base_style)
+                return Transformation(new_fragments)
+            elif node.is_highlighted:
+                # Fallback to whole-line highlighting if no matched indices
+                base_style += " class:highlighted"
+                new_fragments = [(base_style, text) for _style, text in fragments]
+                return Transformation(new_fragments)
+            else:
+                # No highlighting, just apply base style
+                new_fragments = [(base_style, text) for _style, text in fragments]
+                return Transformation(new_fragments)
         else:
-            # Line number exceeds the number of nodes, return original
-            # fragments
+            # Line number exceeds the number of nodes, return original fragments
             return Transformation(fragments)
+
+    def _highlight_characters(self, fragments, node, base_style):
+        """Apply character-level highlighting to matched characters in node name."""
+        # Combine all fragments into a single string to find the node name
+        full_text = "".join(text for _style, text in fragments)
+
+        # Find where the node name appears in the line
+        # The line format is typically: "  ├── NodeName" or similar
+        node_name_start = full_text.find(node.name)
+
+        if node_name_start == -1:
+            # Node name not found, return fragments with base style
+            return [(base_style, text) for _style, text in fragments]
+
+        # Build new fragments with character-level highlighting
+        new_fragments = []
+        char_pos = 0
+
+        for _style, text in fragments:
+            for char in text:
+                # Determine style for this character
+                if char_pos >= node_name_start and char_pos < node_name_start + len(node.name):
+                    # This character is part of the node name
+                    name_char_idx = char_pos - node_name_start
+                    if name_char_idx in node.matched_indices:
+                        # This character matches the query
+                        char_style = base_style + " class:highlighted"
+                    else:
+                        char_style = base_style
+                else:
+                    # Character is not part of node name
+                    char_style = base_style
+
+                # Append character with its style
+                new_fragments.append((char_style, char))
+                char_pos += 1
+
+        return new_fragments
 
 
 class Tree:
@@ -340,7 +385,7 @@ class Tree:
             str:
                 The filtered tree text, or empty string if no query.
         """
-        from h5forest.fuzzy import search_paths
+        from h5forest.fuzzy import get_match_indices, search_paths
 
         # If query is empty, restore original tree
         if not query:
@@ -371,7 +416,8 @@ class Tree:
         matching_paths = [path for path, score in matches]
 
         # Build filtered tree with matches and their parents
-        self._build_filtered_tree(matching_paths)
+        # Pass query for character-level highlighting
+        self._build_filtered_tree(matching_paths, query)
 
         return self.tree_text
 
@@ -381,14 +427,17 @@ class Tree:
         self.original_tree_text_split = self.tree_text_split.copy()
         self.original_nodes_by_row = self.nodes_by_row.copy()
 
-    def _build_filtered_tree(self, matching_paths):
+    def _build_filtered_tree(self, matching_paths, query):
         """
         Build a filtered tree showing only matching nodes and their parents.
 
         Args:
             matching_paths (list):
                 List of paths that match the search query.
+            query (str):
+                The search query string for character-level highlighting.
         """
+        from h5forest.fuzzy import get_match_indices
         # Collect all paths to include (matches + parents)
         paths_to_include = set()
 
@@ -452,8 +501,11 @@ class Tree:
                     filtered_rows.append(row_counter[0])
                     # Mark this node as a match for highlighting
                     node.is_highlighted = True
+                    # Calculate which characters in the node name match the query
+                    node.matched_indices = get_match_indices(query, node.name)
                 else:
                     node.is_highlighted = False
+                    node.matched_indices = []
 
                 row_counter[0] += 1
 
@@ -515,9 +567,10 @@ class Tree:
             self.tree_text_split = self.original_tree_text_split.copy()
             self.nodes_by_row = self.original_nodes_by_row.copy()
 
-            # Clear all highlighting
+            # Clear all highlighting and matched indices
             for node in self.nodes_by_row:
                 node.is_highlighted = False
+                node.matched_indices = []
 
             # Clear saved state
             self.original_tree_text = None
