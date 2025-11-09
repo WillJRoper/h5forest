@@ -140,7 +140,7 @@ class DynamicLabelLayout:
         # Calculate how many labels can fit per row based on max width
         # All labels will be padded to max_label_width, so we can fit:
         # available_width // max_label_width labels per row
-        labels_per_row = max(1, available_width // max_label_width + 1)
+        labels_per_row = max(1, available_width // max_label_width)
 
         # Distribute labels evenly across rows in grid fashion
         rows = []
@@ -207,14 +207,20 @@ class DynamicLabelLayout:
             HSplit: Container with labels arranged in multiple rows.
         """
         try:
-            # Get current terminal width
-            app = get_app()
-            output = app.output
-            size = output.get_size()
-            available_width = size.columns
+            # Try to get terminal width from shutil first (most reliable)
+            import shutil
+
+            available_width = shutil.get_terminal_size().columns
         except Exception:
-            # Fallback if app is not available
-            available_width = 80
+            try:
+                # Fallback to prompt_toolkit's get_app
+                app = get_app()
+                output = app.output
+                size = output.get_size()
+                available_width = size.columns
+            except Exception:
+                # Final fallback
+                available_width = 80
 
         # Get current labels (call if callable, otherwise use as-is)
         current_labels = (
