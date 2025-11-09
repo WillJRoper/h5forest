@@ -843,6 +843,10 @@ class H5Forest:
         This is called whenever the user types in the search buffer.
         It filters the tree in real-time based on the search query.
         """
+        # Only filter if we're actually in search mode
+        if not self._flag_search_mode:
+            return
+
         # Get the current search query
         query = self.search_content.text
 
