@@ -224,6 +224,8 @@ def _init_dataset_bindings(app):
     app.kb.add("s", filter=Condition(lambda: app.flag_dataset_mode))(std)
 
     # Add the hot keys
+    # Return all hot keys as a list
+    # No conditional labels in dataset mode
     hot_keys = [
         Label("v → Show Values"),
         Label("V → Show Values In Range"),
@@ -234,4 +236,4 @@ def _init_dataset_bindings(app):
         Label("q → Exit Dataset Mode"),
     ]
 
-    return DynamicLabelLayout(hot_keys)
+    return hot_keys

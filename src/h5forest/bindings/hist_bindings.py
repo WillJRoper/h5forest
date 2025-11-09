@@ -163,29 +163,16 @@ def _init_hist_bindings(app):
         filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
     )(exit_edit_hist)
 
-    # Add the hot keys
-    hot_keys = [
-        ConditionalContainer(
-            Label("e → Edit Config"),
-            Condition(lambda: len(app.histogram_plotter.plot_params) > 0),
-        ),
-        ConditionalContainer(
-            Label("Enter → Edit entry"),
-            Condition(lambda: app.app.layout.has_focus(app.hist_content)),
-        ),
-        Label("h → Show Histogram"),
-        Label("H → Save Histogram"),
-        Label("r → Reset"),
-        ConditionalContainer(
-            Label("q → Exit Hist Mode"),
-            Condition(
-                lambda: not app.app.layout.has_focus(app.hist_content)
-            ),
-        ),
-        ConditionalContainer(
-            Label("q → Exit Config"),
-            Condition(lambda: app.app.layout.has_focus(app.hist_content)),
-        ),
-    ]
+    # Return all possible hot keys as a dict
+    # The app will use property methods to filter based on state
+    hot_keys = {
+        "edit_config": Label("e → Edit Config"),
+        "edit_entry": Label("Enter → Edit entry"),
+        "show_hist": Label("h → Show Histogram"),
+        "save_hist": Label("H → Save Histogram"),
+        "reset": Label("r → Reset"),
+        "exit_mode": Label("q → Exit Hist Mode"),
+        "exit_config": Label("q → Exit Config"),
+    }
 
-    return DynamicLabelLayout(hot_keys)
+    return hot_keys

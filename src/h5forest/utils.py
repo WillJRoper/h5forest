@@ -56,12 +56,13 @@ class DynamicLabelLayout:
     """
     A layout container that dynamically arranges labels across multiple rows.
 
-    This class wraps a list of labels (including ConditionalContainers) and
-    distributes them across multiple rows based on available terminal width.
+    This class wraps a list of labels or a callable that returns labels,
+    and distributes them across multiple rows based on available terminal width.
     It ensures labels don't overlap and automatically adjusts on window resize.
 
     Attributes:
-        labels (list): List of Label or ConditionalContainer widgets.
+        labels (list or callable): List of Label widgets, or a callable that
+            returns a list of Labels when called.
         padding (int): Space between labels (default: 3).
         min_rows (int): Minimum number of rows to display (default: 3).
     """
@@ -71,7 +72,8 @@ class DynamicLabelLayout:
         Initialize the dynamic label layout.
 
         Args:
-            labels (list): List of Label or ConditionalContainer widgets.
+            labels (list or callable): List of Label widgets, or a callable
+                that returns a list of Labels when called.
             padding (int): Space between labels (default: 3).
             min_rows (int): Minimum number of rows (default: 3).
         """
@@ -229,8 +231,18 @@ class DynamicLabelLayout:
             # Fallback if app is not available
             available_width = 80
 
+        # Get current labels (call if callable, otherwise use as-is)
+        current_labels = self.labels() if callable(self.labels) else self.labels
+
+        # Temporarily store current labels for distribution
+        original_labels = self.labels
+        self.labels = current_labels
+
         # Distribute labels across rows
         rows = self._distribute_labels(available_width)
+
+        # Restore original labels reference
+        self.labels = original_labels
 
         if not rows or all(not row for row in rows):
             # All rows are empty
