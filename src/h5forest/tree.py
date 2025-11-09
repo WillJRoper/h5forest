@@ -104,6 +104,14 @@ class Tree:
         self.all_node_paths = []
         self.get_all_paths()
 
+        # Store the original tree state for search restoration
+        self.original_tree_text = None
+        self.original_tree_text_split = None
+        self.original_nodes_by_row = None
+
+        # Store filtered node rows for search navigation
+        self.filtered_node_rows = []
+
     @property
     def length(self):
         """Return the length of the tree text."""
@@ -316,20 +324,162 @@ class Tree:
         # to ensure we have all the paths before we start searching without
         # holding things up here
 
-    def search_tree(self):
-        """Search the HDF5 file for the user input."""
-        from h5forest import H5Forest as app
+    def filter_tree(self, query):
+        """
+        Filter the tree based on a fuzzy search query.
 
-        # Wait for the unpack thread to finish
-        self.unpack_thread.join()
+        This method searches all paths in the HDF5 file and reconstructs
+        the tree to show only matching nodes and their parents. The original
+        tree state is preserved for restoration.
 
-        def search_callback():
-            """Search the HDF5 file for the user input."""
-            pass
+        Args:
+            query (str):
+                The search query string.
 
-        # Get the user input
-        search_str = app.input("Search for:", search_callback)
+        Returns:
+            str:
+                The filtered tree text, or empty string if no query.
+        """
+        from h5forest.fuzzy import search_paths
 
-        # Check if the search string is empty
-        if not search_str:
-            return
+        # If query is empty, restore original tree
+        if not query:
+            if self.original_tree_text is not None:
+                self.restore_tree()
+            return self.tree_text
+
+        # Wait for the background thread to finish collecting paths
+        if self.unpack_thread is not None and self.unpack_thread.is_alive():
+            self.unpack_thread.join()
+
+        # If we haven't saved the original tree yet, do it now
+        if self.original_tree_text is None:
+            self._save_tree_state()
+
+        # Search for matching paths (limit to top 20)
+        matches = search_paths(query, self.all_node_paths, limit=20)
+
+        # If no matches, show empty tree
+        if not matches:
+            self.tree_text = ""
+            self.tree_text_split = []
+            self.nodes_by_row = []
+            self.filtered_node_rows = []
+            return self.tree_text
+
+        # Extract just the paths from matches
+        matching_paths = [path for path, score in matches]
+
+        # Build filtered tree with matches and their parents
+        self._build_filtered_tree(matching_paths)
+
+        return self.tree_text
+
+    def _save_tree_state(self):
+        """Save the current tree state for later restoration."""
+        self.original_tree_text = self.tree_text
+        self.original_tree_text_split = self.tree_text_split.copy()
+        self.original_nodes_by_row = self.nodes_by_row.copy()
+
+    def _build_filtered_tree(self, matching_paths):
+        """
+        Build a filtered tree showing only matching nodes and their parents.
+
+        Args:
+            matching_paths (list):
+                List of paths that match the search query.
+        """
+        # Collect all paths to include (matches + parents)
+        paths_to_include = set()
+
+        for path in matching_paths:
+            # Add the matching path
+            paths_to_include.add(path)
+
+            # Add all parent paths
+            parts = path.split("/")
+            for i in range(1, len(parts)):
+                parent_path = "/".join(parts[:i])
+                if parent_path:
+                    paths_to_include.add(parent_path)
+
+        # Rebuild the tree by traversing from root
+        # and only including nodes whose paths are in paths_to_include
+        filtered_text = ""
+        filtered_nodes = []
+        filtered_rows = []
+
+        def _traverse_and_filter(node, row_counter):
+            """Recursively traverse and filter nodes."""
+            nonlocal filtered_text, filtered_nodes, filtered_rows
+
+            # Check if this node's path should be included
+            # The root path is "/" but in all_node_paths it appears as ""
+            node_search_path = (
+                node.path[1:] if node.path.startswith("/") else node.path
+            )
+            if node.depth == 0:
+                node_search_path = ""
+
+            # For non-root nodes, we need to match against the path format
+            # used in all_node_paths (without leading /)
+            if node.depth > 0:
+                # Reconstruct the path as it appears in all_node_paths
+                if node.parent and node.parent.depth == 0:
+                    node_search_path = node.name
+                else:
+                    # Build full path from root
+                    path_parts = []
+                    current = node
+                    while current.parent is not None:
+                        path_parts.insert(0, current.name)
+                        current = current.parent
+                    node_search_path = "/".join(path_parts)
+
+            # Root is always included if any children match
+            if node.depth == 0 or node_search_path in paths_to_include:
+                # Add this node to filtered tree
+                filtered_text_line = node.to_tree_text() + "\n"
+                filtered_text += filtered_text_line
+                filtered_nodes.append(node)
+
+                # Track if this was a matching node (not just a parent)
+                if node_search_path in matching_paths:
+                    filtered_rows.append(row_counter[0])
+                    # Mark this node as a match for highlighting
+                    node.is_highlighted = True
+                else:
+                    node.is_highlighted = False
+
+                row_counter[0] += 1
+
+                # Recursively include children
+                for child in node.children:
+                    _traverse_and_filter(child, row_counter)
+
+        # Start traversal from root
+        row_counter = [0]  # Use list to make it mutable in nested function
+        _traverse_and_filter(self.root, row_counter)
+
+        # Update tree state with filtered results
+        self.tree_text = filtered_text.rstrip("\n")
+        self.tree_text_split = self.tree_text.split("\n") if self.tree_text else []
+        self.nodes_by_row = filtered_nodes
+        self.filtered_node_rows = filtered_rows
+
+    def restore_tree(self):
+        """Restore the original tree state before filtering."""
+        if self.original_tree_text is not None:
+            self.tree_text = self.original_tree_text
+            self.tree_text_split = self.original_tree_text_split.copy()
+            self.nodes_by_row = self.original_nodes_by_row.copy()
+
+            # Clear all highlighting
+            for node in self.nodes_by_row:
+                node.is_highlighted = False
+
+            # Clear saved state
+            self.original_tree_text = None
+            self.original_tree_text_split = None
+            self.original_nodes_by_row = None
+            self.filtered_node_rows = []

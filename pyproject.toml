@@ -26,6 +26,7 @@ dependencies = [
   "numpy",
   "prompt_toolkit",
   "matplotlib",
+  "rapidfuzz>=3.0.0",
 ]
 
 # Add special dependencies for development
