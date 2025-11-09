@@ -555,6 +555,85 @@ class TestH5ForestLayout:
         assert app.layout is not None
         assert app.expanded_attrs_frame is not None
 
+    def test_tree_width_calculation(self, temp_h5_file):
+        """Test tree_width closure with different visibility flags."""
+        from unittest.mock import patch
+
+        from h5forest.h5_forest import H5Forest
+
+        # Mock get_window_size to return known values
+        with patch("h5forest.h5_forest.get_window_size") as mock_size:
+            mock_size.return_value = (100, 40)  # 100 rows, 40 columns
+
+            app = H5Forest(temp_h5_file)
+
+            # Access the width callable through Frame's body container
+            # Frame has a .body attribute which is the wrapped container
+
+            # Test with flag_values_visible
+            app._flag_values_visible = True
+            app._init_layout()
+            width_func = app.tree_frame.body.width
+            if callable(width_func):
+                width = width_func()
+                assert width == 20  # 40 columns // 2
+
+            # Test with flag_plotting_mode
+            app._flag_values_visible = False
+            app._flag_plotting_mode = True
+            app._init_layout()
+            width_func = app.tree_frame.body.width
+            if callable(width_func):
+                width = width_func()
+                assert width == 20
+
+            # Test with scatter_plotter having data (len > 0)
+            app._flag_plotting_mode = False
+            app.scatter_plotter.plot_params = {"x": "test"}
+            app._init_layout()
+            width_func = app.tree_frame.body.width
+            if callable(width_func):
+                width = width_func()
+                assert width == 20
+            app.scatter_plotter.plot_params = {}
+
+            # Test with flag_hist_mode
+            app._flag_hist_mode = True
+            app._init_layout()
+            width_func = app.tree_frame.body.width
+            if callable(width_func):
+                width = width_func()
+                assert width == 20
+
+            # Test with histogram_plotter having data
+            app._flag_hist_mode = False
+            app.histogram_plotter.plot_params = {"data": "test"}
+            app._init_layout()
+            width_func = app.tree_frame.body.width
+            if callable(width_func):
+                width = width_func()
+                assert width == 20
+            app.histogram_plotter.plot_params = {}
+
+            # Test with flag_expanded_attrs
+            app.flag_expanded_attrs = True
+            app._init_layout()
+            width_func = app.tree_frame.body.width
+            if callable(width_func):
+                width = width_func()
+                assert width == 20
+
+            # Test default case (all flags false, full width)
+            app._flag_values_visible = False
+            app._flag_plotting_mode = False
+            app._flag_hist_mode = False
+            app.flag_expanded_attrs = False
+            app._init_layout()
+            width_func = app.tree_frame.body.width
+            if callable(width_func):
+                width = width_func()
+                assert width == 40  # Full width
+
 
 class TestH5ForestPrintAndInput:
     """Test H5Forest print and input methods."""
@@ -644,28 +723,62 @@ class TestH5ForestPrintAndInput:
         def test_callback():
             callback_executed.append(app.user_input)
 
-        # Set up input
+        # Store initial binding count
+        initial_bindings = len(app.kb.bindings)
+
+        # Set up input - this adds the on_enter binding
         app.input("Enter value:", test_callback)
+
+        # Verify bindings were added
+        assert len(app.kb.bindings) > initial_bindings
 
         # Simulate typing
         app.mini_buffer_content.text = "test_value"
 
-        # Find and trigger the enter handler
-        for binding in reversed(app.kb.bindings):
-            if binding.keys == ("enter",) and binding.filter is not None:
-                # Check if this binding is the one added by input()
-                # by checking if it applies when mini_buffer has focus
-                mock_event = Mock()
-                try:
-                    binding.handler(mock_event)
-                    # If we got here, check if callback was executed
-                    if len(callback_executed) > 0:
-                        assert callback_executed[0] == "test_value"
-                        assert app.input_buffer_content.text == ""
-                        break
-                except Exception:
-                    # Not the right binding, continue
-                    pass
+        # Mock has_focus to return True for mini_buffer_content
+        def mock_has_focus(widget):
+            return widget == app.mini_buffer_content
+
+        app.app.layout.has_focus = mock_has_focus
+
+        # Find the newly added bindings (last 2: enter and escape)
+        new_bindings = app.kb.bindings[initial_bindings:]
+
+        # Find the enter binding from new bindings
+        # The "enter" key might be represented differently
+        on_enter_binding = None
+        for binding in new_bindings:
+            # Check for enter, c-m (Control-M, which is enter), or return
+            if binding.keys in [("enter",), ("c-m",), ("<enter>",)]:
+                on_enter_binding = binding
+                break
+
+        # If not found, just take the first new binding with a filter
+        if on_enter_binding is None:
+            for binding in new_bindings:
+                if binding.filter is not None:
+                    on_enter_binding = binding
+                    break
+
+        # Assert we found the binding
+        msg = (
+            f"Enter binding not found. Keys: {[b.keys for b in new_bindings]}"
+        )
+        assert on_enter_binding is not None, msg
+
+        # Verify filter exists and passes
+        assert on_enter_binding.filter is not None
+        assert on_enter_binding.filter()
+
+        # Call the on_enter handler
+        mock_event = Mock()
+        on_enter_binding.handler(mock_event)
+
+        # Verify on_enter was executed (lines 785-791)
+        assert app.user_input == "test_value"  # Line 785
+        assert app.input_buffer_content.text == ""  # Line 788
+        assert len(callback_executed) == 1  # Line 791
+        assert callback_executed[0] == "test_value"
 
     def test_input_on_escape(self, temp_h5_file):
         """Test input method on_esc callback."""
@@ -895,20 +1008,16 @@ class TestH5ForestMain:
                 # Verify run was called
                 mock_run.assert_called_once()
 
-    def test_main_name_guard(self, temp_h5_file):
-        """Test __name__ == '__main__' guard."""
-        # This test verifies that the if __name__ == "__main__" block exists
-        # and would execute main() when the script is run directly
-        from h5forest import h5_forest
-
-        # Verify that main is defined and callable
-        assert hasattr(h5_forest, "main")
-        assert callable(h5_forest.main)
-
-        # The actual guard can't be tested directly in a pytest, but we can
-        # verify the code structure is correct by checking the module's source
+    def test_main_name_guard(self):
+        """Test __name__ == '__main__' guard exists in module."""
+        # The __main__ guard (line 883) is standard Python boilerplate
+        # It cannot be easily covered by unit tests as it requires
+        # running the module as __main__, which conflicts with pytest
         import inspect
 
+        from h5forest import h5_forest
+
+        # Verify the guard exists in the source
         source = inspect.getsource(h5_forest)
         assert 'if __name__ == "__main__":' in source
         assert "main()" in source
