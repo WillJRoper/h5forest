@@ -1,5 +1,6 @@
 """Comprehensive tests for fuzzy search functionality."""
 
+import os
 import tempfile
 
 import h5py
@@ -38,8 +39,6 @@ def search_test_file():
         g3_data.create_dataset("Density", data=np.ones(10) * 1.2)
 
     yield filepath
-
-    import os
 
     os.unlink(filepath)
 
@@ -271,7 +270,6 @@ class TestTreeFiltering:
         filtered = tree.filter_tree("g2t")
 
         assert "Temperature" in filtered or filtered == ""
-        # Note: May not match depending on scorer strictness
 
     def test_top_100_limit(self, search_test_file):
         """Test that only top 100 results are shown."""
@@ -296,8 +294,6 @@ class TestTreeFiltering:
             assert len(tree.filtered_node_rows) <= 100
 
         finally:
-            import os
-
             os.unlink(filepath)
 
     def test_filter_state_cleared_on_restore(self, search_test_file):
