@@ -86,17 +86,18 @@ def _init_app_bindings(app):
         app.tree.original_nodes_by_row = None
         app.tree.filtered_node_rows = []
 
-        # Rebuild tree from root (shows tree as if app just opened)
-        tree_text = app.tree.get_tree_text()
-
         # Reset the flag
         app.flag_tree_filtered = False
 
-        # Update the tree display with rebuilt tree text
+        # Restore to the initial tree state (as when app first opened)
         app.tree_buffer.set_document(
-            Document(text=tree_text, cursor_position=0),
+            Document(text=app.initial_tree_text, cursor_position=0),
             bypass_readonly=True,
         )
+
+        # Update tree state to match
+        app.tree.tree_text = app.initial_tree_text
+        app.tree.tree_text_split = app.initial_tree_text.split("\n")
 
         # Invalidate to refresh display
         event.app.invalidate()
