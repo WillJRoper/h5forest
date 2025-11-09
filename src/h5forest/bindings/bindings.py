@@ -80,6 +80,10 @@ def _init_app_bindings(app):
     @error_handler
     def restore_filtered_tree(event):
         """Restore the original tree when viewing filtered search results."""
+        print("DEBUG: ESC PRESSED - restore_filtered_tree called")
+        print(f"DEBUG: flag_tree_filtered = {app.flag_tree_filtered}")
+        print(f"DEBUG: flag_normal_mode = {app.flag_normal_mode}")
+
         # Clear any saved filtering state
         app.tree.original_tree_text = None
         app.tree.original_tree_text_split = None
@@ -89,18 +93,19 @@ def _init_app_bindings(app):
         # Reset the flag
         app.flag_tree_filtered = False
 
-        # Restore to the initial tree state (as when app first opened)
+        # Rebuild tree from root - shows tree as when first opened
+        tree_text = app.tree.get_tree_text()
+        print(f"DEBUG: Rebuilt tree, length = {len(tree_text)}")
+
+        # Update the display
         app.tree_buffer.set_document(
-            Document(text=app.initial_tree_text, cursor_position=0),
+            Document(text=tree_text, cursor_position=0),
             bypass_readonly=True,
         )
 
-        # Update tree state to match
-        app.tree.tree_text = app.initial_tree_text
-        app.tree.tree_text_split = app.initial_tree_text.split("\n")
-
         # Invalidate to refresh display
         event.app.invalidate()
+        print("DEBUG: Tree restored and display invalidated")
 
     # Bind the functions
     app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
