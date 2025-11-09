@@ -1,8 +1,8 @@
 """Simple utils tests that work correctly."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from h5forest.utils import DynamicTitle
+from h5forest.utils import DynamicTitle, get_window_size
 
 
 class TestDynamicTitle:
@@ -48,6 +48,20 @@ class TestDynamicTitle:
 
 class TestGetWindowSizeSimple:
     """Simple tests for get_window_size function with proper mocking."""
+
+    @patch("os.popen")
+    def test_get_window_size_with_mocked_popen(self, mock_popen):
+        """Test get_window_size with mocked os.popen."""
+        # Create a mock file object that returns "24 80"
+        mock_file = MagicMock()
+        mock_file.read.return_value = "24 80"
+        mock_popen.return_value = mock_file
+
+        rows, cols = get_window_size()
+
+        assert rows == 24
+        assert cols == 80
+        mock_popen.assert_called_once_with("stty size", "r")
 
     @patch("h5forest.utils.get_window_size")
     def test_get_window_size_mocked(self, mock_get_window_size):
