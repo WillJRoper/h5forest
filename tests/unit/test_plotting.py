@@ -58,6 +58,34 @@ class TestPlotter:
         plotter.show()
         mock_show.assert_called_once()
 
+    @patch("h5forest.plotting.plt.close")
+    def test_close_with_figure(self, mock_close):
+        """Test close method with existing figure."""
+        plotter = Plotter()
+        fig_mock = Mock()
+        plotter.fig = fig_mock
+        plotter.ax = Mock()
+
+        plotter.close()
+
+        mock_close.assert_called_once_with(fig_mock)
+        assert plotter.fig is None
+        assert plotter.ax is None
+
+    @patch("h5forest.plotting.plt.close")
+    def test_close_without_figure(self, mock_close):
+        """Test close method when no figure exists."""
+        plotter = Plotter()
+        plotter.fig = None
+        plotter.ax = None
+
+        plotter.close()
+
+        # close should not be called if fig is None
+        mock_close.assert_not_called()
+        assert plotter.fig is None
+        assert plotter.ax is None
+
     @patch("h5forest.plotting.os.getcwd")
     @patch("h5forest.h5_forest.H5Forest")
     def test_save(self, mock_forest_class, mock_getcwd):
