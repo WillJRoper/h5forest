@@ -329,8 +329,30 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.input.assert_called_once()
 
-    def test_toggle_x_scale(self, mock_app, mock_event):
-        """Test toggling x scale."""
+    def test_edit_bins_callback(self, mock_app, mock_event):
+        """Test editing bins callback updates the value."""
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("b",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Get the callback that was passed to input
+        callback = mock_app.input.call_args[0][1]
+        mock_app.user_input = "100"
+
+        # Call the callback
+        callback()
+
+        # Verify the bins value was updated
+        assert "nbins:       100" in mock_app.hist_content.text
+        mock_app.shift_focus.assert_called_with(mock_app.tree_content)
+
+    def test_toggle_x_scale_linear_to_log(self, mock_app, mock_event):
+        """Test toggling x scale from linear to log."""
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -339,11 +361,34 @@ class TestHistBindings:
         ]
         handler = bindings[0].handler
         handler(mock_event)
-        assert "log" in mock_app.hist_content.text
+        assert "x-scale:     log" in mock_app.hist_content.text
         mock_app.app.invalidate.assert_called()
 
-    def test_toggle_y_scale(self, mock_app, mock_event):
-        """Test toggling y scale."""
+    def test_toggle_x_scale_log_to_linear(self, mock_app, mock_event):
+        """Test toggling x scale from log to linear."""
+        _init_hist_bindings(mock_app)
+
+        # Set initial state to log
+        mock_app.hist_content.text = (
+            "data:        <key>\n"
+            "nbins:       50\n"
+            "x-label:     <label>\n"
+            "x-scale:     log\n"
+            "y-scale:     linear\n"
+        )
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("x",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        assert "x-scale:     linear" in mock_app.hist_content.text
+        mock_app.app.invalidate.assert_called()
+
+    def test_toggle_y_scale_linear_to_log(self, mock_app, mock_event):
+        """Test toggling y scale from linear to log."""
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -352,7 +397,30 @@ class TestHistBindings:
         ]
         handler = bindings[0].handler
         handler(mock_event)
-        assert "log" in mock_app.hist_content.text
+        assert "y-scale:     log" in mock_app.hist_content.text
+        mock_app.app.invalidate.assert_called()
+
+    def test_toggle_y_scale_log_to_linear(self, mock_app, mock_event):
+        """Test toggling y scale from log to linear."""
+        _init_hist_bindings(mock_app)
+
+        # Set initial state to log
+        mock_app.hist_content.text = (
+            "data:        <key>\n"
+            "nbins:       50\n"
+            "x-label:     <label>\n"
+            "x-scale:     linear\n"
+            "y-scale:     log\n"
+        )
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        assert "y-scale:     linear" in mock_app.hist_content.text
         mock_app.app.invalidate.assert_called()
 
     def test_exit_hist_mode(self, mock_app, mock_event):

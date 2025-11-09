@@ -371,11 +371,117 @@ class TestPlotBindings:
         # Verify focus shifted back to tree
         mock_app.shift_focus.assert_called_with(mock_app.tree_content)
 
+    def test_toggle_x_scale_linear_to_log(self, mock_app, mock_event):
+        """Test toggling x scale from linear to log."""
+        _init_plot_bindings(mock_app)
+
+        # Find the X binding (capital X for toggle)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("X",) and b.filter is not None
+        ]
+        assert len(bindings) > 0
+
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify x-scale was toggled to log
+        assert "log" in mock_app.plot_content.text
+        mock_app.app.invalidate.assert_called()
+
+    def test_toggle_x_scale_log_to_linear(self, mock_app, mock_event):
+        """Test toggling x scale from log to linear."""
+        _init_plot_bindings(mock_app)
+
+        # Set initial state to log
+        mock_app.plot_content.text = (
+            "x-axis:      <key>\n"
+            "y-axis:      <key>\n"
+            "x-label:     <label>\n"
+            "y-label:     <label>\n"
+            "x-scale:     log\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("X",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify x-scale was toggled back to linear
+        assert "x-scale:     linear" in mock_app.plot_content.text
+
+    def test_toggle_y_scale_linear_to_log(self, mock_app, mock_event):
+        """Test toggling y scale from linear to log."""
+        _init_plot_bindings(mock_app)
+
+        # Find the Y binding (capital Y for toggle)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("Y",) and b.filter is not None
+        ]
+        assert len(bindings) > 0
+
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify y-scale was toggled to log
+        assert "y-scale:     log" in mock_app.plot_content.text
+        mock_app.app.invalidate.assert_called()
+
+    def test_toggle_y_scale_log_to_linear(self, mock_app, mock_event):
+        """Test toggling y scale from log to linear."""
+        _init_plot_bindings(mock_app)
+
+        # Set initial state to log
+        mock_app.plot_content.text = (
+            "x-axis:      <key>\n"
+            "y-axis:      <key>\n"
+            "x-label:     <label>\n"
+            "y-label:     <label>\n"
+            "x-scale:     linear\n"
+            "y-scale:     log\n"
+            "marker:      .\n"
+        )
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("Y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify y-scale was toggled back to linear
+        assert "y-scale:     linear" in mock_app.plot_content.text
+
+    def test_reset_closes_figure(self, mock_app, mock_event):
+        """Test that reset closes any open figures."""
+        _init_plot_bindings(mock_app)
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("r",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify close was called
+        mock_app.scatter_plotter.close.assert_called_once()
+        mock_app.scatter_plotter.reset.assert_called_once()
+
     def test_all_keys_bound(self, mock_app):
         """Test that all expected keys are bound."""
         _init_plot_bindings(mock_app)
 
-        expected_keys = ["x", "y", "c-m", "p", "P", "r", "e", "q"]
+        expected_keys = ["x", "y", "X", "Y", "c-m", "p", "P", "r", "e", "q"]
 
         for key in expected_keys:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
