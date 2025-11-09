@@ -191,19 +191,21 @@ class TestDynamicLabelLayout:
 
         # Total width needed: (1+2) + (1+2) + (1+2) = 9 characters
         # Available width: 100 (more than enough)
+        # Grid layout: all 3 labels should fit in first row
         rows = layout._distribute_labels(100)
 
         # Should have 3 rows minimum (even though all fit in one)
         assert len(rows) == 3
-        # First row should have all labels
+        # First row should have all labels (grid places them all in one row)
         assert len(rows[0]) == 3
-        assert rows[0] == labels
         # Remaining rows should be empty
         assert rows[1] == []
         assert rows[2] == []
+        # Verify all labels are present
+        assert all(label in rows[0] for label in labels)
 
     def test_distribute_labels_multiple_rows(self):
-        """Test label distribution across multiple rows."""
+        """Test label distribution across multiple rows in grid layout."""
         labels = [
             Label("Label 1"),
             Label("Label 2"),
@@ -212,16 +214,20 @@ class TestDynamicLabelLayout:
         ]
         layout = DynamicLabelLayout(labels, padding=3)
 
-        # Each label: ~10 characters
-        # With width=25, should fit 2 labels per row
+        # Each label: ~10 characters with padding = ~13 total
+        # With width=25, should fit 2 labels per row in grid layout
         rows = layout._distribute_labels(25)
 
-        # Should distribute across at least 2 rows
-        assert len(rows) >= 2
-        # First row should have labels
-        assert len(rows[0]) > 0
-        # Should have distributed labels (not all in first row)
-        assert len(rows[0]) < len(labels)
+        # Should have at least 3 rows (min_rows)
+        assert len(rows) >= 3
+        # With grid layout, rows should have equal counts (except last)
+        non_empty_rows = [r for r in rows if r]
+        if len(non_empty_rows) >= 2:
+            # First rows should have same number of labels
+            assert len(non_empty_rows[0]) == len(non_empty_rows[1])
+        # All labels should be distributed
+        total_labels = sum(len(row) for row in rows)
+        assert total_labels == len(labels)
 
     def test_distribute_labels_narrow_terminal(self):
         """Test label distribution with very narrow terminal."""
@@ -477,6 +483,15 @@ class TestDynamicLabelLayout:
                 all_distributed_labels.extend(row)
             assert len(all_distributed_labels) == len(labels)
 
+            # Grid layout: non-empty rows should have consistent counts
+            non_empty_rows = [r for r in rows if r]
+            if len(non_empty_rows) > 1:
+                # All rows except possibly last should have same count
+                row_counts = [len(r) for r in non_empty_rows[:-1]]
+                if row_counts:
+                    # All should be equal
+                    assert all(c == row_counts[0] for c in row_counts)
+
     def test_label_distribution_with_varying_sizes(self):
         """Test distribution with labels of varying sizes."""
         labels = [
@@ -547,3 +562,50 @@ class TestDynamicLabelLayout:
         assert len(rows) >= 3
         total_items = sum(len(row) for row in rows)
         assert total_items == len(labels)
+
+    def test_grid_alignment_property(self):
+        """Test that grid layout maintains consistent row sizes."""
+        # Create labels that should require multiple rows
+        labels = [Label(f"Item {i}") for i in range(10)]
+        layout = DynamicLabelLayout(labels, padding=2)
+
+        # Test with moderate width (should create multiple rows)
+        rows = layout._distribute_labels(50)
+
+        # Get non-empty rows
+        non_empty_rows = [r for r in rows if r]
+
+        # Grid property: all rows except last should have same count
+        if len(non_empty_rows) > 1:
+            first_row_count = len(non_empty_rows[0])
+            # All rows except possibly the last should match first row
+            for row in non_empty_rows[:-1]:
+                assert (
+                    len(row) == first_row_count
+                ), f"Grid alignment failed: expected {first_row_count} labels per row"
+
+            # Last row should have <= first_row_count
+            assert len(non_empty_rows[-1]) <= first_row_count
+
+    def test_grid_distribution_order(self):
+        """Test that labels are distributed left-to-right, top-to-bottom."""
+        labels = [
+            Label("A"),
+            Label("B"),
+            Label("C"),
+            Label("D"),
+            Label("E"),
+        ]
+        layout = DynamicLabelLayout(labels, padding=2)
+
+        # With narrow width, should get 1 per row
+        rows = layout._distribute_labels(5)
+
+        # Labels should appear in order across rows
+        flat_labels = []
+        for row in rows:
+            flat_labels.extend(row)
+
+        # Should maintain original order
+        for i, label in enumerate(flat_labels):
+            assert label == labels[i]

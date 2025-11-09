@@ -110,7 +110,11 @@ class DynamicLabelLayout:
 
     def _distribute_labels(self, available_width):
         """
-        Distribute labels across rows based on available width.
+        Distribute labels evenly across rows in a grid layout.
+
+        This method calculates how many labels can fit per row, then
+        distributes labels left-to-right, top-to-bottom to create
+        aligned columns.
 
         Args:
             available_width (int): Terminal width in characters.
@@ -121,33 +125,41 @@ class DynamicLabelLayout:
         if available_width <= 0:
             available_width = 80  # Fallback width
 
+        if not self.labels:
+            # Return empty rows matching min_rows
+            return [[] for _ in range(self.min_rows)]
+
+        # Calculate maximum label width to ensure all labels fit
+        label_widths = [
+            self._estimate_label_width(label) for label in self.labels
+        ]
+        max_label_width = max(label_widths) if label_widths else 20
+
+        # Calculate how many labels can fit per row based on max width
+        # This ensures even the widest label will fit
+        labels_per_row = max(1, available_width // max_label_width)
+
+        # Verify the first row actually fits with real widths
+        # If not, reduce labels_per_row until it does
+        for num_per_row in range(labels_per_row, 0, -1):
+            # Calculate actual width needed for this many labels
+            # Use a sample from the actual labels to test
+            test_labels = self.labels[:num_per_row]
+            test_width = sum(
+                self._estimate_label_width(label) for label in test_labels
+            )
+            if test_width <= available_width:
+                labels_per_row = num_per_row
+                break
+
+        # Ensure we have at least 1 label per row
+        labels_per_row = max(1, labels_per_row)
+
+        # Distribute labels evenly across rows in grid fashion
         rows = []
-        current_row = []
-        current_width = 0
-
-        for label in self.labels:
-            label_width = self._estimate_label_width(label)
-
-            # Check if this label fits in the current row
-            if current_width + label_width <= available_width:
-                current_row.append(label)
-                current_width += label_width
-            else:
-                # Start a new row if current row is not empty
-                if current_row:
-                    rows.append(current_row)
-                    current_row = [label]
-                    current_width = label_width
-                else:
-                    # Label is too wide for available width, add it anyway
-                    current_row.append(label)
-                    rows.append(current_row)
-                    current_row = []
-                    current_width = 0
-
-        # Add the last row if not empty
-        if current_row:
-            rows.append(current_row)
+        for i in range(0, len(self.labels), labels_per_row):
+            row = self.labels[i : i + labels_per_row]
+            rows.append(row)
 
         # Ensure minimum number of rows
         while len(rows) < self.min_rows:
