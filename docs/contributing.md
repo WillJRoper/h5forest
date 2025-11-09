@@ -38,7 +38,29 @@ We welcome contributions to h5forest! This guide will help you get started with 
    - `mkdocs-material` - Material theme for MkDocs
    - Related plugins and extensions
 
-4. **Verify installation:**
+4. **Install pre-commit hooks (recommended):**
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+   This sets up automatic code quality checks that run before each commit:
+   - **Ruff linting and formatting** - Ensures code style consistency
+   - **Merge conflict detection** - Prevents accidental merge conflict markers
+   - **Large file prevention** - Stops large files from being added
+   - **Case conflict checks** - Avoids filename case issues
+
+   Once installed, these checks run automatically on staged files before every commit.
+   You can also run them manually:
+   ```bash
+   # Run on all files
+   pre-commit run --all-files
+
+   # Run on specific files
+   pre-commit run --files path/to/file.py
+   ```
+
+5. **Verify installation:**
    ```bash
    # Run tests
    pytest
