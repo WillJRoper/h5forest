@@ -159,9 +159,6 @@ class H5Forest:
         self._flag_hist_mode = False
         self._flag_search_mode = False
 
-        # Flag to track if the tree is currently filtered by search results
-        self.flag_tree_filtered = False
-
         # Set up the main app and tree bindings. The hot keys for these are
         # combined into a single hot keys panel which will be shown whenever
         # in normal mode

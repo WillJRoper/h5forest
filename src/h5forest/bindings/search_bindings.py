@@ -33,8 +33,7 @@ def _init_search_bindings(app):
         # Rebuild tree text from current tree state
         tree_text = app.tree.get_tree_text()
 
-        # Reset flags and return to normal mode BEFORE clearing buffer
-        app.flag_tree_filtered = False
+        # Return to normal mode BEFORE clearing buffer
         app.return_to_normal_mode()
 
         # Clear the search buffer (safe now that we're not in search mode)
@@ -60,9 +59,6 @@ def _init_search_bindings(app):
         Keeps the filtered tree visible and returns to normal mode,
         allowing all other modes (d, g, w, p, H) to work on the filtered results.
         """
-        # Set flag that tree contains filtered results
-        app.flag_tree_filtered = True
-
         # Return to normal mode BEFORE clearing buffer
         # This prevents the text change handler from restoring the tree
         app.return_to_normal_mode()
