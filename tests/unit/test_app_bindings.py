@@ -76,9 +76,9 @@ class TestAppBindings:
         return event
 
     def test_init_app_bindings_returns_hotkeys(self, mock_app):
-        """Test that _init_app_bindings returns a list of hotkeys."""
+        """Test that _init_app_bindings returns a dict of hotkeys."""
         hot_keys = _init_app_bindings(mock_app)
-        assert isinstance(hot_keys, list)
+        assert isinstance(hot_keys, dict)
         assert len(hot_keys) == 10
 
     def test_exit_app_handler(self, mock_app, mock_event):
@@ -386,18 +386,17 @@ class TestAppBindings:
         assert callable(error_handler)
 
     def test_hotkeys_structure(self, mock_app):
-        """Test that hotkeys list has correct structure."""
+        """Test that hotkeys dict has correct structure."""
         hot_keys = _init_app_bindings(mock_app)
 
-        # Should be a list with ConditionalContainers and Labels
-        from prompt_toolkit.layout.containers import ConditionalContainer
+        # Should be a dict with Label values
         from prompt_toolkit.widgets import Label
 
         assert len(hot_keys) == 10
 
-        # Some should be ConditionalContainers, some plain Labels
-        # Just verify they're valid types
-        for item in hot_keys:
-            assert isinstance(item, (ConditionalContainer, Label)), (
-                f"Invalid type: {type(item)}"
+        # All values should be Labels
+        for key, value in hot_keys.items():
+            assert isinstance(key, str), f"Invalid key type: {type(key)}"
+            assert isinstance(value, Label), (
+                f"Invalid value type: {type(value)}"
             )
