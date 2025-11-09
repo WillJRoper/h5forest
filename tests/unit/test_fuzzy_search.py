@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 import pytest
 
-from h5forest.fuzzy import search_paths
+from h5forest.fuzzy import get_match_indices, search_paths
 from h5forest.tree import Tree
 
 
@@ -42,6 +42,35 @@ def search_test_file():
     import os
 
     os.unlink(filepath)
+
+
+class TestGetMatchIndices:
+    """Test the get_match_indices function."""
+
+    def test_basic_matching(self):
+        """Test basic character index matching."""
+        indices = get_match_indices("abc", "xaxbxcx")
+        assert indices == [1, 3, 5]
+
+    def test_empty_query(self):
+        """Test that empty query returns empty list."""
+        indices = get_match_indices("", "some text")
+        assert indices == []
+
+    def test_empty_text(self):
+        """Test that empty text returns empty list."""
+        indices = get_match_indices("query", "")
+        assert indices == []
+
+    def test_case_insensitive(self):
+        """Test case insensitive matching."""
+        indices = get_match_indices("abc", "AXBXCX")
+        assert indices == [0, 2, 4]
+
+    def test_partial_match(self):
+        """Test partial match when not all characters found."""
+        indices = get_match_indices("xyz", "xy")
+        assert len(indices) == 2  # Only x and y found
 
 
 class TestSearchPaths:
