@@ -86,6 +86,16 @@ def _init_app_bindings(app):
         app.tree.original_nodes_by_row = None
         app.tree.filtered_node_rows = []
 
+        # Close all children of the root to collapse everything
+        for child in app.tree.root.children:
+            child.close_node()
+
+        # Clear the root's children list
+        app.tree.root.children = []
+
+        # Reopen just the root level to restore initial state
+        app.tree.root.open_node()
+
         # Rebuild tree from root - shows tree as when first opened
         tree_text = app.tree.get_tree_text()
 
