@@ -9,7 +9,6 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding.key_processor import KeyPress
 from prompt_toolkit.keys import Keys
-from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
@@ -123,20 +122,11 @@ def _init_tree_bindings(app):
         move_right
     )
 
-    # Add hot keys
-    hot_keys = [
-        ConditionalContainer(
-            Label("Enter → Open Group"),
-            filter=Condition(
-                lambda: app.app.layout.has_focus(app.tree_content)
-            ),
-        ),
-        ConditionalContainer(
-            Label("{/} → Move Up/Down 10 Lines"),
-            filter=Condition(
-                lambda: app.app.layout.has_focus(app.tree_content)
-            ),
-        ),
-    ]
+    # Return all possible hot keys as a dict
+    # The app will use property methods to filter based on state
+    hot_keys = {
+        "open_group": Label("Enter → Open Group"),
+        "move_ten": Label("{/} → Move Up/Down 10 Lines"),
+    }
 
     return hot_keys

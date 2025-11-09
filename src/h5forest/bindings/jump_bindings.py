@@ -9,7 +9,6 @@ application.
 """
 
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout import VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
@@ -166,16 +165,15 @@ def _init_goto_bindings(app):
     app.kb.add("n", filter=Condition(lambda: app.flag_jump_mode))(goto_next)
     app.kb.add("K", filter=Condition(lambda: app.flag_jump_mode))(jump_to_key)
 
-    # Add the hot keys
-    hot_keys = VSplit(
-        [
-            Label("t/g → Go to Top"),
-            Label("b/G → Go to Bottom"),
-            Label("p → Go to Parent"),
-            Label("n → Next Parent Group"),
-            Label("K → Jump to Key Containing"),
-            Label("q → Exit Goto Mode"),
-        ]
-    )
+    # Return all hot keys as a list
+    # No conditional labels in jump mode
+    hot_keys = [
+        Label("t/g → Go to Top"),
+        Label("b/G → Go to Bottom"),
+        Label("p → Go to Parent"),
+        Label("n → Next Parent Group"),
+        Label("K → Jump to Key Containing"),
+        Label("q → Exit Goto Mode"),
+    ]
 
     return hot_keys

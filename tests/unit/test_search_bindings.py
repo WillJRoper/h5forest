@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import VSplit
 
 from h5forest.bindings.search_bindings import _init_search_bindings
 
@@ -56,16 +55,15 @@ class TestSearchBindings:
         return event
 
     def test_init_search_bindings_returns_hotkeys(self, mock_app):
-        """Test that _init_search_bindings returns a VSplit with hotkeys."""
+        """Test that _init_search_bindings returns a list of Labels."""
+        from prompt_toolkit.widgets import Label
+
         hot_keys = _init_search_bindings(mock_app)
 
-        assert isinstance(hot_keys, VSplit)
-        assert len(hot_keys.children) == 2
-        # Labels are wrapped in Window containers
-        from prompt_toolkit.layout.containers import Window
-
-        assert isinstance(hot_keys.children[0], Window)
-        assert isinstance(hot_keys.children[1], Window)
+        assert isinstance(hot_keys, list)
+        assert len(hot_keys) == 2
+        for item in hot_keys:
+            assert isinstance(item, Label)
 
     def test_exit_search_mode_restores_tree(self, mock_app, mock_event):
         """Test that exit_search_mode restores the original tree."""
@@ -231,25 +229,19 @@ class TestSearchBindings:
         assert callable(error_handler)
 
     def test_hotkeys_display_content(self, mock_app):
-        """Test that hotkeys display shows correct labels."""
+        """Test that hotkeys list contains correct labels."""
         hot_keys = _init_search_bindings(mock_app)
 
-        # Labels are wrapped in Window containers
-        from prompt_toolkit.layout.containers import Window
+        # Should be a list of Labels
+        from prompt_toolkit.widgets import Label
 
-        windows = [
-            child for child in hot_keys.children if isinstance(child, Window)
-        ]
+        assert len(hot_keys) == 2
 
-        assert len(windows) == 2
-
-        # Each Window has a content with a callable that returns the text
-        # For Label widgets, the text is stored in
-        # content._get_formatted_text_cached
-        # We can verify the windows exist and have content
-        for window in windows:
-            assert hasattr(window, "content")
-            assert window.content is not None
+        # All items should be Labels with text content
+        for item in hot_keys:
+            assert isinstance(item, Label)
+            assert hasattr(item, "text")
+            assert item.text is not None
 
     def test_search_mode_filter_condition(self, mock_app):
         """Test that bindings are only active when flag_search_mode is True."""
