@@ -9,6 +9,7 @@ This should not be used directly, but instead provides the functions for the
 application.
 """
 
+from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import VSplit
 from prompt_toolkit.widgets import Label
@@ -29,16 +30,16 @@ def _init_search_bindings(app):
         # Restore the original tree
         app.tree.restore_tree()
 
-        # Clear the search buffer
-        app.search_content.text = ""
-
-        # Reset flags
+        # Reset flags and return to normal mode BEFORE clearing buffer
         app.flag_tree_filtered = False
         app.return_to_normal_mode()
 
-        # Update the tree display
+        # Clear the search buffer (safe now that we're not in search mode)
+        app.search_content.text = ""
+
+        # Update the tree display with restored tree text
         app.tree_buffer.set_document(
-            app.tree_buffer.document,
+            Document(text=app.tree.tree_text, cursor_position=0),
             bypass_readonly=True,
         )
 
