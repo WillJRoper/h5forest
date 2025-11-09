@@ -403,6 +403,10 @@ class Tree:
                 if parent_path:
                     paths_to_include.add(parent_path)
 
+        # First pass: Open all parent nodes that need to be shown
+        # This ensures we can traverse their children
+        self._open_nodes_in_paths(paths_to_include)
+
         # Rebuild the tree by traversing from root
         # and only including nodes whose paths are in paths_to_include
         filtered_text = ""
@@ -466,6 +470,43 @@ class Tree:
         self.tree_text_split = self.tree_text.split("\n") if self.tree_text else []
         self.nodes_by_row = filtered_nodes
         self.filtered_node_rows = filtered_rows
+
+    def _open_nodes_in_paths(self, paths_to_include):
+        """
+        Open all nodes that are in the paths_to_include set.
+
+        This ensures that when we filter the tree, parent nodes are opened
+        so their children are visible.
+
+        Args:
+            paths_to_include (set):
+                Set of paths that should be included in the filtered tree.
+        """
+        def _recursive_open(node):
+            """Recursively open nodes that need to be shown."""
+            # Build the search path for this node
+            if node.depth == 0:
+                node_search_path = ""
+            elif node.parent and node.parent.depth == 0:
+                node_search_path = node.name
+            else:
+                path_parts = []
+                current = node
+                while current.parent is not None:
+                    path_parts.insert(0, current.name)
+                    current = current.parent
+                node_search_path = "/".join(path_parts)
+
+            # If this node is in paths to include and is a group, open it
+            if (node.depth == 0 or node_search_path in paths_to_include):
+                if node.is_group and not node.is_expanded:
+                    node.open_node()
+
+                # Recursively process children
+                for child in node.children:
+                    _recursive_open(child)
+
+        _recursive_open(self.root)
 
     def restore_tree(self):
         """Restore the original tree state before filtering."""
