@@ -11,6 +11,7 @@ from prompt_toolkit.layout import ConditionalContainer, VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
+from h5forest.utils import DynamicLabelLayout
 
 
 def _init_plot_bindings(app):
@@ -166,48 +167,46 @@ def _init_plot_bindings(app):
     )(exit_edit_plot)
 
     # Add the hot keys
-    hot_keys = VSplit(
-        [
-            ConditionalContainer(
-                Label("e → Edit Config"),
-                Condition(lambda: len(app.scatter_plotter.plot_params) > 0),
+    hot_keys = [
+        ConditionalContainer(
+            Label("e → Edit Config"),
+            Condition(lambda: len(app.scatter_plotter.plot_params) > 0),
+        ),
+        ConditionalContainer(
+            Label("Enter → Edit entry"),
+            Condition(lambda: app.app.layout.has_focus(app.plot_content)),
+        ),
+        ConditionalContainer(
+            Label("x → Select x-axis"),
+            filter=Condition(
+                lambda: "x" not in app.scatter_plotter.plot_params
             ),
-            ConditionalContainer(
-                Label("Enter → Edit entry"),
-                Condition(lambda: app.app.layout.has_focus(app.plot_content)),
+        ),
+        ConditionalContainer(
+            Label("y → Select y-axis"),
+            filter=Condition(
+                lambda: "y" not in app.scatter_plotter.plot_params
             ),
-            ConditionalContainer(
-                Label("x → Select x-axis"),
-                filter=Condition(
-                    lambda: "x" not in app.scatter_plotter.plot_params
-                ),
+        ),
+        ConditionalContainer(
+            Label("p → Plot"),
+            Condition(lambda: len(app.scatter_plotter) > 0),
+        ),
+        ConditionalContainer(
+            Label("P → Save Plot"),
+            Condition(lambda: len(app.scatter_plotter) > 0),
+        ),
+        Label("r → Reset"),
+        ConditionalContainer(
+            Label("q → Exit Plotting Mode"),
+            Condition(
+                lambda: not app.app.layout.has_focus(app.plot_content)
             ),
-            ConditionalContainer(
-                Label("y → Select y-axis"),
-                filter=Condition(
-                    lambda: "y" not in app.scatter_plotter.plot_params
-                ),
-            ),
-            ConditionalContainer(
-                Label("p → Plot"),
-                Condition(lambda: len(app.scatter_plotter) > 0),
-            ),
-            ConditionalContainer(
-                Label("P → Save Plot"),
-                Condition(lambda: len(app.scatter_plotter) > 0),
-            ),
-            Label("r → Reset"),
-            ConditionalContainer(
-                Label("q → Exit Plotting Mode"),
-                Condition(
-                    lambda: not app.app.layout.has_focus(app.plot_content)
-                ),
-            ),
-            ConditionalContainer(
-                Label("q → Exit Config"),
-                Condition(lambda: app.app.layout.has_focus(app.plot_content)),
-            ),
-        ]
-    )
+        ),
+        ConditionalContainer(
+            Label("q → Exit Config"),
+            Condition(lambda: app.app.layout.has_focus(app.plot_content)),
+        ),
+    ]
 
-    return hot_keys
+    return DynamicLabelLayout(hot_keys)

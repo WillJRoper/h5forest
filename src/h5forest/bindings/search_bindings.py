@@ -15,6 +15,7 @@ from prompt_toolkit.layout import VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
+from h5forest.utils import DynamicLabelLayout
 
 
 def _init_search_bindings(app):
@@ -93,11 +94,9 @@ def _init_search_bindings(app):
     )
 
     # Create hot keys display
-    hot_keys = VSplit(
-        [
-            Label("Enter → Accept"),
-            Label("Esc → Cancel"),
-        ]
-    )
+    hot_keys = [
+        Label("Enter → Accept"),
+        Label("Esc → Cancel"),
+    ]
 
-    return hot_keys
+    return DynamicLabelLayout(hot_keys)

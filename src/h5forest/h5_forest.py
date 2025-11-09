@@ -38,7 +38,7 @@ from h5forest.bindings import (
 from h5forest.plotting import HistogramPlotter, ScatterPlotter
 from h5forest.styles import style
 from h5forest.tree import Tree, TreeProcessor
-from h5forest.utils import DynamicTitle, get_window_size
+from h5forest.utils import DynamicLabelLayout, DynamicTitle, get_window_size
 
 
 class H5Forest:
@@ -165,7 +165,7 @@ class H5Forest:
         self.kb = KeyBindings()
         app_keys = _init_app_bindings(self)
         tree_keys = _init_tree_bindings(self)
-        self.hot_keys = VSplit([*tree_keys, *app_keys])
+        self.hot_keys = DynamicLabelLayout([*tree_keys, *app_keys])
 
         # Set up the rest of the keybindings and attach hot keys
         self.dataset_keys = _init_dataset_bindings(self)
@@ -662,7 +662,7 @@ class H5Forest:
             ]
         )
         self.hotkeys_frame = ConditionalContainer(
-            Frame(self.hotkeys_panel, height=3),
+            Frame(self.hotkeys_panel),
             filter=Condition(
                 lambda: self.flag_normal_mode
                 or self.flag_jump_mode

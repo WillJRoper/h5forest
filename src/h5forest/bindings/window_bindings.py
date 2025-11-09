@@ -10,6 +10,7 @@ from prompt_toolkit.layout.containers import ConditionalContainer, VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
+from h5forest.utils import DynamicLabelLayout
 
 
 def _init_window_bindings(app):
@@ -79,37 +80,35 @@ def _init_window_bindings(app):
     app.kb.add("escape")(move_to_default)
 
     # Add the hot keys
-    hot_keys = VSplit(
-        [
-            ConditionalContainer(
-                Label("t → Move to Tree"),
-                Condition(
-                    lambda: not app.app.layout.has_focus(app.tree_content)
-                ),
+    hot_keys = [
+        ConditionalContainer(
+            Label("t → Move to Tree"),
+            Condition(
+                lambda: not app.app.layout.has_focus(app.tree_content)
             ),
-            ConditionalContainer(
-                Label("a → Move to Attributes"),
-                Condition(
-                    lambda: not app.app.layout.has_focus(
-                        app.attributes_content
-                    )
-                ),
+        ),
+        ConditionalContainer(
+            Label("a → Move to Attributes"),
+            Condition(
+                lambda: not app.app.layout.has_focus(
+                    app.attributes_content
+                )
             ),
-            ConditionalContainer(
-                Label("v → Move to Values"),
-                Condition(
-                    lambda: app.flag_values_visible
-                    and not app.app.layout.has_focus(app.values_content)
-                ),
+        ),
+        ConditionalContainer(
+            Label("v → Move to Values"),
+            Condition(
+                lambda: app.flag_values_visible
+                and not app.app.layout.has_focus(app.values_content)
             ),
-            ConditionalContainer(
-                Label("p → Move to Plot"),
-                Condition(
-                    lambda: not app.app.layout.has_focus(app.plot_content)
-                ),
+        ),
+        ConditionalContainer(
+            Label("p → Move to Plot"),
+            Condition(
+                lambda: not app.app.layout.has_focus(app.plot_content)
             ),
-            Label("q → Exit Window Mode"),
-        ]
-    )
+        ),
+        Label("q → Exit Window Mode"),
+    ]
 
-    return hot_keys
+    return DynamicLabelLayout(hot_keys)
