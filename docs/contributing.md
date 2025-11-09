@@ -38,13 +38,13 @@ We welcome contributions to h5forest! This guide will help you get started with 
    - `mkdocs-material` - Material theme for MkDocs
    - Related plugins and extensions
 
-4. **Install pre-commit hooks (REQUIRED):**
+4. **Install pre-commit hooks:**
    ```bash
    pip install pre-commit
    pre-commit install
    ```
 
-   **This step is mandatory for all contributors.** Pre-commit hooks automatically enforce our code quality standards. Pull requests that don't pass these checks will be rejected by our CI workflows.
+   Pre-commit hooks automatically enforce our code quality standards. Pull requests that don't pass these checks will be rejected by our CI workflows.
 
    The hooks perform the following checks:
    - **Ruff linting and formatting** - Ensures code style consistency (PEP 8, 79 char lines, etc.)
@@ -52,7 +52,7 @@ We welcome contributions to h5forest! This guide will help you get started with 
    - **Large file prevention** - Stops large files from being added
    - **Case conflict checks** - Avoids filename case issues across operating systems
 
-   Once installed, these checks run automatically on staged files before every commit. This catches issues early and saves time in the review process.
+   Once installed, these checks run automatically on staged files before every commit, catching issues early and saving time in the review process.
 
    You can also run them manually:
    ```bash
@@ -62,8 +62,6 @@ We welcome contributions to h5forest! This guide will help you get started with 
    # Run on specific files
    pre-commit run --files path/to/file.py
    ```
-
-   **Important:** If pre-commit catches issues, fix them before committing. The hooks will prevent commits that don't meet our standards.
 
 5. **Verify installation:**
    ```bash

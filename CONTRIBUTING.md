@@ -9,12 +9,12 @@ Thank you for your interest in contributing to h5forest! We welcome contribution
    ```bash
    pip install -e ".[dev,test]"
    ```
-3. **Install pre-commit hooks (required):**
+3. **Install pre-commit hooks:**
    ```bash
    pip install pre-commit
    pre-commit install
    ```
-   **This is required!** Pre-commit hooks automatically enforce our code style. Pull requests that don't follow our style guidelines will be rejected by the CI workflows.
+   Pre-commit hooks automatically enforce our code style. Pull requests that don't pass our style checks will be rejected by the CI workflows.
 4. **Make your changes** following our coding standards
 5. **Run tests** to ensure everything works:
    ```bash
