@@ -102,6 +102,7 @@ class Tree:
         # facilitate searches
         self.unpack_thread = None  # we'll do the unpacking on this thread
         self.all_node_paths = []
+        self.all_node_paths_lock = threading.Lock()  # Protect concurrent access
         self.get_all_paths()
 
         # Store the original tree state for search restoration
@@ -313,7 +314,8 @@ class Tree:
             with h5py.File(self.filepath, "r") as hdf:
 
                 def visitor(name, obj):
-                    self.all_node_paths.append(name)
+                    with self.all_node_paths_lock:
+                        self.all_node_paths.append(name)
 
                 hdf.visititems(visitor)
 
@@ -357,7 +359,9 @@ class Tree:
             self._save_tree_state()
 
         # Search for matching paths (limit to top 100 to avoid UI freeze)
-        matches = search_paths(query, self.all_node_paths, limit=100)
+        # Use lock to safely read all_node_paths
+        with self.all_node_paths_lock:
+            matches = search_paths(query, self.all_node_paths, limit=100)
 
         # If no matches, show empty tree
         if not matches:
