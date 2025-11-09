@@ -416,11 +416,7 @@ class H5Forest:
         labels.append(self._app_keys_dict["hist_mode"])
         labels.append(self._app_keys_dict["plotting_mode"])
         labels.append(self._app_keys_dict["window_mode"])
-
-        # Add search only when tree has focus
-        if tree_has_focus:
-            labels.append(self._app_keys_dict["search"])
-
+        labels.append(self._app_keys_dict["search"])
         labels.append(self._app_keys_dict["restore_tree"])
         labels.append(self._app_keys_dict["exit"])
 
