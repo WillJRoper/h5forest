@@ -381,6 +381,34 @@ class Tree:
         self.original_tree_text_split = self.tree_text_split.copy()
         self.original_nodes_by_row = self.nodes_by_row.copy()
 
+    def _get_node_search_path(self, node):
+        """
+        Build the search path for a node as it appears in all_node_paths.
+
+        The path format matches how paths are stored in all_node_paths:
+        - Root node: ""
+        - Direct children of root: "node_name"
+        - Deeper nodes: "parent/child/node_name"
+
+        Args:
+            node: The node to build the search path for.
+
+        Returns:
+            str: The search path for the node.
+        """
+        if node.depth == 0:
+            return ""
+        elif node.parent and node.parent.depth == 0:
+            return node.name
+        else:
+            # Build full path from root
+            path_parts = []
+            current = node
+            while current.parent is not None:
+                path_parts.insert(0, current.name)
+                current = current.parent
+            return "/".join(path_parts)
+
     def _build_filtered_tree(self, matching_paths):
         """
         Build a filtered tree showing only matching nodes and their parents.
@@ -417,28 +445,8 @@ class Tree:
             """Recursively traverse and filter nodes."""
             nonlocal filtered_text, filtered_nodes, filtered_rows
 
-            # Check if this node's path should be included
-            # The root path is "/" but in all_node_paths it appears as ""
-            node_search_path = (
-                node.path[1:] if node.path.startswith("/") else node.path
-            )
-            if node.depth == 0:
-                node_search_path = ""
-
-            # For non-root nodes, we need to match against the path format
-            # used in all_node_paths (without leading /)
-            if node.depth > 0:
-                # Reconstruct the path as it appears in all_node_paths
-                if node.parent and node.parent.depth == 0:
-                    node_search_path = node.name
-                else:
-                    # Build full path from root
-                    path_parts = []
-                    current = node
-                    while current.parent is not None:
-                        path_parts.insert(0, current.name)
-                        current = current.parent
-                    node_search_path = "/".join(path_parts)
+            # Get the search path for this node
+            node_search_path = self._get_node_search_path(node)
 
             # Root is always included if any children match
             if node.depth == 0 or node_search_path in paths_to_include:
@@ -483,18 +491,8 @@ class Tree:
 
         def _recursive_open(node):
             """Recursively open nodes that need to be shown."""
-            # Build the search path for this node
-            if node.depth == 0:
-                node_search_path = ""
-            elif node.parent and node.parent.depth == 0:
-                node_search_path = node.name
-            else:
-                path_parts = []
-                current = node
-                while current.parent is not None:
-                    path_parts.insert(0, current.name)
-                    current = current.parent
-                node_search_path = "/".join(path_parts)
+            # Get the search path for this node
+            node_search_path = self._get_node_search_path(node)
 
             # If this node is in paths to include and is a group, open it
             if node.depth == 0 or node_search_path in paths_to_include:
