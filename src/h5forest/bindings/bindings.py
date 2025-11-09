@@ -80,10 +80,13 @@ def _init_app_bindings(app):
     @error_handler
     def restore_filtered_tree(event):
         """Restore the original tree when viewing filtered search results."""
-        # Restore the original tree by rebuilding from root
-        app.tree.restore_tree()
+        # Clear any saved filtering state
+        app.tree.original_tree_text = None
+        app.tree.original_tree_text_split = None
+        app.tree.original_nodes_by_row = None
+        app.tree.filtered_node_rows = []
 
-        # Rebuild tree text from current tree state
+        # Rebuild tree from root (shows tree as if app just opened)
         tree_text = app.tree.get_tree_text()
 
         # Reset the flag
@@ -144,11 +147,7 @@ def _init_app_bindings(app):
     # Bind Esc to restore original tree when viewing filtered results
     app.kb.add(
         "escape",
-        filter=Condition(
-            lambda: app.flag_normal_mode
-            and app.flag_tree_filtered
-            and app.app.layout.has_focus(app.tree_content.content)
-        ),
+        filter=Condition(lambda: app.flag_normal_mode and app.flag_tree_filtered),
     )(restore_filtered_tree)
 
     # Add the hot keys
