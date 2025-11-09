@@ -191,9 +191,10 @@ class DynamicLabelLayout:
         # Pad with spaces to reach target width
         padded_text = text.ljust(width)
 
-        # Always return a regular Label without ConditionalContainer wrapping
-        # This ensures proper grid alignment without gaps from hidden labels
-        # Note: This means all labels are always visible in the grid
+        # Always return a regular Label without ConditionalContainer wrapping.
+        # This ensures proper grid alignment without gaps from hidden labels.
+        # Note: DynamicLabelLayout receives pre-filtered labels and does not perform
+        # conditional visibility itself; any filtering is done at a higher level.
         return Label(padded_text)
 
     def __pt_container__(self):
