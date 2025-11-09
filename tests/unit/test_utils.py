@@ -133,7 +133,7 @@ class TestDynamicLabelLayout:
         layout = DynamicLabelLayout(labels)
 
         assert layout.labels == labels
-        assert layout.padding == 3
+        assert layout.padding == 1
         assert layout.min_rows == 3
 
     def test_init_custom_parameters(self):
@@ -150,9 +150,9 @@ class TestDynamicLabelLayout:
         layout = DynamicLabelLayout([])
         label = Label("Hello World")
 
-        # Width should be text length (11) + padding (3) = 14
+        # Width should be text length (11) + padding (1) = 12
         width = layout._estimate_label_width(label)
-        assert width == 14
+        assert width == 12
 
     def test_estimate_label_width_conditional_container(self):
         """Test width estimation for a ConditionalContainer."""

@@ -63,18 +63,18 @@ class DynamicLabelLayout:
     Attributes:
         labels (list or callable): List of Label widgets, or a callable that
             returns a list of Labels when called.
-        padding (int): Space between labels (default: 3).
+        padding (int): Space between labels (default: 1).
         min_rows (int): Minimum number of rows to display (default: 3).
     """
 
-    def __init__(self, labels, padding=3, min_rows=3):
+    def __init__(self, labels, padding=1, min_rows=3):
         """
         Initialize the dynamic label layout.
 
         Args:
             labels (list or callable): List of Label widgets, or a callable
                 that returns a list of Labels when called.
-            padding (int): Space between labels (default: 3).
+            padding (int): Space between labels (default: 1).
             min_rows (int): Minimum number of rows (default: 3).
         """
         self.labels = labels
