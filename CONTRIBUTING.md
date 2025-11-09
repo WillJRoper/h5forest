@@ -9,13 +9,19 @@ Thank you for your interest in contributing to h5forest! We welcome contribution
    ```bash
    pip install -e ".[dev,test]"
    ```
-3. **Make your changes** following our coding standards
-4. **Run tests** to ensure everything works:
+3. **Install pre-commit hooks:**
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+   This will automatically run linting and formatting checks before each commit.
+4. **Make your changes** following our coding standards
+5. **Run tests** to ensure everything works:
    ```bash
    pytest
    ruff check .
    ```
-5. **Submit a pull request**
+6. **Submit a pull request**
 
 ## Coding Standards
 
