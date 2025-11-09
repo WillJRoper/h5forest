@@ -320,7 +320,7 @@ class Tree:
         self.unpack_thread = threading.Thread(target=run_in_thread)
         self.unpack_thread.start()
 
-        # We'll join this thread in the search function (search_tree)
+        # We'll join this thread in the filter function (filter_tree)
         # to ensure we have all the paths before we start searching without
         # holding things up here
 
