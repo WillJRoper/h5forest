@@ -403,16 +403,10 @@ class H5Forest:
             read_only=True,
         )
 
-        # Get and save the initial tree text
-        initial_tree_text = self.tree.get_tree_text()
-
-        # Save this initial state for later restoration
-        self.initial_tree_text = initial_tree_text
-
         # Set the text of the buffer
         self.tree_buffer.set_document(
             Document(
-                text=initial_tree_text,
+                text=self.tree.get_tree_text(),
                 cursor_position=0,
             ),
             bypass_readonly=True,
