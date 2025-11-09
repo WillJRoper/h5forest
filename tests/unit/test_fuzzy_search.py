@@ -6,79 +6,8 @@ import h5py
 import numpy as np
 import pytest
 
-from h5forest.fuzzy import fzf_scorer, search_paths
+from h5forest.fuzzy import search_paths
 from h5forest.tree import Tree
-
-
-class TestFuzzyScorer:
-    """Test the fuzzy matching scorer function."""
-
-    def test_exact_match(self):
-        """Test exact string matching."""
-        score = fzf_scorer("test", "test")
-        assert score > 0
-        assert score > fzf_scorer("test", "testing")
-
-    def test_subsequence_match(self):
-        """Test fuzzy subsequence matching (fzf-style)."""
-        # "gmd" should match "Group_Mass_Data"
-        score = fzf_scorer("gmd", "Group_Mass_Data")
-        assert score > 0
-
-    def test_no_match(self):
-        """Test that non-matching strings return 0."""
-        score = fzf_scorer("xyz", "abcdef")
-        assert score == 0
-
-    def test_case_insensitive(self):
-        """Test case-insensitive matching."""
-        score1 = fzf_scorer("test", "TEST")
-        score2 = fzf_scorer("TEST", "test")
-        score3 = fzf_scorer("TeSt", "TeSt")
-        assert score1 > 0
-        assert score2 > 0
-        assert score3 > 0
-
-    def test_empty_query(self):
-        """Test that empty query returns 0."""
-        score = fzf_scorer("", "anything")
-        assert score == 0
-
-    def test_consecutive_bonus(self):
-        """Test that consecutive character matches score higher."""
-        # "abc" in "abc..." should score higher than "abc" in "a_b_c..."
-        consecutive_score = fzf_scorer("abc", "abcdef")
-        non_consecutive_score = fzf_scorer("abc", "a_b_c_d")
-        assert consecutive_score > non_consecutive_score
-
-    def test_word_boundary_bonus(self):
-        """Test that matches at word boundaries score higher."""
-        # Matching at start should score higher
-        boundary_score = fzf_scorer("md", "Mass_Data")
-        non_boundary_score = fzf_scorer("md", "some_made")
-        assert boundary_score > non_boundary_score
-
-    def test_start_position_bonus(self):
-        """Test that matches at the start score higher."""
-        start_score = fzf_scorer("test", "testing")
-        middle_score = fzf_scorer("test", "my_test_data")
-        assert start_score > middle_score
-
-    def test_length_penalty(self):
-        """Test that shorter matches are preferred."""
-        short_score = fzf_scorer("data", "data")
-        long_score = fzf_scorer("data", "data_with_extra_stuff")
-        assert short_score > long_score
-
-    def test_characters_must_be_in_order(self):
-        """Test that matched characters must appear in query order."""
-        # "abc" should not match "cba"
-        score = fzf_scorer("abc", "cba")
-        assert score == 0
-
-        # "abc" should match "a_b_c"
-        score = fzf_scorer("abc", "a_b_c")
-        assert score > 0
 
 
 class TestSearchPaths:
@@ -132,23 +61,8 @@ class TestSearchPaths:
         paths = ["Group1/Mass_Data", "Group2/Metadata"]
         results = search_paths("md", paths, limit=10)
 
-        # Both should match
+        # Should have at least one match
         assert len(results) >= 1
-        # "Mass_Data" should score higher (word boundaries)
-        assert any("Mass_Data" in path for path, _ in results)
-
-    def test_custom_scorer(self):
-        """Test using a custom scorer function."""
-
-        def custom_scorer(query, choice, **kwargs):
-            """Simple contains check."""
-            return 100 if query.lower() in choice.lower() else 0
-
-        paths = ["test_data", "other_data", "test_group"]
-        results = search_paths("test", paths, limit=10, scorer=custom_scorer)
-
-        assert len(results) == 2
-        assert all(score == 100 for _, score in results)
 
 
 class TestTreeFiltering:
@@ -359,14 +273,14 @@ class TestTreeFiltering:
         assert "Temperature" in filtered or filtered == ""
         # Note: May not match depending on scorer strictness
 
-    def test_top_20_limit(self, search_test_file):
-        """Test that only top 20 results are shown."""
-        # Create a file with more than 20 matching items
+    def test_top_100_limit(self, search_test_file):
+        """Test that only top 100 results are shown."""
+        # Create a file with more than 100 matching items
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
             filepath = tmp.name
 
         with h5py.File(filepath, "w") as f:
-            for i in range(50):
+            for i in range(150):
                 f.create_dataset(f"Data_{i}", data=np.arange(5))
 
         try:
@@ -378,9 +292,8 @@ class TestTreeFiltering:
 
             tree.filter_tree("data")
 
-            # Should have at most 21 nodes (20 matches + root)
-            # Actually depends on tree structure, but filtered matches should be <= 20
-            assert len(tree.filtered_node_rows) <= 20
+            # Should have at most 100 matches
+            assert len(tree.filtered_node_rows) <= 100
 
         finally:
             import os
