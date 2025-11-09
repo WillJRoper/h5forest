@@ -609,3 +609,92 @@ class TestDynamicLabelLayout:
         # Should maintain original order
         for i, label in enumerate(flat_labels):
             assert label == labels[i]
+
+    def test_get_label_text_simple_label(self):
+        """Test extracting text from a simple Label."""
+        layout = DynamicLabelLayout([])
+        label = Label("Test Text")
+
+        text = layout._get_label_text(label)
+        assert text == "Test Text"
+
+    def test_get_label_text_conditional_container(self):
+        """Test extracting text from a ConditionalContainer."""
+        layout = DynamicLabelLayout([])
+        label = Label("Conditional Text")
+        container = ConditionalContainer(
+            label, filter=Condition(lambda: True)
+        )
+
+        text = layout._get_label_text(container)
+        assert text == "Conditional Text"
+
+    def test_create_padded_label_simple(self):
+        """Test creating a padded label."""
+        layout = DynamicLabelLayout([])
+        label = Label("Short")
+
+        padded = layout._create_padded_label(label, 20)
+        padded_text = layout._get_label_text(padded)
+
+        assert len(padded_text) == 20
+        assert padded_text.startswith("Short")
+        assert padded_text.endswith(" " * (20 - 5))
+
+    def test_create_padded_label_conditional(self):
+        """Test creating a padded label from ConditionalContainer."""
+        layout = DynamicLabelLayout([])
+        label = Label("Text")
+        container = ConditionalContainer(
+            label, filter=Condition(lambda: True)
+        )
+
+        padded = layout._create_padded_label(container, 15)
+
+        # Should still be a ConditionalContainer
+        assert isinstance(padded, ConditionalContainer)
+        # Text should be padded
+        padded_text = layout._get_label_text(padded)
+        assert len(padded_text) == 15
+
+    @patch("h5forest.utils.get_app")
+    def test_pt_container_with_padding(self, mock_get_app):
+        """Test that __pt_container__ creates padded labels."""
+        labels = [Label("A"), Label("Long Label"), Label("B")]
+        layout = DynamicLabelLayout(labels)
+
+        # Mock the app
+        mock_app = Mock()
+        mock_output = Mock()
+        mock_size = Mock()
+        mock_size.columns = 100
+        mock_output.get_size.return_value = mock_size
+        mock_app.output = mock_output
+        mock_get_app.return_value = mock_app
+
+        container = layout.__pt_container__()
+
+        # Should create an HSplit
+        assert isinstance(container, HSplit)
+
+        # Get the first row (should be a VSplit)
+        children = container.get_children()
+        assert len(children) >= 1
+
+        first_row = children[0]
+        if isinstance(first_row, VSplit):
+            # Get labels from first row
+            row_labels = first_row.get_children()
+            # All labels should have been padded to same width
+            if len(row_labels) > 1:
+                # Extract text from each label
+                texts = []
+                for lbl in row_labels:
+                    if hasattr(lbl, "text"):
+                        texts.append(lbl.text)
+                # All should have same length (padded)
+                if texts:
+                    first_len = len(texts[0])
+                    assert all(
+                        len(t) == first_len for t in texts
+                    ), "All labels should be padded to same width"

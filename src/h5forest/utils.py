@@ -167,6 +167,51 @@ class DynamicLabelLayout:
 
         return rows
 
+    def _get_label_text(self, label):
+        """
+        Extract text from a label or conditional container.
+
+        Args:
+            label: A Label or ConditionalContainer widget.
+
+        Returns:
+            str: The label's text content.
+        """
+        if isinstance(label, ConditionalContainer):
+            inner = label.content
+            if hasattr(inner, "text"):
+                return inner.text
+            return ""
+        else:
+            if hasattr(label, "text"):
+                return label.text
+            return ""
+
+    def _create_padded_label(self, label, width):
+        """
+        Create a label padded to a specific width.
+
+        Args:
+            label: Original Label or ConditionalContainer.
+            width: Target width in characters.
+
+        Returns:
+            Label or ConditionalContainer with padded text.
+        """
+        from prompt_toolkit.widgets import Label
+
+        text = self._get_label_text(label)
+        # Pad with spaces to reach target width
+        padded_text = text.ljust(width)
+
+        # Create new label with padded text
+        if isinstance(label, ConditionalContainer):
+            # Preserve the conditional wrapper
+            new_label = Label(padded_text)
+            return ConditionalContainer(new_label, filter=label.filter)
+        else:
+            return Label(padded_text)
+
     def __pt_container__(self):
         """
         Generate the prompt_toolkit container dynamically.
@@ -190,11 +235,39 @@ class DynamicLabelLayout:
         # Distribute labels across rows
         rows = self._distribute_labels(available_width)
 
-        # Create VSplit for each row
+        if not rows or all(not row for row in rows):
+            # All rows are empty
+            row_containers = []
+            for _ in range(self.min_rows):
+                row_containers.append(
+                    Window(
+                        FormattedTextControl(text=""),
+                        height=1,
+                    )
+                )
+            return HSplit(row_containers)
+
+        # Calculate max label width for padding (for grid alignment)
+        # Find the width needed for the widest label
+        max_text_width = 0
+        for row in rows:
+            for label in row:
+                text = self._get_label_text(label)
+                max_text_width = max(max_text_width, len(text))
+
+        # Add padding to account for spacing between labels
+        column_width = max_text_width + self.padding
+
+        # Create VSplit for each row with padded labels
         row_containers = []
         for row in rows:
             if row:
-                row_containers.append(VSplit(row))
+                # Pad all labels in this row to the same width
+                padded_labels = [
+                    self._create_padded_label(label, column_width)
+                    for label in row
+                ]
+                row_containers.append(VSplit(padded_labels))
             else:
                 # Empty row - add an empty window
                 row_containers.append(
