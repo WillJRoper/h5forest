@@ -398,6 +398,6 @@ class TestAppBindings:
         # Some should be ConditionalContainers, some plain Labels
         # Just verify they're valid types
         for item in hot_keys:
-            assert isinstance(
-                item, (ConditionalContainer, Label)
-            ), f"Invalid type: {type(item)}"
+            assert isinstance(item, (ConditionalContainer, Label)), (
+                f"Invalid type: {type(item)}"
+            )
