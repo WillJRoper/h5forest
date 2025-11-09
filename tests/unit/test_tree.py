@@ -382,6 +382,64 @@ class TestTreeNodeOperations:
                     assert not node.is_expanded
                     break
 
+    def test_close_node_with_siblings(self):
+        """Test close_node when a node has both children and siblings.
+
+        This test ensures the break statement in close_node is executed
+        when it encounters a sibling node at the same depth after the children.
+        Creates a specific HDF5 structure: root > [group1 > data1, group2]
+        Closing group1 should trigger the break when it encounters group2.
+        """
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, suffix=".h5"
+        ) as f:
+            temp_path = f.name
+
+        try:
+            import h5py
+
+            with h5py.File(temp_path, "w") as f:
+                g1 = f.create_group("group1")
+                g1.create_dataset("data1", data=[1, 2, 3])
+                f.create_group("group2")  # Sibling of group1
+
+            tree = Tree(temp_path)
+
+            # Manually expand group1 to show its children
+            for node in tree.root.children:
+                if node.name == "group1":
+                    node.open_node()
+                    break
+
+            # Regenerate tree to include expanded nodes
+            tree.get_tree_text()
+
+            # Verify structure: root, group1 (expanded), data1, group2
+            assert len(tree.nodes_by_row) >= 4
+            # Find group1
+            group1_idx = None
+            for i, node in enumerate(tree.nodes_by_row):
+                if node.name == "group1":
+                    group1_idx = i
+                    assert node.is_expanded
+                    break
+
+            assert group1_idx is not None
+
+            # Close group1 - should delete data1 and break at group2
+            initial_length = len(tree.nodes_by_row)
+            tree.close_node(tree.nodes_by_row[group1_idx], group1_idx)
+
+            # Verify: group1 closed, fewer nodes
+            assert len(tree.nodes_by_row) < initial_length
+            assert not tree.nodes_by_row[group1_idx].is_expanded
+
+        finally:
+            os.unlink(temp_path)
+
     def test_get_current_node_method(self, simple_h5_file):
         """Test get_current_node updates cursor highlighting."""
         tree = Tree(simple_h5_file)
