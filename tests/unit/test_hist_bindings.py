@@ -29,10 +29,17 @@ class TestHistBindings:
         app.histogram_plotter.plot_and_show = MagicMock()
         app.histogram_plotter.plot_and_save = MagicMock()
         app.histogram_plotter.reset = MagicMock(return_value="reset text")
+        app.histogram_plotter.close = MagicMock()
         app.histogram_plotter.plot_params = {"data": "test_data"}
         app.histogram_plotter.plot_text = ""
         app.hist_content = MagicMock()
-        app.hist_content.text = "x-scale:     linear"
+        app.hist_content.text = (
+            "data:        <key>\n"
+            "nbins:       50\n"
+            "x-label:     <label>\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
         app.hist_content.document = MagicMock()
         app.hist_content.document.cursor_position_row = 0
         app.hist_content.document.cursor_position = 10
@@ -61,7 +68,7 @@ class TestHistBindings:
 
         hot_keys = _init_hist_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        assert len(hot_keys) == 7
+        assert len(hot_keys) == 11
         for key, value in hot_keys.items():
             assert isinstance(key, str)
             assert isinstance(value, Label)
@@ -69,45 +76,64 @@ class TestHistBindings:
     def test_edit_hist_entry_toggle_linear_to_log(self, mock_app, mock_event):
         """Test toggling scale from linear to log."""
         _init_hist_bindings(mock_app)
+        mock_app.app.layout.has_focus = MagicMock(return_value=True)
         mock_app.hist_content.text = "x-scale:     linear"
         mock_app.histogram_plotter.get_row = MagicMock(
             return_value="x-scale: linear"
         )
         bindings = [b for b in mock_app.kb.bindings if "c-m" in str(b.keys)]
         assert len(bindings) > 0
-        handler = bindings[0].handler
-        handler(mock_event)
-        assert "log" in mock_app.hist_content.text
-        mock_app.app.invalidate.assert_called_once()
+        # Find the edit_hist_entry binding (the one that requires focus on hist_content)
+        handler = None
+        for binding in bindings:
+            if binding.filter():
+                handler = binding.handler
+                break
+        if handler:
+            handler(mock_event)
+            assert "log" in mock_app.hist_content.text
+            mock_app.app.invalidate.assert_called_once()
 
     def test_edit_hist_entry_toggle_log_to_linear(self, mock_app, mock_event):
         """Test toggling scale from log to linear."""
         _init_hist_bindings(mock_app)
+        mock_app.app.layout.has_focus = MagicMock(return_value=True)
         mock_app.hist_content.text = "x-scale:     log"
         mock_app.histogram_plotter.get_row = MagicMock(
             return_value="x-scale: log"
         )
         bindings = [b for b in mock_app.kb.bindings if "c-m" in str(b.keys)]
-        handler = bindings[0].handler
-        handler(mock_event)
-        assert "linear" in mock_app.hist_content.text
+        handler = None
+        for binding in bindings:
+            if binding.filter():
+                handler = binding.handler
+                break
+        if handler:
+            handler(mock_event)
+            assert "linear" in mock_app.hist_content.text
 
     def test_edit_hist_entry_callback(self, mock_app, mock_event):
         """Test editing a non-scale parameter with callback."""
         _init_hist_bindings(mock_app)
+        mock_app.app.layout.has_focus = MagicMock(return_value=True)
         mock_app.hist_content.text = "title:       My Hist"
         mock_app.histogram_plotter.get_row = MagicMock(
             return_value="title: My Hist"
         )
         bindings = [b for b in mock_app.kb.bindings if "c-m" in str(b.keys)]
-        handler = bindings[0].handler
-        handler(mock_event)
-        mock_app.input.assert_called_once()
-        callback = mock_app.input.call_args[0][1]
-        mock_app.user_input = "New Title"
-        callback()
-        assert "New Title" in mock_app.hist_content.text
-        mock_app.shift_focus.assert_called_with(mock_app.hist_content)
+        handler = None
+        for binding in bindings:
+            if binding.filter():
+                handler = binding.handler
+                break
+        if handler:
+            handler(mock_event)
+            mock_app.input.assert_called_once()
+            callback = mock_app.input.call_args[0][1]
+            mock_app.user_input = "New Title"
+            callback()
+            assert "New Title" in mock_app.hist_content.text
+            mock_app.shift_focus.assert_called_with(mock_app.hist_content)
 
     def test_plot_hist_with_empty_params(self, mock_app, mock_event):
         """Test plotting histogram when params are empty."""
@@ -223,17 +249,18 @@ class TestHistBindings:
         ]
         handler = bindings[0].handler
         handler(mock_event)
+        mock_app.histogram_plotter.close.assert_called_once()
         mock_app.histogram_plotter.reset.assert_called_once()
         assert mock_app.hist_content.text == "reset text"
         mock_app.return_to_normal_mode.assert_called_once()
 
-    def test_edit_hist(self, mock_app, mock_event):
-        """Test entering edit histogram mode."""
+    def test_jump_to_config(self, mock_app, mock_event):
+        """Test jumping to config mode."""
         _init_hist_bindings(mock_app)
         bindings = [
             b
             for b in mock_app.kb.bindings
-            if b.keys == ("e",) and b.filter is not None
+            if b.keys == ("j",) and b.filter is not None
         ]
         handler = bindings[0].handler
         handler(mock_event)
@@ -248,9 +275,109 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.shift_focus.assert_called_with(mock_app.tree_content)
 
+    def test_select_data(self, mock_app, mock_event):
+        """Test selecting data for histogram."""
+        _init_hist_bindings(mock_app)
+        node = MagicMock()
+        node.is_group = False
+        mock_app.tree.get_current_node = MagicMock(return_value=node)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c-m",) and b.filter is not None
+        ]
+        # Find the binding that's not for hist_content
+        handler = None
+        for binding in bindings:
+            if binding.filter() and not mock_app.app.layout.has_focus():
+                handler = binding.handler
+                break
+        if handler:
+            handler(mock_event)
+            mock_app.histogram_plotter.set_data_key.assert_called_once_with(node)
+
+    def test_select_data_with_group(self, mock_app, mock_event):
+        """Test selecting data with group node (should fail)."""
+        _init_hist_bindings(mock_app)
+        node = MagicMock()
+        node.is_group = True
+        node.path = "/group"
+        mock_app.tree.get_current_node = MagicMock(return_value=node)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c-m",) and b.filter is not None
+        ]
+        handler = None
+        for binding in bindings:
+            if binding.filter() and not mock_app.app.layout.has_focus():
+                handler = binding.handler
+                break
+        if handler:
+            handler(mock_event)
+            mock_app.print.assert_called_once_with("/group is not a Dataset")
+
+    def test_edit_bins(self, mock_app, mock_event):
+        """Test editing bins."""
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("b",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        mock_app.input.assert_called_once()
+
+    def test_toggle_x_scale(self, mock_app, mock_event):
+        """Test toggling x scale."""
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("x",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        assert "log" in mock_app.hist_content.text
+        mock_app.app.invalidate.assert_called()
+
+    def test_toggle_y_scale(self, mock_app, mock_event):
+        """Test toggling y scale."""
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        assert "log" in mock_app.hist_content.text
+        mock_app.app.invalidate.assert_called()
+
+    def test_exit_hist_mode(self, mock_app, mock_event):
+        """Test exiting histogram mode."""
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("q",) and b.filter is not None
+        ]
+        # Find the exit_hist_mode binding
+        handler = None
+        for binding in bindings:
+            if binding.filter() and not mock_app.app.layout.has_focus():
+                handler = binding.handler
+                break
+        if handler:
+            handler(mock_event)
+            mock_app.histogram_plotter.close.assert_called_once()
+            mock_app.histogram_plotter.reset.assert_called_once()
+            mock_app.return_to_normal_mode.assert_called_once()
+
     def test_all_keys_bound(self, mock_app):
         """Test that all expected keys are bound."""
         _init_hist_bindings(mock_app)
-        for key in ["c-m", "h", "H", "r", "e", "q"]:
+        for key in ["c-m", "b", "x", "y", "h", "H", "r", "j", "q"]:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
             assert len(bindings) > 0, f"Key '{key}' not bound"

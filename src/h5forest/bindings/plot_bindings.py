@@ -44,6 +44,44 @@ def _init_plot_bindings(app):
         app.plot_content.text = app.scatter_plotter.set_y_key(node)
 
     @error_handler
+    def toggle_x_scale(event):
+        """Toggle the x-axis scale between linear and log."""
+        # Get the current text
+        split_text = app.plot_content.text.split("\n")
+
+        # Get the current x-scale (it's on line 4)
+        current_scale = split_text[4].split(": ")[1].strip()
+
+        # Toggle the scale
+        new_scale = "log" if current_scale == "linear" else "linear"
+        split_text[4] = f"x-scale:     {new_scale}"
+
+        # Update the text
+        app.plot_content.text = "\n".join(split_text)
+        app.scatter_plotter.plot_text = app.plot_content.text
+
+        app.app.invalidate()
+
+    @error_handler
+    def toggle_y_scale(event):
+        """Toggle the y-axis scale between linear and log."""
+        # Get the current text
+        split_text = app.plot_content.text.split("\n")
+
+        # Get the current y-scale (it's on line 5)
+        current_scale = split_text[5].split(": ")[1].strip()
+
+        # Toggle the scale
+        new_scale = "log" if current_scale == "linear" else "linear"
+        split_text[5] = f"y-scale:     {new_scale}"
+
+        # Update the text
+        app.plot_content.text = "\n".join(split_text)
+        app.scatter_plotter.plot_text = app.plot_content.text
+
+        app.app.invalidate()
+
+    @error_handler
     def edit_plot_entry(event):
         """Edit plot param under cursor."""
         # Get the current position and row in the plot content
@@ -123,6 +161,7 @@ def _init_plot_bindings(app):
     @error_handler
     def reset(event):
         """Reset the plot content."""
+        app.scatter_plotter.close()
         app.plot_content.text = app.scatter_plotter.reset()
 
         app.app.invalidate()
@@ -141,6 +180,12 @@ def _init_plot_bindings(app):
     # Bind the functions
     app.kb.add("x", filter=Condition(lambda: app.flag_plotting_mode))(select_x)
     app.kb.add("y", filter=Condition(lambda: app.flag_plotting_mode))(select_y)
+    app.kb.add("X", filter=Condition(lambda: app.flag_plotting_mode))(
+        toggle_x_scale
+    )
+    app.kb.add("Y", filter=Condition(lambda: app.flag_plotting_mode))(
+        toggle_y_scale
+    )
     app.kb.add(
         "enter",
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
@@ -171,6 +216,8 @@ def _init_plot_bindings(app):
         "edit_entry": Label("Enter → Edit entry"),
         "select_x": Label("x → Select x-axis"),
         "select_y": Label("y → Select y-axis"),
+        "toggle_x_scale": Label("X → Toggle x-scale"),
+        "toggle_y_scale": Label("Y → Toggle y-scale"),
         "plot": Label("p → Plot"),
         "save_plot": Label("P → Save Plot"),
         "reset": Label("r → Reset"),
