@@ -8,7 +8,6 @@ application.
 
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
@@ -157,29 +156,19 @@ def _init_app_bindings(app):
         filter=Condition(lambda: app.flag_normal_mode),
     )(restore_tree_to_initial)
 
-    # Add the hot keys
-    hot_keys = [
-        ConditionalContainer(
-            Label("A → Expand Attributes"),
-            filter=Condition(lambda: not app.flag_expanded_attrs),
-        ),
-        ConditionalContainer(
-            Label("A → Shrink Attributes"),
-            filter=Condition(lambda: app.flag_expanded_attrs),
-        ),
-        Label("d → Dataset Mode"),
-        Label("g → Goto Mode"),
-        Label("H → Histogram Mode"),
-        Label("p → Plotting Mode"),
-        Label("w → Window Mode"),
-        ConditionalContainer(
-            Label("s → Search"),
-            filter=Condition(
-                lambda: app.app.layout.has_focus(app.tree_content.content)
-            ),
-        ),
-        Label("r → Restore Tree"),
-        Label("q → Exit"),
-    ]
+    # Return all possible hot keys as a dict
+    # The app will use property methods to filter based on state
+    hot_keys = {
+        "expand_attrs": Label("A → Expand Attributes"),
+        "shrink_attrs": Label("A → Shrink Attributes"),
+        "dataset_mode": Label("d → Dataset Mode"),
+        "goto_mode": Label("g → Goto Mode"),
+        "hist_mode": Label("H → Histogram Mode"),
+        "plotting_mode": Label("p → Plotting Mode"),
+        "window_mode": Label("w → Window Mode"),
+        "search": Label("s → Search"),
+        "restore_tree": Label("r → Restore Tree"),
+        "exit": Label("q → Exit"),
+    }
 
     return hot_keys

@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import VSplit
 
 from h5forest.bindings.window_bindings import _init_window_bindings
 
@@ -54,10 +53,15 @@ class TestWindowBindings:
         return event
 
     def test_init_window_bindings_returns_hotkeys(self, mock_app):
-        """Test that _init_window_bindings returns a VSplit."""
+        """Test that _init_window_bindings returns a dict of Labels."""
+        from prompt_toolkit.widgets import Label
+
         hot_keys = _init_window_bindings(mock_app)
-        assert isinstance(hot_keys, VSplit)
-        assert len(hot_keys.children) == 5
+        assert isinstance(hot_keys, dict)
+        assert len(hot_keys) == 6
+        for key, value in hot_keys.items():
+            assert isinstance(key, str)
+            assert isinstance(value, Label)
 
     def test_move_tree_handler(self, mock_app, mock_event):
         """Test the move_tree handler."""
@@ -272,19 +276,20 @@ class TestWindowBindings:
         assert mock_app._flag_plotting_mode is False
 
     def test_hotkeys_contains_correct_labels(self, mock_app):
-        """Test that hotkeys VSplit contains expected labels."""
+        """Test that hotkeys dict contains expected labels."""
         hot_keys = _init_window_bindings(mock_app)
 
-        # VSplit should have 5 children (4 ConditionalContainers + 1 Label)
-        assert len(hot_keys.children) == 5
+        # Dict should have 6 keys
+        assert len(hot_keys) == 6
 
-        # The last child should be a plain Label for "q → Exit Window Mode"
-
-        # Note: Labels are wrapped in Windows
-        from prompt_toolkit.layout.containers import Window
-
-        # Check that we have containers
-        assert all(
-            isinstance(child, (Window, type(hot_keys.children[0])))
-            for child in hot_keys.children
-        )
+        # Check that all expected keys are present
+        expected_keys = [
+            "move_tree",
+            "move_attrs",
+            "move_values",
+            "move_plot",
+            "move_hist",
+            "exit",
+        ]
+        for key in expected_keys:
+            assert key in hot_keys

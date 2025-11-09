@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import VSplit
 
 from h5forest.bindings.plot_bindings import _init_plot_bindings
 
@@ -72,10 +71,15 @@ class TestPlotBindings:
         return event
 
     def test_init_plot_bindings_returns_hotkeys(self, mock_app):
-        """Test that _init_plot_bindings returns a VSplit."""
+        """Test that _init_plot_bindings returns a dict of Labels."""
+        from prompt_toolkit.widgets import Label
+
         hot_keys = _init_plot_bindings(mock_app)
-        assert isinstance(hot_keys, VSplit)
-        assert len(hot_keys.children) == 9
+        assert isinstance(hot_keys, dict)
+        assert len(hot_keys) == 9
+        for key, value in hot_keys.items():
+            assert isinstance(key, str)
+            assert isinstance(value, Label)
 
     def test_select_x_with_dataset(self, mock_app, mock_event):
         """Test selecting x-axis with a dataset node."""
@@ -378,14 +382,15 @@ class TestPlotBindings:
         assert callable(error_handler)
 
     def test_hotkeys_structure(self, mock_app):
-        """Test that hotkeys VSplit has correct structure."""
+        """Test that hotkeys dict has correct structure."""
         hot_keys = _init_plot_bindings(mock_app)
 
-        # Should be a VSplit with ConditionalContainers and Labels
+        # Should be a dict with Label values
+        from prompt_toolkit.widgets import Label
 
-        assert len(hot_keys.children) == 9
+        assert len(hot_keys) == 9
 
-        # All should be ConditionalContainers or Labels (wrapped in Windows)
-        for child in hot_keys.children:
-            # ConditionalContainer or Window
-            assert hasattr(child, "content") or hasattr(child, "filter")
+        # All values should be Labels
+        for key, value in hot_keys.items():
+            assert isinstance(key, str)
+            assert isinstance(value, Label)
