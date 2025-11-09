@@ -9,7 +9,6 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding.key_processor import KeyPress
 from prompt_toolkit.keys import Keys
-from prompt_toolkit.layout import ConditionalContainer
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler

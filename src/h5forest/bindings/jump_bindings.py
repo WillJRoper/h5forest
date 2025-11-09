@@ -9,11 +9,9 @@ application.
 """
 
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout import VSplit
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
-from h5forest.utils import DynamicLabelLayout
 
 
 def _init_goto_bindings(app):
