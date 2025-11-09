@@ -109,11 +109,19 @@ def _init_tree_bindings(app):
         filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
     )(expand_collapse_node)
 
-    # Add vim-style navigation (hjkl) - these work app-wide
-    app.kb.add("h")(move_left)
-    app.kb.add("j")(move_down)
-    app.kb.add("k")(move_up)
-    app.kb.add("l")(move_right)
+    # Add vim-style navigation (hjkl) - exclude search mode
+    app.kb.add("h", filter=Condition(lambda: not app.flag_search_mode))(
+        move_left
+    )
+    app.kb.add("j", filter=Condition(lambda: not app.flag_search_mode))(
+        move_down
+    )
+    app.kb.add("k", filter=Condition(lambda: not app.flag_search_mode))(
+        move_up
+    )
+    app.kb.add("l", filter=Condition(lambda: not app.flag_search_mode))(
+        move_right
+    )
 
     # Add hot keys
     hot_keys = [

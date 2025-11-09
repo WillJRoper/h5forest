@@ -31,6 +31,7 @@ from h5forest.bindings import (
     _init_goto_bindings,
     _init_hist_bindings,
     _init_plot_bindings,
+    _init_search_bindings,
     _init_tree_bindings,
     _init_window_bindings,
 )
@@ -156,6 +157,7 @@ class H5Forest:
         self._flag_window_mode = False
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
+        self._flag_search_mode = False
 
         # Set up the main app and tree bindings. The hot keys for these are
         # combined into a single hot keys panel which will be shown whenever
@@ -171,6 +173,7 @@ class H5Forest:
         self.window_keys = _init_window_bindings(self)
         self.plot_keys = _init_plot_bindings(self)
         self.hist_keys = _init_hist_bindings(self)
+        self.search_keys = _init_search_bindings(self)
 
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
@@ -363,6 +366,22 @@ class H5Forest:
             self.mini_buffer_content
         )
 
+    @property
+    def flag_search_mode(self):
+        """
+        Return the search mode flag.
+
+        This accounts for whether we are in search mode and the search
+        buffer has focus.
+
+        Returns:
+            bool:
+                The flag for search mode.
+        """
+        return self._flag_search_mode and self.app.layout.has_focus(
+            self.search_content
+        )
+
     def return_to_normal_mode(self):
         """Return to normal mode."""
         self._flag_normal_mode = True
@@ -371,6 +390,7 @@ class H5Forest:
         self._flag_window_mode = False
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
+        self._flag_search_mode = False
 
     def _init_text_areas(self):
         """Initialise the content for each frame."""
@@ -449,6 +469,20 @@ class H5Forest:
             scrollbar=False,
             focusable=False,
             read_only=True,
+        )
+
+        # A buffer that will be used for searching
+        self.search_content = TextArea(
+            text="",
+            scrollbar=False,
+            focusable=True,
+            read_only=False,
+            height=1,
+            multiline=False,
+        )
+        # Attach on_text_changed handler for real-time search
+        self.search_content.buffer.on_text_changed += (
+            self._on_search_text_changed
         )
 
         self.plot_content = TextArea(
@@ -571,13 +605,21 @@ class H5Forest:
             self.mini_buffer_content,
             height=3,
         )
-        self.input_buffer = Frame(
-            self.input_buffer_content,
-            height=3,
-        )
         self.input_buffer = ConditionalContainer(
-            self.input_buffer,
+            Frame(
+                self.input_buffer_content,
+                height=3,
+            ),
             filter=Condition(lambda: len(self.input_buffer_content.text) > 0),
+        )
+
+        # Search buffer
+        self.search_buffer = ConditionalContainer(
+            Frame(
+                self.search_content,
+                height=3,
+            ),
+            filter=Condition(lambda: self._flag_search_mode),
         )
 
         # Wrap those frames that need it in conditional containers
@@ -613,6 +655,10 @@ class H5Forest:
                     content=self.hist_keys,
                     filter=Condition(lambda: self.flag_hist_mode),
                 ),
+                ConditionalContainer(
+                    content=self.search_keys,
+                    filter=Condition(lambda: self.flag_search_mode),
+                ),
             ]
         )
         self.hotkeys_frame = ConditionalContainer(
@@ -624,6 +670,7 @@ class H5Forest:
                 or self.flag_window_mode
                 or self.flag_plotting_mode
                 or self.flag_hist_mode
+                or self.flag_search_mode
             ),
         )
 
@@ -655,7 +702,13 @@ class H5Forest:
             Frame(self.progress_bar_content, height=3),
             filter=Condition(lambda: self.flag_progress_bar),
         )
-        buffers = HSplit([self.input_buffer, self.mini_buffer])
+        buffers = HSplit(
+            [
+                self.input_buffer,
+                self.mini_buffer,
+                self.search_buffer,
+            ]
+        )
 
         # Layout using split views
         self.layout = Layout(
@@ -781,6 +834,32 @@ class H5Forest:
                 get_app().layout.focus(content_area)
 
         return mouse_handler
+
+    def _on_search_text_changed(self, event):
+        """
+        Handle search text changes for real-time filtering.
+
+        This is called whenever the user types in the search buffer.
+        It filters the tree in real-time based on the search query.
+        """
+        # Only filter if we're actually in search mode
+        if not self._flag_search_mode:
+            return
+
+        # Get the current search query
+        query = self.search_content.text
+
+        # Filter the tree based on the query
+        filtered_text = self.tree.filter_tree(query)
+
+        # Update the tree display
+        self.tree_buffer.set_document(
+            Document(text=filtered_text, cursor_position=0),
+            bypass_readonly=True,
+        )
+
+        # Invalidate the app to refresh the display
+        get_app().invalidate()
 
 
 def main():

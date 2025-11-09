@@ -31,12 +31,14 @@ Normal Mode is designed for:
 | **`w`** | Window Mode | Panel and focus management |
 | **`p`** | Plotting Mode | Create scatter plots |
 | **`H`** | Histogram Mode | Generate histograms |
+| **`s`** | Search Mode | Fuzzy search through tree (only when tree has focus) |
 
 ### Interface Control
 
 | Key | Action | Description |
 |-----|--------|-------------|
 | **`A`** | Toggle Attributes | Expand/shrink attributes panel |
+| **`r`** | Restore Tree | Reset tree to initial state (collapses all, clears search results) |
 | **`q`** | Quit | Exit application |
 | **`Ctrl+Q`** | Force Quit | Force exit application |
 
