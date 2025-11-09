@@ -21,15 +21,26 @@ def _init_search_bindings(app):
 
     @error_handler
     def exit_search_mode(event):
-        """Exit search mode and restore the original tree."""
+        """
+        Cancel search and restore the original tree.
+
+        Returns to normal mode with the original tree displayed.
+        """
         # Restore the original tree
         app.tree.restore_tree()
 
         # Clear the search buffer
         app.search_content.text = ""
 
-        # Return to normal mode
+        # Reset flags
+        app.flag_tree_filtered = False
         app.return_to_normal_mode()
+
+        # Update the tree display
+        app.tree_buffer.set_document(
+            app.tree_buffer.document,
+            bypass_readonly=True,
+        )
 
         # Shift focus back to the tree
         app.shift_focus(app.tree_content)
@@ -38,27 +49,15 @@ def _init_search_bindings(app):
         event.app.invalidate()
 
     @error_handler
-    def accept_search(event):
-        """Accept search and keep filtered tree, jump to first match."""
-        # If there are matches, jump to the first one
-        if app.tree.filtered_node_rows:
-            # Get the first match (after restoring we'd lose this info)
-            first_match_row = app.tree.filtered_node_rows[0]
+    def accept_search_results(event):
+        """
+        Accept search results and return to normal mode.
 
-            # Restore tree first
-            app.tree.restore_tree()
-
-            # Calculate cursor position for the first match
-            cursor_pos = sum(
-                len(line) + 1
-                for line in app.tree.tree_text_split[:first_match_row]
-            )
-
-            # Jump to it
-            app.set_cursor_position(app.tree.tree_text, cursor_pos)
-        else:
-            # No matches, just restore
-            app.tree.restore_tree()
+        Keeps the filtered tree visible and returns to normal mode,
+        allowing all other modes (d, g, w, p, H) to work on the filtered results.
+        """
+        # Set flag that tree contains filtered results
+        app.flag_tree_filtered = True
 
         # Clear the search buffer
         app.search_content.text = ""
@@ -66,8 +65,14 @@ def _init_search_bindings(app):
         # Return to normal mode
         app.return_to_normal_mode()
 
-        # Shift focus back to the tree
+        # Shift focus to the tree content (keeping filtered view)
         app.shift_focus(app.tree_content)
+
+        # Update tree buffer to reflect current position
+        app.tree_buffer.set_document(
+            app.tree_buffer.document,
+            bypass_readonly=True,
+        )
 
         # Invalidate to refresh display
         event.app.invalidate()
@@ -83,7 +88,7 @@ def _init_search_bindings(app):
 
     app.kb.add(
         "enter", filter=Condition(lambda: app.flag_search_mode)
-    )(accept_search)
+    )(accept_search_results)
 
     # Create hot keys display
     hot_keys = VSplit(

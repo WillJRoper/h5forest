@@ -76,6 +76,24 @@ def _init_app_bindings(app):
         app.shift_focus(app.search_content)
         event.app.invalidate()
 
+    @error_handler
+    def restore_filtered_tree(event):
+        """Restore the original tree when viewing filtered search results."""
+        # Restore the original tree
+        app.tree.restore_tree()
+
+        # Reset the flag
+        app.flag_tree_filtered = False
+
+        # Update the tree display
+        app.tree_buffer.set_document(
+            app.tree_buffer.document,
+            bypass_readonly=True,
+        )
+
+        # Invalidate to refresh display
+        event.app.invalidate()
+
     # Bind the functions
     app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
     app.kb.add("c-q")(exit_app)
@@ -119,6 +137,16 @@ def _init_app_bindings(app):
         ),
     )(search_leader_mode)
 
+    # Bind Esc to restore original tree when viewing filtered results
+    app.kb.add(
+        "escape",
+        filter=Condition(
+            lambda: app.flag_normal_mode
+            and app.flag_tree_filtered
+            and app.app.layout.has_focus(app.tree_content.content)
+        ),
+    )(restore_filtered_tree)
+
     # Add the hot keys
     hot_keys = [
         ConditionalContainer(
@@ -139,6 +167,10 @@ def _init_app_bindings(app):
             filter=Condition(
                 lambda: app.app.layout.has_focus(app.tree_content.content)
             ),
+        ),
+        ConditionalContainer(
+            Label("Esc → Restore Tree"),
+            filter=Condition(lambda: app.flag_tree_filtered),
         ),
         Label("q → Exit"),
     ]
