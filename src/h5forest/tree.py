@@ -42,7 +42,8 @@ class TreeProcessor(Processor):
             new_fragments = [(style, text) for _style, text in fragments]
             return Transformation(new_fragments)
         else:
-            # Line number exceeds the number of nodes, return original fragments
+            # Line number exceeds the number of nodes, return original
+            # fragments
             return Transformation(fragments)
 
 
@@ -462,7 +463,9 @@ class Tree:
 
         # Update tree state with filtered results
         self.tree_text = filtered_text.rstrip("\n")
-        self.tree_text_split = self.tree_text.split("\n") if self.tree_text else []
+        self.tree_text_split = (
+            self.tree_text.split("\n") if self.tree_text else []
+        )
         self.nodes_by_row = filtered_nodes
         self.filtered_node_rows = filtered_rows
 
@@ -477,6 +480,7 @@ class Tree:
             paths_to_include (set):
                 Set of paths that should be included in the filtered tree.
         """
+
         def _recursive_open(node):
             """Recursively open nodes that need to be shown."""
             # Build the search path for this node
@@ -493,7 +497,7 @@ class Tree:
                 node_search_path = "/".join(path_parts)
 
             # If this node is in paths to include and is a group, open it
-            if (node.depth == 0 or node_search_path in paths_to_include):
+            if node.depth == 0 or node_search_path in paths_to_include:
                 if node.is_group and not node.is_expanded:
                     node.open_node()
 

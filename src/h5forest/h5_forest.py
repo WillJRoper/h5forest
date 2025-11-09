@@ -481,7 +481,9 @@ class H5Forest:
             multiline=False,
         )
         # Attach on_text_changed handler for real-time search
-        self.search_content.buffer.on_text_changed += self._on_search_text_changed
+        self.search_content.buffer.on_text_changed += (
+            self._on_search_text_changed
+        )
 
         self.plot_content = TextArea(
             text=self.scatter_plotter.default_plot_text,

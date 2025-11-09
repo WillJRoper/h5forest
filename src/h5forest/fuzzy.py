@@ -56,8 +56,9 @@ def search_paths(query, paths, limit=20):
     """
     Search for paths matching the query using fuzzy matching.
 
-    Uses RapidFuzz's default scoring algorithm with case-insensitive matching.
-    Only returns results where all query characters appear in order in the path.
+    Uses RapidFuzz's default scoring algorithm with case-insensitive
+    matching. Only returns results where all query characters appear in
+    order in the path.
 
     Args:
         query (str):
@@ -75,8 +76,9 @@ def search_paths(query, paths, limit=20):
     if not query or not paths:
         return []
 
-    # Use RapidFuzz's process.extract with default scorer and case-insensitive processor
-    # Request more results than limit to account for filtering
+    # Use RapidFuzz's process.extract with default scorer and
+    # case-insensitive processor. Request more results than limit
+    # to account for filtering
     results = process.extract(
         query=query,
         choices=paths,
@@ -84,7 +86,8 @@ def search_paths(query, paths, limit=20):
         processor=utils.default_process,  # Lowercase and strip whitespace
     )
 
-    # Filter results to only include paths where all query characters appear in order
+    # Filter results to only include paths where all query characters
+    # appear in order
     filtered_results = []
     for choice, score, _ in results:
         # Check if all query characters are present in order
