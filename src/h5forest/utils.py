@@ -267,6 +267,9 @@ class DynamicLabelLayout:
         # Add padding to account for spacing between labels
         column_width = max_text_width + self.padding
 
+        # Find the maximum row length to ensure all rows have same count
+        max_row_length = max(len(row) for row in rows if row) if any(rows) else 0
+
         # Create VSplit for each row with padded labels
         row_containers = []
         for row in rows:
@@ -276,14 +279,29 @@ class DynamicLabelLayout:
                     self._create_padded_label(label, column_width)
                     for label in row
                 ]
+
+                # Pad row with empty labels to match max_row_length
+                while len(padded_labels) < max_row_length:
+                    from prompt_toolkit.widgets import Label
+                    padded_labels.append(Label(" " * column_width))
+
                 row_containers.append(VSplit(padded_labels))
             else:
-                # Empty row - add an empty window
-                row_containers.append(
-                    Window(
-                        FormattedTextControl(text=""),
-                        height=1,
+                # Empty row - add empty labels matching max_row_length
+                if max_row_length > 0:
+                    from prompt_toolkit.widgets import Label
+                    empty_labels = [
+                        Label(" " * column_width)
+                        for _ in range(max_row_length)
+                    ]
+                    row_containers.append(VSplit(empty_labels))
+                else:
+                    # No labels at all - add an empty window
+                    row_containers.append(
+                        Window(
+                            FormattedTextControl(text=""),
+                            height=1,
+                        )
                     )
-                )
 
         return HSplit(row_containers)
