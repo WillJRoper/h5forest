@@ -59,11 +59,12 @@ def _init_search_bindings(app):
         # Set flag that tree contains filtered results
         app.flag_tree_filtered = True
 
-        # Clear the search buffer
-        app.search_content.text = ""
-
-        # Return to normal mode
+        # Return to normal mode BEFORE clearing buffer
+        # This prevents the text change handler from restoring the tree
         app.return_to_normal_mode()
+
+        # Clear the search buffer (safe now that we're not in search mode)
+        app.search_content.text = ""
 
         # Shift focus to the tree content (keeping filtered view)
         app.shift_focus(app.tree_content)
