@@ -93,10 +93,11 @@ def _init_search_bindings(app):
         accept_search_results
     )
 
-    # Create hot keys display
+    # Return all hot keys as a list
+    # No conditional labels in search mode
     hot_keys = [
         Label("Enter → Accept"),
         Label("Esc → Cancel"),
     ]
 
-    return DynamicLabelLayout(hot_keys)
+    return hot_keys

@@ -167,7 +167,8 @@ def _init_goto_bindings(app):
     app.kb.add("n", filter=Condition(lambda: app.flag_jump_mode))(goto_next)
     app.kb.add("K", filter=Condition(lambda: app.flag_jump_mode))(jump_to_key)
 
-    # Add the hot keys
+    # Return all hot keys as a list
+    # No conditional labels in jump mode
     hot_keys = [
         Label("t/g → Go to Top"),
         Label("b/G → Go to Bottom"),
@@ -177,4 +178,4 @@ def _init_goto_bindings(app):
         Label("q → Exit Goto Mode"),
     ]
 
-    return DynamicLabelLayout(hot_keys)
+    return hot_keys

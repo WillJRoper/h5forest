@@ -166,47 +166,18 @@ def _init_plot_bindings(app):
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
     )(exit_edit_plot)
 
-    # Add the hot keys
-    hot_keys = [
-        ConditionalContainer(
-            Label("e → Edit Config"),
-            Condition(lambda: len(app.scatter_plotter.plot_params) > 0),
-        ),
-        ConditionalContainer(
-            Label("Enter → Edit entry"),
-            Condition(lambda: app.app.layout.has_focus(app.plot_content)),
-        ),
-        ConditionalContainer(
-            Label("x → Select x-axis"),
-            filter=Condition(
-                lambda: "x" not in app.scatter_plotter.plot_params
-            ),
-        ),
-        ConditionalContainer(
-            Label("y → Select y-axis"),
-            filter=Condition(
-                lambda: "y" not in app.scatter_plotter.plot_params
-            ),
-        ),
-        ConditionalContainer(
-            Label("p → Plot"),
-            Condition(lambda: len(app.scatter_plotter) > 0),
-        ),
-        ConditionalContainer(
-            Label("P → Save Plot"),
-            Condition(lambda: len(app.scatter_plotter) > 0),
-        ),
-        Label("r → Reset"),
-        ConditionalContainer(
-            Label("q → Exit Plotting Mode"),
-            Condition(
-                lambda: not app.app.layout.has_focus(app.plot_content)
-            ),
-        ),
-        ConditionalContainer(
-            Label("q → Exit Config"),
-            Condition(lambda: app.app.layout.has_focus(app.plot_content)),
-        ),
-    ]
+    # Return all possible hot keys as a dict
+    # The app will use property methods to filter based on state
+    hot_keys = {
+        "edit_config": Label("e → Edit Config"),
+        "edit_entry": Label("Enter → Edit entry"),
+        "select_x": Label("x → Select x-axis"),
+        "select_y": Label("y → Select y-axis"),
+        "plot": Label("p → Plot"),
+        "save_plot": Label("P → Save Plot"),
+        "reset": Label("r → Reset"),
+        "exit_mode": Label("q → Exit Plotting Mode"),
+        "exit_config": Label("q → Exit Config"),
+    }
 
-    return DynamicLabelLayout(hot_keys)
+    return hot_keys
