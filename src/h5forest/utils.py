@@ -64,10 +64,10 @@ class DynamicLabelLayout:
         labels (list or callable): List of Label widgets, or a callable that
             returns a list of Labels when called.
         padding (int): Space between labels (default: 1).
-        min_rows (int): Minimum number of rows to display (default: 3).
+        min_rows (int): Minimum number of rows to display (default: 1).
     """
 
-    def __init__(self, labels, padding=1, min_rows=3):
+    def __init__(self, labels, padding=1, min_rows=1):
         """
         Initialize the dynamic label layout.
 
@@ -75,7 +75,7 @@ class DynamicLabelLayout:
             labels (list or callable): List of Label widgets, or a callable
                 that returns a list of Labels when called.
             padding (int): Space between labels (default: 1).
-            min_rows (int): Minimum number of rows (default: 3).
+            min_rows (int): Minimum number of rows (default: 1).
         """
         self.labels = labels
         self.padding = padding
@@ -140,7 +140,7 @@ class DynamicLabelLayout:
         # Calculate how many labels can fit per row based on max width
         # All labels will be padded to max_label_width, so we can fit:
         # available_width // max_label_width labels per row
-        labels_per_row = max(1, available_width // max_label_width)
+        labels_per_row = max(1, available_width // max_label_width + 1)
 
         # Distribute labels evenly across rows in grid fashion
         rows = []
