@@ -208,14 +208,20 @@ class DynamicLabelLayout:
             HSplit: Container with labels arranged in multiple rows.
         """
         try:
-            # Get current terminal width
-            app = get_app()
-            output = app.output
-            size = output.get_size()
-            available_width = size.columns
+            # Try to get terminal width from shutil first (most reliable)
+            import shutil
+
+            available_width = shutil.get_terminal_size().columns
         except Exception:
-            # Fallback if app is not available
-            available_width = 80
+            try:
+                # Fallback to prompt_toolkit's get_app
+                app = get_app()
+                output = app.output
+                size = output.get_size()
+                available_width = size.columns
+            except Exception:
+                # Final fallback
+                available_width = 80
 
         # Get current labels (call if callable, otherwise use as-is)
         current_labels = (
