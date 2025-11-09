@@ -215,10 +215,9 @@ class TestDynamicLabelLayout:
         ]
         layout = DynamicLabelLayout(labels, padding=3, min_rows=3)
 
-        # Each label: 7 characters text, 3 padding = 10 max_label_width
-        # For 2 labels per row: need 2*7 + 1*3 = 17 characters
-        # Formula: (17 + 3) // 10 = 2 labels per row
-        rows = layout._distribute_labels(17)
+        # Each label: 7 characters + 3 padding = 10 total
+        # With width=15 and +1 in calculation: 15 // 10 + 1 = 2 labels per row
+        rows = layout._distribute_labels(15)
 
         # Should have at least 3 rows (min_rows)
         assert len(rows) >= 3
