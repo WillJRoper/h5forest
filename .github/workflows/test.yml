@@ -2,9 +2,9 @@ name: Test Suite
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   test:
@@ -14,37 +14,37 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libhdf5-dev pkg-config
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libhdf5-dev pkg-config
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev,test]"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,test]"
 
-    - name: Generate test fixtures
-      run: |
-        python tests/fixtures/create_fixtures.py
+      - name: Generate test fixtures
+        run: |
+          python tests/fixtures/create_fixtures.py
 
-    - name: Lint with ruff
-      run: |
-        ruff check .
-        ruff format --check .
+      - name: Lint with ruff
+        run: |
+          ruff check .
+          ruff format --check .
 
-    - name: Run tests with pytest
-      run: |
-        pytest --cov=src/h5forest --cov-report=xml --cov-report=term-missing -v
+      - name: Run tests with pytest
+        run: |
+          pytest --cov=src/h5forest --cov-report=xml --cov-report=term-missing -v
 
-    - name: Upload coverage reports to Codecov
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
