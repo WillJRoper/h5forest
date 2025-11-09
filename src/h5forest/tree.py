@@ -356,8 +356,8 @@ class Tree:
         if self.original_tree_text is None:
             self._save_tree_state()
 
-        # Search for matching paths (limit to top 20)
-        matches = search_paths(query, self.all_node_paths, limit=20)
+        # Search for matching paths (no limit)
+        matches = search_paths(query, self.all_node_paths, limit=None)
 
         # If no matches, show empty tree
         if not matches:
