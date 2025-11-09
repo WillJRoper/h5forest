@@ -449,10 +449,6 @@ class Tree:
                 # Track if this was a matching node (not just a parent)
                 if node_search_path in matching_paths:
                     filtered_rows.append(row_counter[0])
-                    # Mark this node as a match for highlighting
-                    node.is_highlighted = True
-                else:
-                    node.is_highlighted = False
 
                 row_counter[0] += 1
 
