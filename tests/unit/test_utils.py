@@ -651,11 +651,12 @@ class TestDynamicLabelLayout:
 
         padded = layout._create_padded_label(container, 15)
 
-        # Should still be a ConditionalContainer
-        assert isinstance(padded, ConditionalContainer)
+        # Should be a regular Label (not ConditionalContainer)
+        # This ensures grid alignment without gaps
+        assert isinstance(padded, Label)
         # Text should be padded
-        padded_text = layout._get_label_text(padded)
-        assert len(padded_text) == 15
+        assert len(padded.text) == 15
+        assert padded.text.startswith("Text")
 
     @patch("h5forest.utils.get_app")
     def test_pt_container_with_padding(self, mock_get_app):
