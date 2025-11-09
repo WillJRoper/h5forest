@@ -78,12 +78,8 @@ def _init_app_bindings(app):
         event.app.invalidate()
 
     @error_handler
-    def restore_filtered_tree(event):
-        """Restore the original tree when viewing filtered search results."""
-        print("DEBUG: ESC PRESSED - restore_filtered_tree called")
-        print(f"DEBUG: flag_tree_filtered = {app.flag_tree_filtered}")
-        print(f"DEBUG: flag_normal_mode = {app.flag_normal_mode}")
-
+    def restore_tree_to_initial(event):
+        """Restore the tree to initial state (as when app was opened)."""
         # Clear any saved filtering state
         app.tree.original_tree_text = None
         app.tree.original_tree_text_split = None
@@ -95,7 +91,6 @@ def _init_app_bindings(app):
 
         # Rebuild tree from root - shows tree as when first opened
         tree_text = app.tree.get_tree_text()
-        print(f"DEBUG: Rebuilt tree, length = {len(tree_text)}")
 
         # Update the display
         app.tree_buffer.set_document(
@@ -105,7 +100,6 @@ def _init_app_bindings(app):
 
         # Invalidate to refresh display
         event.app.invalidate()
-        print("DEBUG: Tree restored and display invalidated")
 
     # Bind the functions
     app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
@@ -150,25 +144,11 @@ def _init_app_bindings(app):
         ),
     )(search_leader_mode)
 
-    # Debug binding to see flag states
-    @error_handler
-    def debug_esc(event):
-        msg = (
-            f"ESC: normal={app.flag_normal_mode} "
-            f"filtered={app.flag_tree_filtered} "
-            f"_normal={app._flag_normal_mode} "
-            f"_search={app._flag_search_mode}"
-        )
-        app.mini_buffer_content.text = msg
-
-    # Bind Esc to restore original tree when viewing filtered results
+    # Bind 'r' to restore tree to initial state
     app.kb.add(
-        "escape",
-        filter=Condition(lambda: app.flag_normal_mode and app.flag_tree_filtered),
-    )(restore_filtered_tree)
-
-    # Temporary debug binding that always triggers
-    app.kb.add("escape")(debug_esc)
+        "r",
+        filter=Condition(lambda: app.flag_normal_mode),
+    )(restore_tree_to_initial)
 
     # Add the hot keys
     hot_keys = [
@@ -191,10 +171,7 @@ def _init_app_bindings(app):
                 lambda: app.app.layout.has_focus(app.tree_content.content)
             ),
         ),
-        ConditionalContainer(
-            Label("Esc → Restore Tree"),
-            filter=Condition(lambda: app.flag_tree_filtered),
-        ),
+        Label("r → Restore Tree"),
         Label("q → Exit"),
     ]
 
