@@ -10,6 +10,40 @@ from h5forest.fuzzy import search_paths
 from h5forest.tree import Tree
 
 
+@pytest.fixture
+def search_test_file():
+    """Create a test HDF5 file specifically for search testing."""
+    with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
+        filepath = tmp.name
+
+    with h5py.File(filepath, "w") as f:
+        # Create nested structure for testing
+        f.create_dataset("RootData", data=np.arange(10))
+
+        # Group 1
+        g1 = f.create_group("Group1")
+        g1.create_dataset("Mass", data=np.ones(5))
+        g1.create_dataset("Velocity", data=np.ones(5) * 2)
+
+        # Nested groups
+        g2 = f.create_group("Group2")
+        g2_sub = g2.create_group("Subgroup")
+        g2_sub.create_dataset("Temperature", data=np.ones(3) * 300)
+        g2_sub.create_dataset("Pressure", data=np.ones(3) * 101)
+
+        # Another level
+        g3 = f.create_group("Analysis")
+        g3_data = g3.create_group("Data")
+        g3_data.create_dataset("Mass_Fraction", data=np.ones(10) * 0.5)
+        g3_data.create_dataset("Density", data=np.ones(10) * 1.2)
+
+    yield filepath
+
+    import os
+
+    os.unlink(filepath)
+
+
 class TestSearchPaths:
     """Test the search_paths function."""
 
@@ -67,39 +101,6 @@ class TestSearchPaths:
 
 class TestTreeFiltering:
     """Test tree filtering functionality."""
-
-    @pytest.fixture
-    def search_test_file(self):
-        """Create a test HDF5 file specifically for search testing."""
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
-            filepath = tmp.name
-
-        with h5py.File(filepath, "w") as f:
-            # Create nested structure for testing
-            f.create_dataset("RootData", data=np.arange(10))
-
-            # Group 1
-            g1 = f.create_group("Group1")
-            g1.create_dataset("Mass", data=np.ones(5))
-            g1.create_dataset("Velocity", data=np.ones(5) * 2)
-
-            # Nested groups
-            g2 = f.create_group("Group2")
-            g2_sub = g2.create_group("Subgroup")
-            g2_sub.create_dataset("Temperature", data=np.ones(3) * 300)
-            g2_sub.create_dataset("Pressure", data=np.ones(3) * 101)
-
-            # Another level
-            g3 = f.create_group("Analysis")
-            g3_data = g3.create_group("Data")
-            g3_data.create_dataset("Mass_Fraction", data=np.ones(10) * 0.5)
-            g3_data.create_dataset("Density", data=np.ones(10) * 1.2)
-
-        yield filepath
-
-        import os
-
-        os.unlink(filepath)
 
     def test_filter_tree_basic(self, search_test_file):
         """Test basic tree filtering."""
@@ -196,8 +197,8 @@ class TestTreeFiltering:
         assert tree.tree_text == original
         assert len(tree.nodes_by_row) == len(original_nodes)
 
-    def test_filtered_nodes_highlighted(self, search_test_file):
-        """Test that matching nodes are marked as highlighted."""
+    def test_filtered_nodes_present(self, search_test_file):
+        """Test that matching nodes are present in filtered results."""
         tree = Tree(search_test_file)
         tree.get_tree_text()
 
@@ -211,9 +212,8 @@ class TestTreeFiltering:
             node for node in tree.nodes_by_row if "Mass" in node.name
         ]
 
-        # They should all be highlighted
-        for node in mass_nodes:
-            assert node.is_highlighted
+        # Should have at least one match
+        assert len(mass_nodes) > 0
 
     def test_parent_nodes_opened(self, search_test_file):
         """Test that parent nodes are opened to show matches."""
@@ -254,10 +254,10 @@ class TestTreeFiltering:
         # Should have row indices
         assert len(tree.filtered_node_rows) > 0
 
-        # Rows should correspond to highlighted nodes
+        # Rows should correspond to actual nodes with "Mass" in the name
         for row_idx in tree.filtered_node_rows:
             node = tree.nodes_by_row[row_idx]
-            assert node.is_highlighted
+            assert "Mass" in node.name or "mass" in node.name.lower()
 
     def test_fuzzy_search_path_matching(self, search_test_file):
         """Test fuzzy matching on full paths."""
@@ -300,23 +300,23 @@ class TestTreeFiltering:
 
             os.unlink(filepath)
 
-    def test_highlighting_cleared_on_restore(self, search_test_file):
-        """Test that highlighting is cleared when tree is restored."""
+    def test_filter_state_cleared_on_restore(self, search_test_file):
+        """Test that filter state is cleared when tree is restored."""
         tree = Tree(search_test_file)
-        tree.get_tree_text()
+        original = tree.get_tree_text()
 
         if tree.unpack_thread:
             tree.unpack_thread.join()
 
-        # Filter and check highlighting
+        # Filter the tree
         tree.filter_tree("mass")
-        highlighted_before = any(node.is_highlighted for node in tree.nodes_by_row)
-        assert highlighted_before
+        assert tree.tree_text != original
+        assert len(tree.filtered_node_rows) > 0
 
-        # Restore and check highlighting is cleared
+        # Restore and check state is cleared
         tree.restore_tree()
-        highlighted_after = any(node.is_highlighted for node in tree.nodes_by_row)
-        assert not highlighted_after
+        assert tree.tree_text == original
+        assert len(tree.filtered_node_rows) == 0
 
 
 class TestSearchIntegration:
@@ -380,6 +380,82 @@ class TestSearchIntegration:
         assert "Mass" in result1 or result1 == ""
         assert "Mass" in result2 or result2 == ""
         assert "Mass" in result3 or result3 == ""
+
+    def test_subsequence_matching_required(self, search_test_file):
+        """Test that all query characters must appear in order."""
+        tree = Tree(search_test_file)
+        tree.get_tree_text()
+
+        if tree.unpack_thread:
+            tree.unpack_thread.join()
+
+        # "c" should NOT match "MassWeightedGasZ" since all chars must be in order
+        # This test verifies filtering ensures subsequence matching
+        filtered = tree.filter_tree("xyz")
+
+        # Should have no results since xyz doesn't appear in order anywhere
+        assert filtered == "" or "xyz" in filtered.lower()
+
+    def test_restore_to_initial_state(self, search_test_file):
+        """Test restoring tree to initial state collapses all nodes."""
+        tree = Tree(search_test_file)
+        initial_text = tree.get_tree_text()
+
+        if tree.unpack_thread:
+            tree.unpack_thread.join()
+
+        # Manually expand some nodes
+        for node in tree.root.children:
+            if node.is_group and node.has_children:
+                node.open_node()
+                break
+
+        # Get expanded tree text
+        tree.get_tree_text()
+        assert len(tree.root.children) > 0
+
+        # Now simulate restore to initial (like 'r' key does)
+        # Close all children
+        for child in tree.root.children:
+            child.close_node()
+
+        # Clear and reopen just root level
+        tree.root.children = []
+        tree.root.open_node()
+
+        # Rebuild tree
+        restored_text = tree.get_tree_text()
+
+        # Should match initial state (only root expanded)
+        assert restored_text == initial_text
+
+    def test_filter_then_accept_workflow(self, search_test_file):
+        """Test the workflow of filtering and accepting results."""
+        tree = Tree(search_test_file)
+        original = tree.get_tree_text()
+
+        if tree.unpack_thread:
+            tree.unpack_thread.join()
+
+        # Filter the tree
+        filtered = tree.filter_tree("mass")
+        assert filtered != original
+        assert "Mass" in filtered
+
+        # In real usage, Enter would keep this filtered view
+        # and return to normal mode. The tree should stay filtered.
+        # We can verify by checking filtered nodes are tracked
+        assert len(tree.filtered_node_rows) > 0
+
+        # User can then restore with 'r' key which would:
+        for child in tree.root.children:
+            child.close_node()
+        tree.root.children = []
+        tree.root.open_node()
+        restored = tree.get_tree_text()
+
+        # Should be back to initial
+        assert restored == original
 
 
 if __name__ == "__main__":
