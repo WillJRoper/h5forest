@@ -1160,8 +1160,8 @@ class H5Forest:
                 lambda: self._update_search_display(filtered_text)
             )
 
-        # Schedule the search to run after 200ms
-        self.search_timer = threading.Timer(0.2, perform_search)
+        # Schedule the search to run after 50ms
+        self.search_timer = threading.Timer(0.05, perform_search)
         self.search_timer.daemon = True
         self.search_timer.start()
 
