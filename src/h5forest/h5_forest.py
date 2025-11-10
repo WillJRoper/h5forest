@@ -593,13 +593,13 @@ class H5Forest:
             return labels
 
         # Otherwise show full tree view keys
+        labels.append(self._hist_keys_dict["edit_config"])
         labels.append(self._hist_keys_dict["select_data"])
         labels.append(self._hist_keys_dict["edit_bins"])
         labels.append(self._hist_keys_dict["toggle_x_scale"])
         labels.append(self._hist_keys_dict["toggle_y_scale"])
         labels.append(self._hist_keys_dict["show_hist"])
         labels.append(self._hist_keys_dict["save_hist"])
-        labels.append(self._hist_keys_dict["edit_config"])
         labels.append(self._hist_keys_dict["reset"])
         labels.append(self._hist_keys_dict["exit_mode"])
 
