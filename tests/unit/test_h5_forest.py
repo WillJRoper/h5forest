@@ -917,15 +917,43 @@ class TestH5ForestSearchTextChanged:
         # Create mock event
         mock_event = Mock()
 
-        # Mock get_app
-        with patch("h5forest.h5_forest.get_app") as mock_get_app:
-            mock_get_app.return_value.invalidate = MagicMock()
+        # Mock app.app.loop for thread-safe calls
+        app.app = MagicMock()
+        app.app.loop = MagicMock()
 
-            # Call handler
-            app._on_search_text_changed(mock_event)
+        # Mock threading.Timer to execute immediately (debouncing uses timers)
+        with patch("h5forest.h5_forest.threading.Timer") as mock_timer:
+            # Make Timer execute the target function immediately
+            def mock_timer_constructor(*args, **kwargs):
+                target = kwargs.get("target") or args[1]
+                mock_instance = MagicMock()
 
-            # Verify filter was called
-            app.tree.filter_tree.assert_called_once_with("search query")
+                def start():
+                    target()  # Execute immediately instead of after delay
+
+                mock_instance.start = start
+                mock_instance.cancel = MagicMock()
+                mock_instance.daemon = True
+                return mock_instance
+
+            mock_timer.side_effect = mock_timer_constructor
+
+            # Mock get_app
+            with patch("h5forest.h5_forest.get_app") as mock_get_app:
+                mock_get_app.return_value.invalidate = MagicMock()
+
+                # Call handler
+                app._on_search_text_changed(mock_event)
+
+                # Verify filter was called
+                app.tree.filter_tree.assert_called_once_with("search query")
+
+                # Verify call_soon_threadsafe was called to update display
+                app.app.loop.call_soon_threadsafe.assert_called_once()
+
+                # Execute the callback that was passed to call_soon_threadsafe
+                callback = app.app.loop.call_soon_threadsafe.call_args[0][0]
+                callback()
 
             # Verify document was updated
             assert app.tree_buffer.document.text == "filtered text"
@@ -954,6 +982,54 @@ class TestH5ForestSearchTextChanged:
 
         # Verify filter was NOT called
         app.tree.filter_tree.assert_not_called()
+
+    def test_on_search_text_changed_cancels_previous_timer(self, temp_h5_file):
+        """Test that typing multiple times cancels previous timer."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app._flag_search_mode = True
+        app.tree.filter_tree = MagicMock(return_value="filtered")
+        app.search_content.text = "query"
+
+        # Mock app.app.loop
+        app.app = MagicMock()
+        app.app.loop = MagicMock()
+
+        # Track created timers
+        timers = []
+
+        with patch("h5forest.h5_forest.threading.Timer") as mock_timer:
+
+            def create_timer(*args, **kwargs):
+                timer = MagicMock()
+                timer.cancel = MagicMock()
+                timer.start = MagicMock()
+                timer.daemon = True
+                timers.append(timer)
+                return timer
+
+            mock_timer.side_effect = create_timer
+
+            # Simulate rapid typing - call handler multiple times
+            mock_event = Mock()
+            app._on_search_text_changed(mock_event)
+            app._on_search_text_changed(mock_event)
+            app._on_search_text_changed(mock_event)
+
+            # Should have created 3 timers
+            assert len(timers) == 3
+
+            # First two timers should have been cancelled
+            timers[0].cancel.assert_called_once()
+            timers[1].cancel.assert_called_once()
+
+            # Last timer should not be cancelled
+            timers[2].cancel.assert_not_called()
+
+            # All timers should have been started
+            for timer in timers:
+                timer.start.assert_called_once()
 
 
 class TestH5ForestMain:

@@ -9,6 +9,7 @@ Example Usage:
 """
 
 import sys
+import threading
 
 from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
@@ -158,6 +159,9 @@ class H5Forest:
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
         self._flag_search_mode = False
+
+        # Timer for debouncing search input
+        self.search_timer = None
 
         # Set up the main app and tree bindings. Store the raw label
         # dicts/lists so we can filter them dynamically using property methods
@@ -1130,28 +1134,43 @@ class H5Forest:
 
     def _on_search_text_changed(self, event):
         """
-        Handle search text changes for real-time filtering.
+        Handle search text changes for real-time filtering with debouncing.
 
         This is called whenever the user types in the search buffer.
-        It filters the tree in real-time based on the search query.
+        It debounces the search to avoid excessive filtering while typing.
         """
         # Only filter if we're actually in search mode
         if not self._flag_search_mode:
             return
 
-        # Get the current search query
-        query = self.search_content.text
+        # Cancel any existing timer
+        if self.search_timer is not None:
+            self.search_timer.cancel()
 
-        # Filter the tree based on the query
-        filtered_text = self.tree.filter_tree(query)
+        # Define the search function to execute after delay
+        def perform_search():
+            # Get the current search query
+            query = self.search_content.text
 
-        # Update the tree display
+            # Filter the tree based on the query
+            filtered_text = self.tree.filter_tree(query)
+
+            # Update the tree display on the main thread
+            self.app.loop.call_soon_threadsafe(
+                lambda: self._update_search_display(filtered_text)
+            )
+
+        # Schedule the search to run after 50ms
+        self.search_timer = threading.Timer(0.05, perform_search)
+        self.search_timer.daemon = True
+        self.search_timer.start()
+
+    def _update_search_display(self, filtered_text):
+        """Update the tree display with filtered results."""
         self.tree_buffer.set_document(
             Document(text=filtered_text, cursor_position=0),
             bypass_readonly=True,
         )
-
-        # Invalidate the app to refresh the display
         get_app().invalidate()
 
 
