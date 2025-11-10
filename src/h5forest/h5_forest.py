@@ -402,7 +402,9 @@ class H5Forest:
         # Add tree keys if tree has focus
         if tree_has_focus:
             labels.append(self._tree_keys_dict["open_group"])
-            labels.append(self._tree_keys_dict["move_ten"])
+
+        # Always show move_ten in normal mode
+        labels.append(self._tree_keys_dict["move_ten"])
 
         # Add conditional app keys
         if not self.flag_expanded_attrs:
