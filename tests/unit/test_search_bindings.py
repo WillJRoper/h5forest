@@ -5,8 +5,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.search_bindings import _init_search_bindings
+from h5forest.bindings.search_bindings import (
+    _init_search_bindings,
+    error_handler,
+)
 
 
 class TestSearchBindings:
@@ -56,7 +60,6 @@ class TestSearchBindings:
 
     def test_init_search_bindings_returns_hotkeys(self, mock_app):
         """Test that _init_search_bindings returns a list of Labels."""
-        from prompt_toolkit.widgets import Label
 
         hot_keys = _init_search_bindings(mock_app)
 
@@ -224,7 +227,6 @@ class TestSearchBindings:
         # Since error_handler is a decorator, we just verify it's
         # imported and used. The actual error handling logic is
         # tested in test_errors.py
-        from h5forest.bindings.search_bindings import error_handler
 
         assert callable(error_handler)
 
@@ -233,7 +235,6 @@ class TestSearchBindings:
         hot_keys = _init_search_bindings(mock_app)
 
         # Should be a list of Labels
-        from prompt_toolkit.widgets import Label
 
         assert len(hot_keys) == 2
 

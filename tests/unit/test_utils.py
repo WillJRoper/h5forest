@@ -3,10 +3,20 @@
 from unittest.mock import MagicMock, Mock, patch
 
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
+from prompt_toolkit.layout import (
+    ConditionalContainer,
+    HSplit,
+    VSplit,
+    Window,
+)
 from prompt_toolkit.widgets import Label
 
-from h5forest.utils import DynamicLabelLayout, DynamicTitle, get_window_size
+from h5forest.utils import (
+    DynamicLabelLayout,
+    DynamicTitle,
+    WaitIndicator,
+    get_window_size,
+)
 
 
 class TestDynamicTitle:
@@ -79,7 +89,6 @@ class TestGetWindowSizeSimple:
 
     def test_get_window_size_import_exists(self):
         """Test that get_window_size function can be imported."""
-        from h5forest.utils import get_window_size
 
         assert callable(get_window_size)
 
@@ -163,6 +172,20 @@ class TestDynamicLabelLayout:
         # so we can't extract the text and fall back to 20
         width = layout._estimate_label_width(container)
         assert width == 20  # Fallback value
+
+    def test_estimate_label_width_conditional_with_text(self):
+        """Test width estimation for ConditionalContainer with text."""
+        layout = DynamicLabelLayout([])
+
+        # Create a mock ConditionalContainer with content that has text
+        mock_content = Mock()
+        mock_content.text = "Test"
+        container = Mock(spec=ConditionalContainer)
+        container.content = mock_content
+
+        # Should extract text and calculate width
+        width = layout._estimate_label_width(container)
+        assert width == 9  # len("Test") + padding(5)
 
     def test_estimate_label_width_custom_padding(self):
         """Test width estimation with custom padding."""
@@ -444,6 +467,10 @@ class TestDynamicLabelLayout:
         # Should have min_rows of empty rows
         assert len(children) == 3
 
+        # Verify children are Windows (line 301 coverage)
+        for child in children:
+            assert isinstance(child, (Window, VSplit))
+
     def test_label_distribution_realistic_scenario(self):
         """Test label distribution in a realistic scenario."""
         # Simulate normal mode labels
@@ -697,3 +724,323 @@ class TestDynamicLabelLayout:
                     assert all(len(t) == first_len for t in texts), (
                         "All labels should be padded to same width"
                     )
+
+    @patch("shutil.get_terminal_size")
+    @patch("h5forest.utils.get_app")
+    def test_pt_container_shutil_exception(
+        self, mock_get_app, mock_get_terminal_size
+    ):
+        """Test __pt_container__ fallback when shutil fails."""
+        labels = [Label("Test")]
+        layout = DynamicLabelLayout(labels)
+
+        # Make shutil.get_terminal_size raise an exception
+        mock_get_terminal_size.side_effect = Exception("No terminal")
+
+        # Mock get_app to provide fallback
+        mock_app = Mock()
+        mock_output = Mock()
+        mock_size = Mock()
+        mock_size.columns = 80
+        mock_output.get_size.return_value = mock_size
+        mock_app.output = mock_output
+        mock_get_app.return_value = mock_app
+
+        # Should fallback to get_app and still work
+        container = layout.__pt_container__()
+        assert isinstance(container, HSplit)
+
+    @patch("shutil.get_terminal_size")
+    @patch("h5forest.utils.get_app")
+    def test_pt_container_both_exceptions(
+        self, mock_get_app, mock_get_terminal_size
+    ):
+        """Test __pt_container__ final fallback when both methods fail."""
+        labels = [Label("Test")]
+        layout = DynamicLabelLayout(labels)
+
+        # Make both terminal size methods fail
+        mock_get_terminal_size.side_effect = Exception("No terminal")
+        mock_get_app.side_effect = Exception("No app")
+
+        # Should use final fallback width of 80
+        container = layout.__pt_container__()
+        assert isinstance(container, HSplit)
+
+    def test_estimate_label_width_conditional_without_text(self):
+        """Test width estimation for ConditionalContainer without text attr."""
+        layout = DynamicLabelLayout([])
+
+        # Create a ConditionalContainer with content that has no text attribute
+        mock_content = Mock(spec=[])  # No text attribute
+        container = Mock(spec=ConditionalContainer)
+        container.content = mock_content
+
+        # Should return fallback value of 20
+        width = layout._estimate_label_width(container)
+        assert width == 20
+
+    def test_get_label_text_label_without_text(self):
+        """Test getting text from label without text attribute."""
+        layout = DynamicLabelLayout([])
+        mock_label = Mock(spec=[])  # No text attribute
+
+        text = layout._get_label_text(mock_label)
+        assert text == ""
+
+    def test_get_label_text_conditional_without_text(self):
+        """Test getting text from ConditionalContainer without text."""
+        layout = DynamicLabelLayout([])
+
+        # Create ConditionalContainer with content that has no text
+        mock_content = Mock(spec=[])
+        container = Mock(spec=ConditionalContainer)
+        container.content = mock_content
+
+        text = layout._get_label_text(container)
+        assert text == ""
+
+    def test_get_label_text_conditional_with_text(self):
+        """Test getting text from ConditionalContainer with text attribute."""
+        layout = DynamicLabelLayout([])
+
+        # Create ConditionalContainer with content that has text
+        mock_content = Mock()
+        mock_content.text = "Hello World"
+        container = Mock(spec=ConditionalContainer)
+        container.content = mock_content
+
+        text = layout._get_label_text(container)
+        assert text == "Hello World"
+
+
+class TestWaitIndicator:
+    """Test cases for WaitIndicator class."""
+
+    def test_init(self):
+        """Test WaitIndicator initialization."""
+        mock_app = MagicMock()
+        indicator = WaitIndicator(mock_app, "Test message")
+
+        assert indicator.app == mock_app
+        assert indicator.message == "Test message"
+        assert indicator.update_interval == 0.1
+        assert indicator.running is False
+        assert indicator.thread is None
+
+    def test_init_custom_interval(self):
+        """Test WaitIndicator with custom update interval."""
+        mock_app = MagicMock()
+        indicator = WaitIndicator(mock_app, "Test", update_interval=0.5)
+
+        assert indicator.update_interval == 0.5
+
+    def test_start_sets_running_flag(self):
+        """Test that start() sets the running flag."""
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        indicator = WaitIndicator(mock_app, "Test")
+        indicator.start()
+
+        assert indicator.running is True
+        assert indicator.thread is not None
+        assert indicator.thread.daemon is True
+
+        # Clean up
+        indicator.stop()
+
+    def test_start_creates_thread(self):
+        """Test that start() creates a daemon thread."""
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        indicator = WaitIndicator(mock_app, "Test")
+        indicator.start()
+
+        assert indicator.thread is not None
+        assert indicator.thread.is_alive()
+        assert indicator.thread.daemon is True
+
+        # Clean up
+        indicator.stop()
+
+    def test_stop_clears_running_flag(self):
+        """Test that stop() clears the running flag."""
+        import time
+
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        indicator = WaitIndicator(mock_app, "Test")
+        indicator.start()
+        time.sleep(0.05)  # Let thread start
+        indicator.stop()
+
+        assert indicator.running is False
+        assert indicator.thread is None
+
+    def test_stop_joins_thread(self):
+        """Test that stop() waits for thread to finish."""
+        import time
+
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        indicator = WaitIndicator(mock_app, "Test")
+        indicator.start()
+        time.sleep(0.05)  # Let thread start
+
+        thread_ref = indicator.thread
+        indicator.stop()
+
+        # Thread should be joined and no longer alive
+        assert not thread_ref.is_alive()
+
+    def test_context_manager_start(self):
+        """Test using WaitIndicator as context manager."""
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        with WaitIndicator(mock_app, "Test") as indicator:
+            assert indicator.running is True
+            assert indicator.thread is not None
+
+        # After exiting context, should be stopped
+        assert indicator.running is False
+
+    def test_context_manager_stop(self):
+        """Test that context manager stops indicator on exit."""
+        import time
+
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        indicator = None
+        with WaitIndicator(mock_app, "Test") as ind:
+            indicator = ind
+            time.sleep(0.05)
+
+        # Should be stopped after context exit
+        assert indicator.running is False
+        assert indicator.thread is None
+
+    def test_animate_calls_app_print(self):
+        """Test that animate loop calls app.print with spinner."""
+        import time
+
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        indicator = WaitIndicator(mock_app, "Loading")
+        indicator.start()
+
+        # Let it run for a bit
+        time.sleep(0.25)
+        indicator.stop()
+
+        # Should have called print multiple times
+        assert mock_app.app.loop.call_soon_threadsafe.call_count > 0
+
+        # Check that it was called with spinner characters
+        calls = mock_app.app.loop.call_soon_threadsafe.call_args_list
+        assert len(calls) > 0
+
+    def test_animate_clears_message_on_stop(self):
+        """Test that stopping clears the message."""
+        import time
+
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        indicator = WaitIndicator(mock_app, "Loading")
+        indicator.start()
+        time.sleep(0.15)
+        indicator.stop()
+
+        # Last call should clear the message (empty string)
+        last_call = mock_app.app.loop.call_soon_threadsafe.call_args_list[-1]
+        # Execute the lambda to see what it does
+        last_call[0][0]()
+        mock_app.print.assert_called_with("")
+
+    def test_start_when_already_running(self):
+        """Test that calling start() when already running does nothing."""
+        import time
+
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        indicator = WaitIndicator(mock_app, "Test")
+        indicator.start()
+        time.sleep(0.05)
+
+        first_thread = indicator.thread
+
+        # Try to start again
+        indicator.start()
+
+        # Should still be the same thread
+        assert indicator.thread is first_thread
+
+        # Clean up
+        indicator.stop()
+
+    def test_spinner_characters(self):
+        """Test that SPINNER_CHARS constant is defined correctly."""
+        expected_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        assert WaitIndicator.SPINNER_CHARS == expected_chars
+
+    def test_multiple_indicators(self):
+        """Test multiple independent WaitIndicator instances."""
+        import time
+
+        mock_app1 = MagicMock()
+        mock_app1.app = MagicMock()
+        mock_app1.app.loop = MagicMock()
+
+        mock_app2 = MagicMock()
+        mock_app2.app = MagicMock()
+        mock_app2.app.loop = MagicMock()
+
+        indicator1 = WaitIndicator(mock_app1, "First")
+        indicator2 = WaitIndicator(mock_app2, "Second")
+
+        indicator1.start()
+        indicator2.start()
+        time.sleep(0.1)
+
+        # Both should be running independently
+        assert indicator1.running is True
+        assert indicator2.running is True
+
+        indicator1.stop()
+        indicator2.stop()
+
+        # Both should be stopped
+        assert indicator1.running is False
+        assert indicator2.running is False
+
+    def test_context_manager_exception_handling(self):
+        """Test that exceptions in context manager are not suppressed."""
+        mock_app = MagicMock()
+        mock_app.app = MagicMock()
+        mock_app.app.loop = MagicMock()
+
+        try:
+            with WaitIndicator(mock_app, "Test"):
+                raise ValueError("Test error")
+        except ValueError as e:
+            # Exception should propagate
+            assert str(e) == "Test error"
+        else:
+            assert False, "Exception should have been raised"

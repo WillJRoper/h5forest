@@ -1,8 +1,8 @@
-# h5forest
+# `H5forest`
 
 **A Text-based User Interface (TUI) for exploring HDF5 files**
 
-h5forest brings interactivity and new functionality to HDF5 file exploration. Unlike traditional command-line tools like `h5ls` or `h5glance`, h5forest provides a fully interactive terminal interface for navigating complex HDF5 file hierarchies.
+`h5forest` brings interactivity and new functionality to HDF5 file exploration. Unlike traditional command-line tools like `h5ls` or `h5glance`, `h5forest` provides a fully interactive terminal interface for navigating complex HDF5 file hierarchies.
 
 ![h5forest Screenshot](https://github.com/user-attachments/assets/38b92869-6768-41f4-833c-d8b4ad6c6ad5)
 
@@ -19,7 +19,7 @@ h5forest brings interactivity and new functionality to HDF5 file exploration. Un
 
 ## Quick Start
 
-Install h5forest via pip:
+Install `h5forest` via pip:
 
 ```bash
 pip install h5forest
@@ -50,13 +50,12 @@ Use keyboard shortcuts to switch between modes and perform actions. Press `q` to
 - **[Getting Started](installation.md)**: Installation and basic setup
 - **[Quick Start](quickstart.md)**: Get up and running in minutes
 - **[Mode Reference](modes/overview.md)**: Detailed guide to all interaction modes
-- **[Examples](examples/navigation.md)**: Practical usage examples
 - **[Contributing](contributing.md)**: Development setup and contribution guidelines
 - **[FAQ](faq.md)**: Common questions and troubleshooting
 
-## Why h5forest?
+## Why `h5forest`?
 
-Traditional HDF5 tools work well for quick inspections, but h5forest excels when you need to:
+Traditional HDF5 tools work well for quick inspections, but `h5forest` excels when you need to:
 
 - Explore complex, deeply nested file structures
 - Interactively analyze datasets without writing scripts
@@ -66,9 +65,10 @@ Traditional HDF5 tools work well for quick inspections, but h5forest excels when
 
 ## Community
 
-h5forest is developed by [Will Roper](https://github.com/WillJRoper).
+`h5forest` is developed by [Will Roper](https://github.com/WillJRoper).
 
 **Get Involved:**
+
 - **Contribute:** See our [Contributing Guide](contributing.md) for development setup and guidelines
 - **Report Issues:** Submit bug reports and feature requests on [GitHub Issues](https://github.com/WillJRoper/h5forest/issues)
 - **Discussions:** Join conversations on [GitHub Discussions](https://github.com/WillJRoper/h5forest/discussions)
@@ -76,4 +76,4 @@ h5forest is developed by [Will Roper](https://github.com/WillJRoper).
 
 ## License
 
-h5forest is released under the MIT License. See the [LICENSE](https://github.com/WillJRoper/h5forest/blob/main/LICENSE) file for details.
+`h5forest` is released under the GPL v3 License. See the [LICENSE](https://github.com/WillJRoper/h5forest/blob/main/LICENSE) file for details.

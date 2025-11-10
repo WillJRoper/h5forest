@@ -1,6 +1,6 @@
 # Basic Usage
 
-This page covers the fundamental concepts and everyday usage patterns of h5forest.
+This page covers the fundamental concepts and usage patterns of `h5forest`.
 
 ## Interface Overview
 
@@ -23,13 +23,13 @@ h5forest's interface consists of several key panels:
 
 ### Panel Descriptions
 
-**Tree Panel**: Shows the hierarchical structure of your HDF5 file. Groups are shown with triangular arrows (▶/▼), datasets without arrows.
+**Tree Panel**: Shows the hierarchical structure of your HDF5 file. Groups are shown with triangular arrows (▶/▼) based on whether they are open or closed, and datasets are shown without arrows.
 
 **Metadata Panel**: Displays information about the currently selected item (group or dataset).
 
-**Attributes Panel**: Shows HDF5 attributes associated with the selected item. Can be expanded with **`A`**.
+**Attributes Panel**: Shows HDF5 attributes associated with the selected item. Can be expanded with **`A`** to show larger lists of attributes in a broader view.
 
-**Values/Plot Panel**: Conditionally appears when viewing dataset values or creating visualizations.
+**Values/Plot Panel**: Conditionally appear when viewing dataset values or creating plots in the Dataset or Plotting modes.
 
 **Hotkeys Display**: Shows available keyboard shortcuts for the current mode.
 
@@ -48,20 +48,23 @@ HDF5 files are organized hierarchically:
 ### Tree Navigation
 
 **Basic Movement**:
+
 ```
 ↑/k    Move up one line
-↓/j    Move down one line  
+↓/j    Move down one line
 ←/h    Move left
 →/l    Move right
 ```
 
 **Fast Movement**:
+
 ```
 {      Jump up 10 lines
 }      Jump down 10 lines
 ```
 
 **Expansion**:
+
 ```
 Enter  Expand/collapse the selected group
 ```
@@ -70,7 +73,7 @@ Enter  Expand/collapse the selected group
 
 ### Groups
 
-When you select a group, you'll see:
+When you select a group, you'll see a variety of metadata telling you about its contents:
 
 ```
 Group:              /simulation/particles
@@ -83,7 +86,7 @@ Groups primarily serve as organizational containers.
 
 ### Datasets
 
-Dataset metadata includes comprehensive information:
+Dataset metadata includes comprehensive information about the data stored at that location:
 
 ```
 Dataset:            /simulation/particles/positions
@@ -96,6 +99,7 @@ Chunks:             (32768, 3)
 ```
 
 Key information:
+
 - **Shape**: Dimensions of the array
 - **Datatype**: Data type (float64, int32, etc.)
 - **Memory**: Actual storage size
@@ -135,7 +139,7 @@ For small datasets, all values are shown. For large datasets, h5forest shows a s
  [2.345 6.789 0.123]
  [3.456 7.890 1.234]
  ...
- 
+
 Showing 1000/3000000 elements.
 ```
 
@@ -156,7 +160,7 @@ h5forest can compute statistics efficiently even for very large datasets:
 ### Available Statistics
 
 - **`m`**: Minimum and maximum values
-- **`M`**: Mean (average) value  
+- **`M`**: Mean (average) value
 - **`s`**: Standard deviation
 
 ### Chunked Processing
@@ -168,43 +172,17 @@ Min/Max ████████████████████████
 ```
 
 This approach:
+
 - Prevents memory overflow
 - Provides progress feedback
 - Maintains accuracy
-
-## Efficient Workflows
-
-### Exploration Workflow
-
-1. **Navigate** to interesting groups using tree navigation
-2. **Expand** groups to see their contents
-3. **Select** datasets to view metadata
-4. **Analyze** interesting datasets with statistics
-5. **Visualize** relationships with plotting tools
-
-### Quick Dataset Assessment
-
-For rapid dataset assessment:
-
-1. Select dataset and review metadata
-2. Press **`d`** → **`v`** to peek at values
-3. Press **`m`** for min/max range
-4. Press **`M`** for mean if relevant
-
-### Large File Strategy
-
-For very large files:
-
-1. Start at root and understand overall structure
-2. Use **`j`** (Jump Mode) for quick navigation
-3. Focus on smaller datasets first
-4. Use chunked statistics for large arrays
 
 ## Performance Considerations
 
 ### Lazy Loading
 
 h5forest only loads data when needed:
+
 - File structure loads immediately
 - Dataset values load on request
 - Statistics compute on demand
@@ -213,69 +191,10 @@ h5forest only loads data when needed:
 
 - Tree structure uses minimal memory
 - Dataset values are not cached
-- Statistics use chunk-based algorithms
+- Statistics use chunk-based algorithms where possible
 
 ### Responsive Interface
 
 - All heavy operations run in background threads
 - Interface remains responsive during calculations
 - Progress bars show operation status
-
-## Common Usage Patterns
-
-### Scientific Data Exploration
-
-```bash
-# Open simulation file
-h5forest simulation_output.h5
-
-# Navigate to particle data
-# Press 'd' to enter Dataset Mode
-# Press 'v' to view coordinates
-# Press 'm' to get position ranges
-# Press 'p' to enter Plotting Mode
-# Select x,y coordinates for scatter plot
-```
-
-### Data Validation
-
-```bash
-# Quick validation workflow:
-# 1. Check dataset shapes and types
-# 2. Verify data ranges with min/max
-# 3. Look for obvious outliers
-# 4. Check attributes for metadata consistency
-```
-
-### File Structure Documentation
-
-```bash
-# Understanding file organization:
-# 1. Navigate full tree structure
-# 2. Note group hierarchy
-# 3. Check attribute documentation
-# 4. Identify key datasets
-```
-
-## Keyboard Efficiency
-
-### Essential Shortcuts
-
-Most common actions:
-```
-Enter  Expand/collapse groups
-d      Dataset analysis mode  
-v      View dataset values
-m      Min/max statistics
-q      Exit current mode
-```
-
-### Mode-Specific Shortcuts
-
-Each mode has optimized shortcuts. Watch the hotkey display at the bottom of the screen for context-sensitive options.
-
-## Next Steps
-
-- Learn about specific [modes](modes/overview.md) for specialized tasks
-- See [visualization examples](examples/visualization.md) for plotting workflows
-- Check [FAQ](faq.md) for troubleshooting common issues

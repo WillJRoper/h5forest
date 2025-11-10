@@ -5,8 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.bindings import _init_app_bindings
+from h5forest.bindings.bindings import _init_app_bindings, error_handler
 
 
 class TestAppBindings:
@@ -287,17 +288,169 @@ class TestAppBindings:
         assert len(bindings) > 0
 
         handler = bindings[0].handler
-        handler(mock_event)
 
-        # Verify mode flags changed
-        assert mock_app._flag_normal_mode is False
-        assert mock_app._flag_search_mode is True
+        # Mock threading to capture the thread target
+        mock_path = "h5forest.bindings.bindings.threading.Thread"
+        with patch(mock_path) as mock_thread:
+            mock_thread_instance = MagicMock()
+            mock_thread.return_value = mock_thread_instance
 
-        # Verify search content was cleared and focused
-        assert mock_app.search_content.text == ""
-        assert mock_app.search_content.buffer.cursor_position == 0
-        mock_app.shift_focus.assert_called_once_with(mock_app.search_content)
-        mock_event.app.invalidate.assert_called_once()
+            handler(mock_event)
+
+            # Verify mode flags changed
+            assert mock_app._flag_normal_mode is False
+            assert mock_app._flag_search_mode is True
+
+            # Verify search content was cleared and focused
+            assert mock_app.search_content.text == ""
+            assert mock_app.search_content.buffer.cursor_position == 0
+            mock_app.shift_focus.assert_called_once_with(
+                mock_app.search_content
+            )
+
+            # Verify get_all_paths was called
+            mock_app.tree.get_all_paths.assert_called_once()
+
+            # Verify thread started if index is building
+            if mock_app.tree.index_building:
+                mock_thread.assert_called_once()
+                mock_thread_instance.start.assert_called_once()
+
+            mock_event.app.invalidate.assert_called_once()
+
+    def test_search_leader_mode_with_index_building(
+        self, mock_app, mock_event
+    ):
+        """Test search mode when index building triggers auto-update."""
+        _init_app_bindings(mock_app)
+
+        # Set up index building scenario
+        mock_app.tree.index_building = True
+        mock_app.tree.unpack_thread = MagicMock()
+        mock_app.search_content.text = "test query"
+        mock_app.tree.filter_tree = MagicMock(return_value="filtered text")
+        mock_app.app.loop = MagicMock()
+        mock_app.app.loop.call_soon_threadsafe = MagicMock()
+
+        # Mock WaitIndicator
+        mock_indicator = MagicMock()
+
+        # Find the 's' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("s",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+
+        # Mock threading but capture and execute the thread target
+        thread_path = "h5forest.bindings.bindings.threading.Thread"
+        with patch(thread_path) as mock_thread:
+            with patch("h5forest.utils.WaitIndicator") as mock_wait_cls:
+                mock_wait_cls.return_value = mock_indicator
+
+                # Capture the thread target function
+                thread_target = None
+
+                def capture_thread(*args, **kwargs):
+                    nonlocal thread_target
+                    thread_target = kwargs.get("target")
+                    mock_inst = MagicMock()
+                    return mock_inst
+
+                mock_thread.side_effect = capture_thread
+
+                # Call the handler
+                handler(mock_event)
+
+                # After handler clears search text, simulate user typing
+                mock_app.search_content.text = "test query"
+
+                # Now execute the captured thread target
+                if thread_target:
+                    thread_target()
+
+                    # Verify WaitIndicator was created and started
+                    mock_wait_cls.assert_called_once_with(
+                        mock_app, "Constructing search database..."
+                    )
+                    mock_indicator.start.assert_called_once()
+
+                    # Verify thread was joined
+                    mock_app.tree.unpack_thread.join.assert_called_once()
+
+                    # Verify indicator was stopped
+                    mock_indicator.stop.assert_called_once()
+
+                    # Verify auto-update was triggered
+                    mock_app.app.loop.call_soon_threadsafe.assert_called_once()
+
+                    # Execute the update_search callback (lines 112-124)
+                    call_args = mock_app.app.loop.call_soon_threadsafe
+                    update_callback = call_args.call_args[0][0]
+                    update_callback()
+
+                    # Verify the update happened
+                    query = "test query"
+                    mock_app.tree.filter_tree.assert_called_once_with(query)
+                    mock_app.tree_buffer.set_document.assert_called_once()
+                    mock_app.app.invalidate.assert_called()
+
+    def test_search_leader_mode_no_query(self, mock_app, mock_event):
+        """Test search when index completes but no query entered."""
+        _init_app_bindings(mock_app)
+
+        # Set up index building scenario with empty query
+        mock_app.tree.index_building = True
+        mock_app.tree.unpack_thread = MagicMock()
+        mock_app.search_content.text = ""  # Empty query
+        mock_app.tree.filter_tree = MagicMock(return_value="filtered text")
+        mock_app.app.loop = MagicMock()
+        mock_app.app.loop.call_soon_threadsafe = MagicMock()
+
+        # Mock WaitIndicator
+        mock_indicator = MagicMock()
+
+        # Find the 's' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("s",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+
+        thread_path = "h5forest.bindings.bindings.threading.Thread"
+        with patch(thread_path) as mock_thread:
+            with patch("h5forest.utils.WaitIndicator") as mock_wait_cls:
+                mock_wait_cls.return_value = mock_indicator
+
+                # Capture the thread target function
+                thread_target = None
+
+                def capture_thread(*args, **kwargs):
+                    nonlocal thread_target
+                    thread_target = kwargs.get("target")
+                    mock_inst = MagicMock()
+                    return mock_inst
+
+                mock_thread.side_effect = capture_thread
+
+                # Call the handler
+                handler(mock_event)
+
+                # Execute the thread target
+                if thread_target:
+                    thread_target()
+
+                    # Execute the update_search callback
+                    call_args = mock_app.app.loop.call_soon_threadsafe
+                    update_callback = call_args.call_args[0][0]
+                    update_callback()
+
+                    # With empty query, filter_tree should NOT be called
+                    mock_app.tree.filter_tree.assert_not_called()
+                    # set_document should not be called either
+                    mock_app.tree_buffer.set_document.assert_not_called()
 
     def test_restore_tree_to_initial(self, mock_app, mock_event):
         """Test restoring tree to initial state."""
@@ -381,8 +534,6 @@ class TestAppBindings:
         self, mock_error_handler, mock_app
     ):
         """Test that some handlers are wrapped with error_handler."""
-        from h5forest.bindings.bindings import error_handler
-
         assert callable(error_handler)
 
     def test_hotkeys_structure(self, mock_app):
@@ -390,8 +541,6 @@ class TestAppBindings:
         hot_keys = _init_app_bindings(mock_app)
 
         # Should be a dict with Label values
-        from prompt_toolkit.widgets import Label
-
         assert len(hot_keys) == 10
 
         # All values should be Labels

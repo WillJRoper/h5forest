@@ -177,6 +177,7 @@ class H5Forest:
 
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
+        self.mode_title = DynamicTitle("Normal Mode")
 
         # Attach the hexbin plotter
         self.scatter_plotter = ScatterPlotter()
@@ -391,32 +392,25 @@ class H5Forest:
         """
         labels = []
 
-        # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
-        tree_has_focus = (
-            has_app
-            and hasattr(self, "tree_content")
-            and self.app.layout.has_focus(self.tree_content.content)
-        )
+        # Always show Enter to open group in normal mode
+        labels.append(self._tree_keys_dict["open_group"])
 
-        # Add tree keys if tree has focus
-        if tree_has_focus:
-            labels.append(self._tree_keys_dict["open_group"])
-            labels.append(self._tree_keys_dict["move_ten"])
-
-        # Add conditional app keys
-        if not self.flag_expanded_attrs:
-            labels.append(self._app_keys_dict["expand_attrs"])
-        else:
-            labels.append(self._app_keys_dict["shrink_attrs"])
-
-        # Add always-visible app keys
+        # Mode-switching keys
         labels.append(self._app_keys_dict["dataset_mode"])
         labels.append(self._app_keys_dict["goto_mode"])
         labels.append(self._app_keys_dict["hist_mode"])
         labels.append(self._app_keys_dict["plotting_mode"])
         labels.append(self._app_keys_dict["window_mode"])
         labels.append(self._app_keys_dict["search"])
+
+        # Other hot keys
+        labels.append(self._tree_keys_dict["move_ten"])
+
+        if not self.flag_expanded_attrs:
+            labels.append(self._app_keys_dict["expand_attrs"])
+        else:
+            labels.append(self._app_keys_dict["shrink_attrs"])
+
         labels.append(self._app_keys_dict["restore_tree"])
         labels.append(self._app_keys_dict["exit"])
 
@@ -529,14 +523,13 @@ class H5Forest:
 
         # If config panel is focused, show only config-specific keys
         if has_app and self.app.layout.has_focus(self.plot_content):
+            labels.append(self._plot_keys_dict["edit_tree"])
             labels.append(self._plot_keys_dict["edit_entry"])
-            labels.append(self._plot_keys_dict["jump_tree"])
             labels.append(self._plot_keys_dict["exit_config"])
             return labels
 
         # Otherwise show full tree view keys
         labels.append(self._plot_keys_dict["edit_config"])
-        labels.append(self._plot_keys_dict["jump_config"])
 
         # Show axis selection only if not already set
         if "x" not in self.scatter_plotter.plot_params:
@@ -585,19 +578,19 @@ class H5Forest:
 
         # If config panel is focused, show only config-specific keys
         if has_app and self.app.layout.has_focus(self.hist_content):
+            labels.append(self._hist_keys_dict["edit_tree"])
             labels.append(self._hist_keys_dict["edit_entry"])
-            labels.append(self._hist_keys_dict["jump_tree"])
             labels.append(self._hist_keys_dict["exit_config"])
             return labels
 
         # Otherwise show full tree view keys
+        labels.append(self._hist_keys_dict["edit_config"])
         labels.append(self._hist_keys_dict["select_data"])
         labels.append(self._hist_keys_dict["edit_bins"])
         labels.append(self._hist_keys_dict["toggle_x_scale"])
         labels.append(self._hist_keys_dict["toggle_y_scale"])
         labels.append(self._hist_keys_dict["show_hist"])
         labels.append(self._hist_keys_dict["save_hist"])
-        labels.append(self._hist_keys_dict["jump_config"])
         labels.append(self._hist_keys_dict["reset"])
         labels.append(self._hist_keys_dict["exit_mode"])
 
@@ -640,6 +633,7 @@ class H5Forest:
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
         self._flag_search_mode = False
+        self.mode_title.update_title("Normal Mode")
 
     def _init_text_areas(self):
         """Initialise the content for each frame."""
@@ -911,7 +905,7 @@ class H5Forest:
             ]
         )
         self.hotkeys_frame = ConditionalContainer(
-            Frame(self.hotkeys_panel),
+            Frame(self.hotkeys_panel, title=self.mode_title),
             filter=Condition(
                 lambda: self.flag_normal_mode
                 or self.flag_jump_mode

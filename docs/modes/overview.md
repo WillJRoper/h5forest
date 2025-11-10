@@ -1,6 +1,6 @@
 # Mode Overview
 
-h5forest uses a modal interface system inspired by Vim, where different keyboard shortcuts become active depending on the current mode. This design enables efficient keyboard-driven navigation and powerful context-specific commands without cluttering the interface.
+h5forest uses a modal interface system inspired by Vim (I use Neovim by the way), where different keyboard shortcuts become active depending on the current mode. This design enables efficient keyboard-driven navigation and powerful context-specific commands without cluttering the interface.
 
 ## Available Modes
 
@@ -18,14 +18,14 @@ h5forest uses a modal interface system inspired by Vim, where different keyboard
 
 From Normal Mode, press the following keys to enter other modes:
 
-| Key | Mode | Purpose |
-|-----|------|---------|
-| **`s`** | Search Mode | Fuzzy search (tree focus only) |
-| **`g`** | Goto Mode | Quick navigation |
-| **`d`** | Dataset Mode | Data analysis |
-| **`w`** | Window Mode | Window management |
-| **`p`** | Plotting Mode | Create scatter plots |
-| **`H`** | Histogram Mode | Generate histograms |
+| Key     | Mode           | Purpose                        |
+| ------- | -------------- | ------------------------------ |
+| **`s`** | Search Mode    | Fuzzy search (tree focus only) |
+| **`g`** | Goto Mode      | Quick navigation               |
+| **`d`** | Dataset Mode   | Data analysis                  |
+| **`w`** | Window Mode    | Window management              |
+| **`p`** | Plotting Mode  | Create scatter plots           |
+| **`H`** | Histogram Mode | Generate histograms            |
 
 ### Exiting Modes
 
@@ -35,34 +35,31 @@ From Normal Mode, press the following keys to enter other modes:
 
 ## Mode Indicators
 
-The current mode is indicated by:
-
-1. **Hotkey Display**: The bottom panel shows mode-specific keyboard shortcuts
-2. **Context**: Available actions change based on the mode
-3. **Focus**: Some modes change which panel has input focus
+The current mode is indicated by the **Hotkey Display**: The bottom panel shows mode-specific keyboard shortcuts and has the current mode in its title
 
 ## Universal Commands
 
 These commands work in all modes:
 
-| Key | Action |
-|-----|--------|
-| **`Ctrl+Q`** | Force quit application |
-| **Arrow Keys** | Navigate (when applicable) |
+| Key            | Action                           |
+| -------------- | -------------------------------- |
+| **`q`**        | Quit to previous content or exit |
+| **`Ctrl+Q`**   | Force quit application           |
+| **Arrow Keys** | Navigate (when applicable)       |
 
 ## Mode Summary
 
-| Mode | Key | Purpose | Main Features |
-|------|-----|---------|---------------|
-| **Normal** | (default) | Navigation | Tree traversal, file exploration |
-| **Search** | `s` | Find items | Real-time fuzzy search, filtering |
-| **Goto** | `g` | Quick nav | Fast tree navigation |
-| **Dataset** | `d` | Data analysis | Value inspection, statistics |
-| **Window** | `w` | UI control | Panel focus, layout |
-| **Plotting** | `p` | Visualization | Scatter plots |
-| **Histogram** | `H` | Distribution | Statistical plots |
+| Mode          | Key       | Purpose       | Main Features                     |
+| ------------- | --------- | ------------- | --------------------------------- |
+| **Normal**    | (default) | Navigation    | Tree traversal, file exploration  |
+| **Search**    | `s`       | Find items    | Real-time fuzzy search, filtering |
+| **Goto**      | `g`       | Quick nav     | Fast tree navigation              |
+| **Dataset**   | `d`       | Data analysis | Value inspection, statistics      |
+| **Window**    | `w`       | UI control    | Panel focus, layout               |
+| **Plotting**  | `p`       | Visualization | Scatter plots                     |
+| **Histogram** | `H`       | Distribution  | Statistical plots                 |
 
-## Next Steps
+## Detailed Mode Documentation
 
 Explore the detailed documentation for each mode:
 

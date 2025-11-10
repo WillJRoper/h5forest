@@ -9,6 +9,7 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
+from h5forest.utils import WaitIndicator
 
 
 def _init_hist_bindings(app):
@@ -33,7 +34,8 @@ def _init_hist_bindings(app):
         """Edit the number of bins."""
         # Wait for data assignment thread to finish if it's running
         if app.histogram_plotter.assign_data_thread is not None:
-            app.histogram_plotter.assign_data_thread.join()
+            with WaitIndicator(app, "Computing data range..."):
+                app.histogram_plotter.assign_data_thread.join()
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available (needed to compute histogram)
@@ -76,7 +78,8 @@ def _init_hist_bindings(app):
         """Toggle the x-axis scale between linear and log."""
         # Wait for data assignment thread to finish if it's running
         if app.histogram_plotter.assign_data_thread is not None:
-            app.histogram_plotter.assign_data_thread.join()
+            with WaitIndicator(app, "Computing data range..."):
+                app.histogram_plotter.assign_data_thread.join()
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available
@@ -125,7 +128,8 @@ def _init_hist_bindings(app):
         """Toggle the y-axis scale between linear and log."""
         # Wait for data assignment thread to finish if it's running
         if app.histogram_plotter.assign_data_thread is not None:
-            app.histogram_plotter.assign_data_thread.join()
+            with WaitIndicator(app, "Computing data range..."):
+                app.histogram_plotter.assign_data_thread.join()
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available (needed to compute histogram)
@@ -239,13 +243,15 @@ def _init_hist_bindings(app):
             # Set the text in the plotting area
             app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
-        # Compute the histogram
-        app.hist_content.text = app.histogram_plotter.compute_hist(
-            app.hist_content.text
-        )
+        # Compute and plot the histogram with wait indicator
+        with WaitIndicator(app, "Generating histogram..."):
+            # Compute the histogram
+            app.hist_content.text = app.histogram_plotter.compute_hist(
+                app.hist_content.text
+            )
 
-        # Get the plot
-        app.histogram_plotter.plot_and_show(app.hist_content.text)
+            # Get the plot
+            app.histogram_plotter.plot_and_show(app.hist_content.text)
 
     @error_handler
     def save_hist(event):
@@ -280,8 +286,8 @@ def _init_hist_bindings(app):
         app.default_focus()
 
     @error_handler
-    def jump_to_config(event):
-        """Toggle between configuration window and tree view."""
+    def edit_hist(event):
+        """Edit the histogram configuration."""
         if app.app.layout.has_focus(app.hist_content):
             # Already in config, jump back to tree
             app.shift_focus(app.tree_content)
@@ -323,9 +329,7 @@ def _init_hist_bindings(app):
     app.kb.add("h", filter=Condition(lambda: app.flag_hist_mode))(plot_hist)
     app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
     app.kb.add("r", filter=Condition(lambda: app.flag_hist_mode))(reset_hist)
-    app.kb.add("J", filter=Condition(lambda: app.flag_hist_mode))(
-        jump_to_config
-    )
+    app.kb.add("e", filter=Condition(lambda: app.flag_hist_mode))(edit_hist)
     app.kb.add(
         "q",
         filter=Condition(
@@ -341,15 +345,15 @@ def _init_hist_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "select_data": Label("Enter → Select data"),
+        "edit_config": Label("e → Edit Config"),
+        "edit_tree": Label("e → Back To Tree"),
         "edit_entry": Label("Enter → Edit entry"),
+        "select_data": Label("Enter → Select data"),
         "edit_bins": Label("b → Edit bins"),
         "toggle_x_scale": Label("x → Toggle x-scale"),
         "toggle_y_scale": Label("y → Toggle y-scale"),
         "show_hist": Label("h → Show Histogram"),
         "save_hist": Label("H → Save Histogram"),
-        "jump_config": Label("J → Jump to Config"),
-        "jump_tree": Label("J → Jump to tree"),
         "reset": Label("r → Reset"),
         "exit_mode": Label("q → Exit Hist Mode"),
         "exit_config": Label("q → Exit Hist Config"),

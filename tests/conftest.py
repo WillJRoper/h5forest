@@ -12,6 +12,26 @@ from prompt_toolkit.input import create_pipe_input
 from prompt_toolkit.output import DummyOutput
 
 
+@pytest.fixture(scope="session", autouse=True)
+def ensure_test_fixtures():
+    """Ensure test fixture files exist before running tests."""
+    fixtures_dir = os.path.join(os.path.dirname(__file__), "fixtures")
+    simple_path = os.path.join(fixtures_dir, "simple.h5")
+
+    # Only create fixtures if they don't exist
+    if not os.path.exists(simple_path):
+        # Import the creation script
+        import sys
+
+        sys.path.insert(0, fixtures_dir)
+        from create_fixtures import create_all_fixtures
+
+        create_all_fixtures()
+        sys.path.pop(0)
+
+    yield
+
+
 @pytest.fixture
 def fixtures_dir():
     """Path to test fixtures directory."""

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.widgets import Label
 
 from h5forest.bindings.jump_bindings import _init_goto_bindings
 
@@ -40,7 +41,6 @@ class TestJumpBindings:
 
     def test_init_goto_bindings_returns_hotkeys(self, mock_app):
         """Test that _init_goto_bindings returns a list of Labels."""
-        from prompt_toolkit.widgets import Label
 
         hot_keys = _init_goto_bindings(mock_app)
         assert isinstance(hot_keys, list)
