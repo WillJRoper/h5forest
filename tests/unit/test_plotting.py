@@ -86,12 +86,12 @@ class TestPlotter:
         assert plotter.fig is None
         assert plotter.ax is None
 
-    @patch("h5forest.plotting.os.getcwd")
+    @patch("h5forest.plotting.Path.cwd")
     @patch("h5forest.h5_forest.H5Forest")
-    def test_save(self, mock_forest_class, mock_getcwd):
+    def test_save(self, mock_forest_class, mock_cwd):
         """Test save method with file path input."""
         # Setup mocks
-        mock_getcwd.return_value = "/tmp"
+        mock_cwd.return_value = Mock(__str__=Mock(return_value="/tmp"))
         mock_forest = Mock()
         mock_forest.user_input = "/tmp/test.png"
         mock_forest_class.return_value = mock_forest
@@ -133,11 +133,11 @@ class TestPlotter:
         plotter._plot.assert_called_once_with(text)
         mock_show.assert_called_once()
 
-    @patch("h5forest.plotting.os.getcwd")
+    @patch("h5forest.plotting.Path.cwd")
     @patch("h5forest.h5_forest.H5Forest")
-    def test_plot_and_save(self, mock_forest_class, mock_getcwd):
+    def test_plot_and_save(self, mock_forest_class, mock_cwd):
         """Test plot_and_save method."""
-        mock_getcwd.return_value = "/tmp"
+        mock_cwd.return_value = Mock(__str__=Mock(return_value="/tmp"))
         mock_forest = Mock()
         mock_forest.user_input = "/tmp/test.png"
         mock_forest_class.return_value = mock_forest

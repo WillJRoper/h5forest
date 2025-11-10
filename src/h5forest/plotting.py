@@ -4,9 +4,9 @@ This is only ever called from the h5forest module and is not intended to be
 used directly by the user.
 """
 
-import os
 import threading
 import warnings
+from pathlib import Path
 
 import h5py
 import matplotlib.pyplot as plt
@@ -92,7 +92,7 @@ class Plotter:
         H5Forest().input(
             "Enter the filepath to save the plot: ",
             save_callback,
-            mini_buffer_text=os.getcwd() + "/",
+            mini_buffer_text=str(Path.cwd()) + "/",
         )
 
     @error_handler
