@@ -689,3 +689,35 @@ class TestPlotBindings:
         for key, value in hot_keys.items():
             assert isinstance(key, str)
             assert isinstance(value, Label)
+
+    def test_jump_to_config_when_in_tree(self, mock_app, mock_event):
+        """Test jumping to config from tree."""
+        _init_plot_bindings(mock_app)
+        # Focus is not on plot_content (i.e., we're in tree)
+        mock_app.app.layout.has_focus = MagicMock(return_value=False)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("J",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Should jump to plot_content
+        mock_app.shift_focus.assert_called_once_with(mock_app.plot_content)
+
+    def test_jump_to_config_when_already_in_config(self, mock_app, mock_event):
+        """Test jumping from config back to tree."""
+        _init_plot_bindings(mock_app)
+        # Set focus to be on plot_content
+        mock_app.app.layout.has_focus = MagicMock(
+            side_effect=lambda content: content == mock_app.plot_content
+        )
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("J",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Should jump back to tree when already in config
+        mock_app.shift_focus.assert_called_once_with(mock_app.tree_content)

@@ -270,6 +270,23 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.shift_focus.assert_called_once_with(mock_app.hist_content)
 
+    def test_jump_to_config_when_already_in_config(self, mock_app, mock_event):
+        """Test jumping from config back to tree."""
+        # Set focus to be on hist_content
+        mock_app.app.layout.has_focus = MagicMock(
+            side_effect=lambda content: content == mock_app.hist_content
+        )
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("J",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Should jump back to tree when already in config
+        mock_app.shift_focus.assert_called_once_with(mock_app.tree_content)
+
     def test_exit_edit_hist(self, mock_app, mock_event):
         """Test exiting edit histogram mode."""
         mock_app.app.layout.has_focus = MagicMock(return_value=True)
@@ -567,6 +584,26 @@ class TestHistBindings:
         mock_thread.join.assert_called_once()
         # Verify input was called (since x_min/x_max are valid)
         mock_app.input.assert_called_once()
+
+    def test_toggle_y_scale_with_running_thread(self, mock_app, mock_event):
+        """Test toggling y scale with a running assign_data_thread."""
+        from unittest.mock import MagicMock
+
+        # Create a mock thread
+        mock_thread = MagicMock()
+        mock_app.histogram_plotter.assign_data_thread = mock_thread
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify thread was joined
+        mock_thread.join.assert_called_once()
+        # Verify scale was toggled
+        assert "y-scale:     log" in mock_app.hist_content.text
 
     def test_exit_hist_mode(self, mock_app, mock_event):
         """Test exiting histogram mode."""
