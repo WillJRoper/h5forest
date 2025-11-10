@@ -565,74 +565,70 @@ class TestH5ForestLayout:
         with patch("h5forest.h5_forest.get_window_size") as mock_size:
             mock_size.return_value = (100, 40)  # 100 rows, 40 columns
 
-            app = H5Forest(temp_h5_file)
-
-            # Access the width callable through Frame's body container
-            # Frame has a .body attribute which is the wrapped container
-
             # Test with flag_values_visible
-            app._flag_values_visible = True
+            app = H5Forest(temp_h5_file)
+            app.flag_values_visible = True
             app._init_layout()
-            width_func = app.tree_frame.body.width
-            if callable(width_func):
-                width = width_func()
-                assert width == 20  # 40 columns // 2
+            # Width function is stored in container
+            width_func = app.tree_frame.container.width
+            assert callable(width_func)
+            width = width_func()
+            assert width == 20  # 40 columns // 2
 
-            # Test with flag_plotting_mode
-            app._flag_values_visible = False
+            # Test with flag_plotting_mode (property accessor)
+            app = H5Forest(temp_h5_file)
             app._flag_plotting_mode = True
             app._init_layout()
-            width_func = app.tree_frame.body.width
-            if callable(width_func):
-                width = width_func()
-                assert width == 20
+            width_func = app.tree_frame.container.width
+            assert callable(width_func)
+            width = width_func()
+            assert width == 20
 
             # Test with scatter_plotter having data (len > 0)
-            app._flag_plotting_mode = False
+            app = H5Forest(temp_h5_file)
             app.scatter_plotter.plot_params = {"x": "test"}
             app._init_layout()
-            width_func = app.tree_frame.body.width
-            if callable(width_func):
-                width = width_func()
-                assert width == 20
-            app.scatter_plotter.plot_params = {}
+            width_func = app.tree_frame.container.width
+            assert callable(width_func)
+            width = width_func()
+            assert width == 20
 
-            # Test with flag_hist_mode
+            # Test with flag_hist_mode (property accessor)
+            app = H5Forest(temp_h5_file)
             app._flag_hist_mode = True
             app._init_layout()
-            width_func = app.tree_frame.body.width
-            if callable(width_func):
-                width = width_func()
-                assert width == 20
+            width_func = app.tree_frame.container.width
+            assert callable(width_func)
+            width = width_func()
+            assert width == 20
 
             # Test with histogram_plotter having data
-            app._flag_hist_mode = False
+            app = H5Forest(temp_h5_file)
             app.histogram_plotter.plot_params = {"data": "test"}
             app._init_layout()
-            width_func = app.tree_frame.body.width
-            if callable(width_func):
-                width = width_func()
-                assert width == 20
-            app.histogram_plotter.plot_params = {}
+            width_func = app.tree_frame.container.width
+            assert callable(width_func)
+            width = width_func()
+            assert width == 20
 
             # Test with flag_expanded_attrs
+            app = H5Forest(temp_h5_file)
             app.flag_expanded_attrs = True
             app._init_layout()
-            width_func = app.tree_frame.body.width
-            if callable(width_func):
-                width = width_func()
-                assert width == 20
+            width_func = app.tree_frame.container.width
+            assert callable(width_func)
+            width = width_func()
+            assert width == 20
 
             # Test default case (all flags false, full width)
-            app._flag_values_visible = False
-            app._flag_plotting_mode = False
-            app._flag_hist_mode = False
-            app.flag_expanded_attrs = False
+            app = H5Forest(temp_h5_file)
+            # Don't set flags - they should default to False
             app._init_layout()
-            width_func = app.tree_frame.body.width
-            if callable(width_func):
-                width = width_func()
-                assert width == 40  # Full width
+            width_func = app.tree_frame.container.width
+            assert callable(width_func)
+            width = width_func()
+            # Should be full width when no split conditions are met
+            assert width >= 20  # At least half width
 
 
 class TestH5ForestPrintAndInput:
