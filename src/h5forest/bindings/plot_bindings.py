@@ -224,8 +224,13 @@ def _init_plot_bindings(app):
 
     @error_handler
     def jump_to_config(event):
-        """Jump to the configuration window."""
-        app.shift_focus(app.plot_content)
+        """Toggle between configuration window and tree view."""
+        if app.app.layout.has_focus(app.plot_content):
+            # Already in config, jump back to tree
+            app.shift_focus(app.tree_content)
+        else:
+            # In tree, jump to config
+            app.shift_focus(app.plot_content)
         app.app.invalidate()
 
     def exit_edit_plot(event):
@@ -267,6 +272,7 @@ def _init_plot_bindings(app):
     hot_keys = {
         "edit_config": Label("e → Edit Config"),
         "jump_config": Label("J → Jump to Config"),
+        "jump_tree": Label("J → Jump to tree"),
         "edit_entry": Label("Enter → Edit entry"),
         "select_x": Label("x → Select x-axis"),
         "select_y": Label("y → Select y-axis"),

@@ -76,6 +76,7 @@ class TestH5ForestLabelProperties:
         h5f._plot_keys_dict = {
             "edit_config": Mock(),
             "jump_config": Mock(),
+            "jump_tree": Mock(),
             "edit_entry": Mock(),
             "select_x": Mock(),
             "select_y": Mock(),
@@ -97,6 +98,7 @@ class TestH5ForestLabelProperties:
             "show_hist": Mock(),
             "save_hist": Mock(),
             "jump_config": Mock(),
+            "jump_tree": Mock(),
             "reset": Mock(),
             "exit_mode": Mock(),
             "exit_config": Mock(),
