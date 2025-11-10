@@ -249,7 +249,9 @@ def _init_hist_bindings(app):
             def run_operation(use_chunks):
                 """Set histogram data and plot after user confirmation."""
                 # Set the text in the plotting area
-                app.hist_content.text = app.histogram_plotter.set_data_key(node)
+                app.hist_content.text = app.histogram_plotter.set_data_key(
+                    node
+                )
 
                 # Compute and plot the histogram with wait indicator
                 with WaitIndicator(app, "Generating histogram..."):
@@ -291,7 +293,9 @@ def _init_hist_bindings(app):
             def run_operation(use_chunks):
                 """Set histogram data and save after user confirmation."""
                 # Set the text in the plotting area
-                app.hist_content.text = app.histogram_plotter.set_data_key(node)
+                app.hist_content.text = app.histogram_plotter.set_data_key(
+                    node
+                )
 
                 # Compute the histogram
                 app.hist_content.text = app.histogram_plotter.compute_hist(

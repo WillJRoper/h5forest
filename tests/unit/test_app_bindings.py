@@ -758,9 +758,7 @@ class TestAppBindings:
         mock_process.communicate.assert_called_once_with(input=b"")
 
         # Verify feedback was shown
-        mock_app.print.assert_called_once_with(
-            "Copied  into the clipboard"
-        )
+        mock_app.print.assert_called_once_with("Copied  into the clipboard")
 
     @patch("h5forest.bindings.bindings.subprocess.Popen")
     @patch("h5forest.bindings.bindings.platform.system")
