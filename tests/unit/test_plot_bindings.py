@@ -467,6 +467,158 @@ class TestPlotBindings:
         # Verify y-scale was toggled back to linear
         assert "y-scale:     linear" in mock_app.plot_content.text
 
+    def test_toggle_x_scale_with_none_x_min(self, mock_app, mock_event):
+        """Test toggling x scale when x_min is None."""
+        mock_app.scatter_plotter.x_min = None
+        mock_app.scatter_plotter.x_max = None
+        _init_plot_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("X",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "x-axis data range not yet computed" in error_msg
+        # Verify scale was NOT changed
+        assert "x-scale:     linear" in mock_app.plot_content.text
+
+    def test_toggle_x_scale_to_log_with_zero_values(self, mock_app, mock_event):
+        """Test toggling x scale to log when x_min is 0."""
+        mock_app.scatter_plotter.x_min = 0
+        _init_plot_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("X",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "Cannot use log scale" in error_msg
+        assert "zero" in error_msg
+        # Verify scale was NOT changed
+        assert "x-scale:     linear" in mock_app.plot_content.text
+
+    def test_toggle_x_scale_to_log_with_negative_values(self, mock_app, mock_event):
+        """Test toggling x scale to log when x_min is negative."""
+        mock_app.scatter_plotter.x_min = -5.0
+        _init_plot_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("X",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "Cannot use log scale" in error_msg
+        assert "negative" in error_msg
+        # Verify scale was NOT changed
+        assert "x-scale:     linear" in mock_app.plot_content.text
+
+    def test_toggle_y_scale_with_none_y_min(self, mock_app, mock_event):
+        """Test toggling y scale when y_min is None."""
+        mock_app.scatter_plotter.y_min = None
+        mock_app.scatter_plotter.y_max = None
+        _init_plot_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("Y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "y-axis data range not yet computed" in error_msg
+        # Verify scale was NOT changed
+        assert "y-scale:     linear" in mock_app.plot_content.text
+
+    def test_toggle_y_scale_to_log_with_zero_values(self, mock_app, mock_event):
+        """Test toggling y scale to log when y_min is 0."""
+        mock_app.scatter_plotter.y_min = 0
+        _init_plot_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("Y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "Cannot use log scale" in error_msg
+        assert "zero" in error_msg
+        # Verify scale was NOT changed
+        assert "y-scale:     linear" in mock_app.plot_content.text
+
+    def test_toggle_y_scale_to_log_with_negative_values(self, mock_app, mock_event):
+        """Test toggling y scale to log when y_min is negative."""
+        mock_app.scatter_plotter.y_min = -5.0
+        _init_plot_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("Y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "Cannot use log scale" in error_msg
+        assert "negative" in error_msg
+        # Verify scale was NOT changed
+        assert "y-scale:     linear" in mock_app.plot_content.text
+
+    def test_toggle_x_scale_with_running_thread(self, mock_app, mock_event):
+        """Test toggling x scale with a running assignx_thread."""
+        from unittest.mock import MagicMock
+        # Create a mock thread
+        mock_thread = MagicMock()
+        mock_app.scatter_plotter.assignx_thread = mock_thread
+        _init_plot_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("X",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify thread was joined
+        mock_thread.join.assert_called_once()
+        # Verify scale was toggled
+        assert "x-scale:     log" in mock_app.plot_content.text
+
+    def test_toggle_y_scale_with_running_thread(self, mock_app, mock_event):
+        """Test toggling y scale with a running assigny_thread."""
+        from unittest.mock import MagicMock
+        # Create a mock thread
+        mock_thread = MagicMock()
+        mock_app.scatter_plotter.assigny_thread = mock_thread
+        _init_plot_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("Y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify thread was joined
+        mock_thread.join.assert_called_once()
+        # Verify scale was toggled
+        assert "y-scale:     log" in mock_app.plot_content.text
+
     def test_reset_closes_figure(self, mock_app, mock_event):
         """Test that reset closes any open figures."""
         _init_plot_bindings(mock_app)
