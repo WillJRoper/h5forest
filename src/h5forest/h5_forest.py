@@ -378,16 +378,12 @@ class H5Forest:
             self.search_content
         )
 
-    @property
-    def hot_keys(self):
+    def _get_hot_keys(self):
         """
-        Return the hot keys for normal mode, filtered based on current state.
-
-        This combines app and tree keys and filters based on flags like
-        flag_expanded_attrs and tree focus.
+        Get the hot keys for normal mode based on current state.
 
         Returns:
-            DynamicLabelLayout: Layout with filtered labels.
+            list: List of Label widgets.
         """
         labels = []
 
@@ -420,7 +416,24 @@ class H5Forest:
         labels.append(self._app_keys_dict["restore_tree"])
         labels.append(self._app_keys_dict["exit"])
 
-        return DynamicLabelLayout(labels)
+        return labels
+
+    @property
+    def hot_keys(self):
+        """
+        Return the hot keys for normal mode, filtered based on current state.
+
+        This combines app and tree keys and filters based on flags like
+        flag_expanded_attrs and tree focus.
+
+        Returns:
+            DynamicLabelLayout: Layout with filtered labels.
+        """
+        return DynamicLabelLayout(lambda: self._get_hot_keys())
+
+    def _get_dataset_keys(self):
+        """Get the hot keys for dataset mode."""
+        return self._dataset_keys_list
 
     @property
     def dataset_keys(self):
@@ -432,7 +445,11 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with dataset labels.
         """
-        return DynamicLabelLayout(self._dataset_keys_list)
+        return DynamicLabelLayout(lambda: self._get_dataset_keys())
+
+    def _get_goto_keys(self):
+        """Get the hot keys for goto mode."""
+        return self._goto_keys_list
 
     @property
     def goto_keys(self):
@@ -444,17 +461,14 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with goto labels.
         """
-        return DynamicLabelLayout(self._goto_keys_list)
+        return DynamicLabelLayout(lambda: self._get_goto_keys())
 
-    @property
-    def window_keys(self):
+    def _get_window_keys(self):
         """
-        Return the hot keys for window mode, filtered based on current state.
-
-        Filters based on focus and flag_values_visible.
+        Get the hot keys for window mode based on current state.
 
         Returns:
-            DynamicLabelLayout: Layout with filtered labels.
+            list: List of Label widgets.
         """
         labels = []
 
@@ -483,7 +497,19 @@ class H5Forest:
 
         labels.append(self._window_keys_dict["exit"])
 
-        return DynamicLabelLayout(labels)
+        return labels
+
+    @property
+    def window_keys(self):
+        """
+        Return the hot keys for window mode, filtered based on current state.
+
+        Filters based on focus and flag_values_visible.
+
+        Returns:
+            DynamicLabelLayout: Layout with filtered labels.
+        """
+        return DynamicLabelLayout(lambda: self._get_window_keys())
 
     def _get_plot_keys(self):
         """
@@ -585,6 +611,10 @@ class H5Forest:
         """
         return DynamicLabelLayout(lambda: self._get_hist_keys())
 
+    def _get_search_keys(self):
+        """Get the hot keys for search mode."""
+        return self._search_keys_list
+
     @property
     def search_keys(self):
         """
@@ -595,7 +625,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with search labels.
         """
-        return DynamicLabelLayout(self._search_keys_list)
+        return DynamicLabelLayout(lambda: self._get_search_keys())
 
     def return_to_normal_mode(self):
         """Return to normal mode."""

@@ -106,6 +106,15 @@ class TestH5ForestLabelProperties:
 
         h5f._search_keys_list = [Mock(), Mock()]
 
+        # Bind the actual methods to the mock
+        h5f._get_hot_keys = H5Forest._get_hot_keys.__get__(h5f, H5Forest)
+        h5f._get_dataset_keys = H5Forest._get_dataset_keys.__get__(h5f, H5Forest)
+        h5f._get_goto_keys = H5Forest._get_goto_keys.__get__(h5f, H5Forest)
+        h5f._get_window_keys = H5Forest._get_window_keys.__get__(h5f, H5Forest)
+        h5f._get_plot_keys = H5Forest._get_plot_keys.__get__(h5f, H5Forest)
+        h5f._get_hist_keys = H5Forest._get_hist_keys.__get__(h5f, H5Forest)
+        h5f._get_search_keys = H5Forest._get_search_keys.__get__(h5f, H5Forest)
+
         # Bind the actual property methods to the mock
         h5f.hot_keys = property(H5Forest.hot_keys.fget).__get__(h5f, H5Forest)
         h5f.dataset_keys = property(H5Forest.dataset_keys.fget).__get__(
