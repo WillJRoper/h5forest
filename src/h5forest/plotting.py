@@ -369,13 +369,43 @@ class ScatterPlotter(Plotter):
 
                             pb.advance(step=x_data.size)
 
+        # Validate data for log scales
+        from h5forest.h5_forest import H5Forest
+
+        if x_scale == "log":
+            if self.x_min is not None and self.x_min <= 0:
+                H5Forest().print(
+                    f"Cannot use log scale on x-axis: data contains "
+                    f"{'zero' if self.x_min == 0 else 'negative'} values "
+                    f"(min = {self.x_min})"
+                )
+                return
+
+        if y_scale == "log":
+            if self.y_min is not None and self.y_min <= 0:
+                H5Forest().print(
+                    f"Cannot use log scale on y-axis: data contains "
+                    f"{'zero' if self.y_min == 0 else 'negative'} values "
+                    f"(min = {self.y_min})"
+                )
+                return
+
         # Set the labels
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel(y_label)
 
-        # Set the scale
-        self.ax.set_xscale(x_scale)
-        self.ax.set_yscale(y_scale)
+        # Set the scale with error handling
+        try:
+            self.ax.set_xscale(x_scale)
+        except Exception as e:
+            H5Forest().print(f"Error setting x-scale to {x_scale}: {str(e)}")
+            return
+
+        try:
+            self.ax.set_yscale(y_scale)
+        except Exception as e:
+            H5Forest().print(f"Error setting y-scale to {y_scale}: {str(e)}")
+            return
 
         self.plot_thread = threading.Thread(target=run_in_thread)
         self.plot_thread.start()
@@ -487,6 +517,8 @@ class HistogramPlotter(Plotter):
         @error_handler
         def run_in_thread():
             """Compute the histogram."""
+            from h5forest.h5_forest import H5Forest
+
             # Unpack the node
             node = self.plot_params["data"]
 
@@ -507,8 +539,15 @@ class HistogramPlotter(Plotter):
             # If we got this far we're ready to go so force a redraw
             get_app().invalidate()
 
-            # Define the bins
+            # Validate data for log scale
             if x_scale == "log":
+                if self.x_min is not None and self.x_min <= 0:
+                    H5Forest().print(
+                        f"Cannot use log scale: data contains "
+                        f"{'zero' if self.x_min == 0 else 'negative'} values "
+                        f"(min = {self.x_min})"
+                    )
+                    return
                 bins = np.logspace(
                     np.log10(self.x_min), np.log10(self.x_max), nbins + 1
                 )
@@ -582,6 +621,8 @@ class HistogramPlotter(Plotter):
             text (str):
                 The text to extract the plot parameters from.
         """
+        from h5forest.h5_forest import H5Forest
+
         # Don't move on until the histogram is computed
         self.compute_hist_thread.join()
         self.compute_hist_thread = None
@@ -591,6 +632,17 @@ class HistogramPlotter(Plotter):
         x_label = split_text[2].split(": ")[1].strip()
         x_scale = split_text[3].split(": ")[1].strip()
         y_scale = split_text[4].split(": ")[1].strip()
+
+        # Validate y-axis for log scale (check histogram values)
+        if y_scale == "log":
+            hist_min = np.min(self.hist)
+            if hist_min <= 0:
+                H5Forest().print(
+                    f"Cannot use log scale on y-axis: histogram contains "
+                    f"{'zero' if hist_min == 0 else 'negative'} counts "
+                    f"(min = {hist_min})"
+                )
+                return
 
         # Create the figure
         self.fig = plt.figure(figsize=(3.5, 3.5))
@@ -607,9 +659,18 @@ class HistogramPlotter(Plotter):
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel("$N$")
 
-        # Set the scale
-        self.ax.set_xscale(x_scale)
-        self.ax.set_yscale(y_scale)
+        # Set the scale with error handling
+        try:
+            self.ax.set_xscale(x_scale)
+        except Exception as e:
+            H5Forest().print(f"Error setting x-scale to {x_scale}: {str(e)}")
+            return
+
+        try:
+            self.ax.set_yscale(y_scale)
+        except Exception as e:
+            H5Forest().print(f"Error setting y-scale to {y_scale}: {str(e)}")
+            return
 
     def reset(self):
         """Reset the histogram."""
