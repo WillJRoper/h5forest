@@ -500,9 +500,10 @@ class H5Forest:
         # Check if app exists (it won't during initialization)
         has_app = hasattr(self, "app") and self.app is not None
 
-        # Show edit config only if there are plot params
+        # Show edit/jump config only if there are plot params
         if len(self.scatter_plotter.plot_params) > 0:
             labels.append(self._plot_keys_dict["edit_config"])
+            labels.append(self._plot_keys_dict["jump_config"])
 
         # Show edit entry only if plot content has focus
         if has_app and self.app.layout.has_focus(self.plot_content):
