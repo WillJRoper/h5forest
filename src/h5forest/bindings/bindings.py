@@ -74,6 +74,8 @@ def _init_app_bindings(app):
         app.search_content.text = ""
         app.search_content.buffer.cursor_position = 0
         app.shift_focus(app.search_content)
+        # Start building the search index in the background
+        app.tree.get_all_paths()
         event.app.invalidate()
 
     @error_handler
