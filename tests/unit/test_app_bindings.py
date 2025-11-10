@@ -557,14 +557,14 @@ class TestAppBindings:
             stderr=subprocess.PIPE,
         )
 
-        # Verify communicate was called with the path
+        # Verify communicate was called with the path (without leading slashes)
         mock_process.communicate.assert_called_once_with(
-            input=b"/test/hdf5/path"
+            input=b"test/hdf5/path"
         )
 
         # Verify feedback was shown
         mock_app.print.assert_called_once_with(
-            "Copied /test/hdf5/path into the clipboard"
+            "Copied test/hdf5/path into the clipboard"
         )
 
         # Verify invalidate was called
