@@ -631,7 +631,10 @@ class H5Forest:
         """Get the hot keys for help mode."""
         from prompt_toolkit.widgets import Label
 
-        return [Label("q → Exit Help")]
+        return [
+            Label("j/k or ↓/↑ → Navigate"),
+            Label("q → Exit Help"),
+        ]
 
     @property
     def help_keys(self):

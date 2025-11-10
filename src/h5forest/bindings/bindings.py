@@ -174,6 +174,7 @@ def _init_app_bindings(app):
         else:
             app.mode_title.update_title("Normal Mode")
             app.default_focus()
+        app.update_hotkeys_panel()
         event.app.invalidate()
 
     def close_help(event):
@@ -181,6 +182,7 @@ def _init_app_bindings(app):
         app.flag_help_visible = False
         app.mode_title.update_title("Normal Mode")
         app.default_focus()
+        app.update_hotkeys_panel()
         event.app.invalidate()
 
     # Bind the functions
@@ -238,6 +240,35 @@ def _init_app_bindings(app):
         "?",
         filter=Condition(lambda: app.flag_normal_mode or app.flag_help_visible),
     )(toggle_help)
+
+    # Help mode navigation bindings
+    def help_move_up(event):
+        """Move up in help screen (vim k)."""
+        from prompt_toolkit.key_binding.key_processor import KeyPress
+        from prompt_toolkit.keys import Keys
+
+        event.app.key_processor.feed(KeyPress(Keys.Up))
+
+    def help_move_down(event):
+        """Move down in help screen (vim j)."""
+        from prompt_toolkit.key_binding.key_processor import KeyPress
+        from prompt_toolkit.keys import Keys
+
+        event.app.key_processor.feed(KeyPress(Keys.Down))
+
+    # Bind navigation keys for help mode
+    app.kb.add("j", filter=Condition(lambda: app.flag_help_visible))(
+        help_move_down
+    )
+    app.kb.add("k", filter=Condition(lambda: app.flag_help_visible))(
+        help_move_up
+    )
+    app.kb.add("down", filter=Condition(lambda: app.flag_help_visible))(
+        help_move_down
+    )
+    app.kb.add("up", filter=Condition(lambda: app.flag_help_visible))(
+        help_move_up
+    )
 
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
