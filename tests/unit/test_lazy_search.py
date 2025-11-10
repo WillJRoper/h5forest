@@ -88,3 +88,88 @@ def test_filter_tree_returns_early_when_building(temp_h5_file):
 
     # Clean up
     tree.unpack_thread.join(timeout=1.0)
+
+
+def test_filter_tree_with_empty_query_restores_original(temp_h5_file):
+    """Test that empty query restores original tree."""
+    from h5forest.tree import Tree
+
+    tree = Tree(temp_h5_file)
+    tree.get_tree_text()
+    original_text = tree.tree_text
+
+    # Build index and filter
+    tree.get_all_paths()
+    tree.unpack_thread.join(timeout=2.0)
+    tree.filter_tree("group")
+
+    # Now filter with empty query
+    result = tree.filter_tree("")
+
+    # Should restore original tree
+    assert result == original_text, "Empty query should restore original"
+    assert tree.tree_text == original_text
+
+
+def test_filter_tree_successful_filtering(temp_h5_file):
+    """Test successful filtering with matches."""
+    from h5forest.tree import Tree
+
+    tree = Tree(temp_h5_file)
+    tree.get_tree_text()
+
+    # Build index
+    tree.get_all_paths()
+    tree.unpack_thread.join(timeout=2.0)
+
+    # Filter with a query that should match
+    result = tree.filter_tree("group")
+
+    # Should have filtered results
+    assert result != tree.original_tree_text, "Should filter tree"
+    assert tree.original_tree_text is not None, "Should save original"
+
+
+def test_filter_tree_no_matches(temp_h5_file):
+    """Test filtering with no matches returns empty tree."""
+    from h5forest.tree import Tree
+
+    tree = Tree(temp_h5_file)
+    tree.get_tree_text()
+
+    # Build index
+    tree.get_all_paths()
+    tree.unpack_thread.join(timeout=2.0)
+
+    # Filter with query that won't match anything
+    result = tree.filter_tree("nonexistent_xyz_123")
+
+    # Should return empty tree
+    assert result == "", "No matches should return empty tree"
+    assert tree.tree_text == ""
+    assert len(tree.tree_text_split) == 0
+    assert len(tree.nodes_by_row) == 0
+
+
+def test_filter_tree_multiple_searches(temp_h5_file):
+    """Test multiple sequential searches."""
+    from h5forest.tree import Tree
+
+    tree = Tree(temp_h5_file)
+    tree.get_tree_text()
+
+    # Build index
+    tree.get_all_paths()
+    tree.unpack_thread.join(timeout=2.0)
+
+    # First search
+    result1 = tree.filter_tree("group")
+    assert result1, "First search should have results"
+
+    # Second search with different query
+    result2 = tree.filter_tree("dataset")
+    assert result2, "Second search should have results"
+
+    # Clear search
+    result3 = tree.filter_tree("")
+    assert result3 == tree.original_tree_text, "Should restore original"

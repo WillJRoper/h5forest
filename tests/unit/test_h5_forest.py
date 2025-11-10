@@ -983,6 +983,54 @@ class TestH5ForestSearchTextChanged:
         # Verify filter was NOT called
         app.tree.filter_tree.assert_not_called()
 
+    def test_on_search_text_changed_cancels_previous_timer(self, temp_h5_file):
+        """Test that typing multiple times cancels previous timer."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app._flag_search_mode = True
+        app.tree.filter_tree = MagicMock(return_value="filtered")
+        app.search_content.text = "query"
+
+        # Mock app.app.loop
+        app.app = MagicMock()
+        app.app.loop = MagicMock()
+
+        # Track created timers
+        timers = []
+
+        with patch("h5forest.h5_forest.threading.Timer") as mock_timer:
+
+            def create_timer(*args, **kwargs):
+                timer = MagicMock()
+                timer.cancel = MagicMock()
+                timer.start = MagicMock()
+                timer.daemon = True
+                timers.append(timer)
+                return timer
+
+            mock_timer.side_effect = create_timer
+
+            # Simulate rapid typing - call handler multiple times
+            mock_event = Mock()
+            app._on_search_text_changed(mock_event)
+            app._on_search_text_changed(mock_event)
+            app._on_search_text_changed(mock_event)
+
+            # Should have created 3 timers
+            assert len(timers) == 3
+
+            # First two timers should have been cancelled
+            timers[0].cancel.assert_called_once()
+            timers[1].cancel.assert_called_once()
+
+            # Last timer should not be cancelled
+            timers[2].cancel.assert_not_called()
+
+            # All timers should have been started
+            for timer in timers:
+                timer.start.assert_called_once()
+
 
 class TestH5ForestMain:
     """Test main entry point function."""
