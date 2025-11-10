@@ -302,13 +302,7 @@ def _init_hist_bindings(app):
     app.kb.add("h", filter=Condition(lambda: app.flag_hist_mode))(plot_hist)
     app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
     app.kb.add("r", filter=Condition(lambda: app.flag_hist_mode))(reset_hist)
-    app.kb.add(
-        "J",
-        filter=Condition(
-            lambda: app.flag_hist_mode
-            and len(app.histogram_plotter.plot_params) > 0
-        ),
-    )(jump_to_config)
+    app.kb.add("J", filter=Condition(lambda: app.flag_hist_mode))(jump_to_config)
     app.kb.add(
         "q",
         filter=Condition(
