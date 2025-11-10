@@ -8,6 +8,7 @@ Example Usage:
 
 """
 
+import argparse
 import sys
 import threading
 
@@ -1170,16 +1171,26 @@ class H5Forest:
 
 def main():
     """Initialise and run the application."""
-    # First port of call, check we have been given a valid input
-    if len(sys.argv) != 2:
-        print("Usage: h5forest /path/to/file.hdf5")
-        sys.exit(1)
-
-    # Extract the filepath
-    filepath = sys.argv[1]
+    parser = argparse.ArgumentParser(
+        prog="h5forest",
+        description="A Text-based User Interface (TUI) for exploring HDF5 files.",
+        epilog="Press 'q' to exit.",
+    )
+    parser.add_argument(
+        "filepath",
+        type=str,
+        help="Path to the HDF5 file to explore",
+    )
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version=f"h5forest {__version__}",
+    )
+    args = parser.parse_args()
 
     # Set up the app
-    app = H5Forest(filepath)
+    app = H5Forest(args.filepath)
 
     # Lets get going!
     app.run()

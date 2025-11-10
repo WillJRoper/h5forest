@@ -1040,18 +1040,12 @@ class TestH5ForestMain:
         from h5forest.h5_forest import main
 
         with patch("h5forest.h5_forest.sys.argv", ["h5forest"]):
-            with patch("builtins.print") as mock_print:
-                # sys.exit should raise SystemExit
-                with pytest.raises(SystemExit) as exc_info:
-                    main()
+            # argparse exits with code 2 on argument errors
+            with pytest.raises(SystemExit) as exc_info:
+                main()
 
-                # Verify exit code
-                assert exc_info.value.code == 1
-
-                # Verify usage was printed
-                mock_print.assert_called_once_with(
-                    "Usage: h5forest /path/to/file.hdf5"
-                )
+            # Verify exit code (argparse uses 2 for argument errors)
+            assert exc_info.value.code == 2
 
     def test_main_with_too_many_args(self):
         """Test main function with too many arguments."""
@@ -1060,18 +1054,12 @@ class TestH5ForestMain:
         with patch(
             "h5forest.h5_forest.sys.argv", ["h5forest", "file1.h5", "file2.h5"]
         ):
-            with patch("builtins.print") as mock_print:
-                # sys.exit should raise SystemExit
-                with pytest.raises(SystemExit) as exc_info:
-                    main()
+            # argparse exits with code 2 on argument errors
+            with pytest.raises(SystemExit) as exc_info:
+                main()
 
-                # Verify exit code
-                assert exc_info.value.code == 1
-
-                # Verify usage was printed
-                mock_print.assert_called_once_with(
-                    "Usage: h5forest /path/to/file.hdf5"
-                )
+            # Verify exit code (argparse uses 2 for argument errors)
+            assert exc_info.value.code == 2
 
     def test_main_with_valid_file(self, temp_h5_file):
         """Test main function with valid file."""
