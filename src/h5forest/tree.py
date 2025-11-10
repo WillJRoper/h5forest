@@ -98,13 +98,13 @@ class Tree:
         self.prev_node = self.root
 
         # We'll collect a list of all the nodes in the background to
-        # facilitate searches
+        # facilitate searches (lazy initialization - only when search is used)
         self.unpack_thread = None  # we'll do the unpacking on this thread
         self.all_node_paths = []
         self.all_node_paths_lock = (
             threading.Lock()
         )  # Protect concurrent access
-        self.get_all_paths()
+        self.paths_initialized = False  # Track if we've started collecting paths
 
         # Store the original tree state for search restoration
         self.original_tree_text = None
@@ -309,7 +309,12 @@ class Tree:
         return new_node
 
     def get_all_paths(self):
-        """Collect all the paths in the HDF5 file."""
+        """Collect all the paths in the HDF5 file (lazy initialization)."""
+        # Only start the collection once
+        if self.paths_initialized:
+            return
+
+        self.paths_initialized = True
 
         def run_in_thread():
             with h5py.File(self.filepath, "r") as hdf:
@@ -350,6 +355,9 @@ class Tree:
             if self.original_tree_text is not None:
                 self.restore_tree()
             return self.tree_text
+
+        # Initialize path collection if this is the first search
+        self.get_all_paths()
 
         # Wait for the background thread to finish collecting paths
         if self.unpack_thread is not None and self.unpack_thread.is_alive():
