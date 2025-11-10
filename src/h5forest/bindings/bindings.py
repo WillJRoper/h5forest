@@ -165,8 +165,24 @@ def _init_app_bindings(app):
         # Invalidate to refresh display
         event.app.invalidate()
 
+    def toggle_help(event):
+        """Toggle the help screen visibility."""
+        app.flag_help_visible = not app.flag_help_visible
+        if app.flag_help_visible:
+            app.shift_focus(app.help_content)
+        else:
+            app.default_focus()
+        event.app.invalidate()
+
+    def close_help(event):
+        """Close the help screen."""
+        app.flag_help_visible = False
+        app.default_focus()
+        event.app.invalidate()
+
     # Bind the functions
     app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
+    app.kb.add("q", filter=Condition(lambda: app.flag_help_visible))(close_help)
     app.kb.add("c-q")(exit_app)
     app.kb.add("g", filter=Condition(lambda: app.flag_normal_mode))(
         goto_leader_mode
@@ -214,9 +230,16 @@ def _init_app_bindings(app):
         filter=Condition(lambda: app.flag_normal_mode),
     )(restore_tree_to_initial)
 
+    # Bind '?' to toggle help screen
+    app.kb.add(
+        "?",
+        filter=Condition(lambda: app.flag_normal_mode or app.flag_help_visible),
+    )(toggle_help)
+
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
+        "help": Label("? → Help"),
         "expand_attrs": Label("A → Expand Attributes"),
         "shrink_attrs": Label("A → Shrink Attributes"),
         "dataset_mode": Label("d → Dataset Mode"),

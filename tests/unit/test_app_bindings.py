@@ -80,7 +80,7 @@ class TestAppBindings:
         """Test that _init_app_bindings returns a dict of hotkeys."""
         hot_keys = _init_app_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        assert len(hot_keys) == 10
+        assert len(hot_keys) == 11  # Updated to include help hotkey
 
     def test_exit_app_handler(self, mock_app, mock_event):
         """Test the exit_app handler."""
@@ -541,7 +541,7 @@ class TestAppBindings:
         hot_keys = _init_app_bindings(mock_app)
 
         # Should be a dict with Label values
-        assert len(hot_keys) == 10
+        assert len(hot_keys) == 11  # Updated to include help hotkey
 
         # All values should be Labels
         for key, value in hot_keys.items():

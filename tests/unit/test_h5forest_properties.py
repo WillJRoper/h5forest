@@ -44,6 +44,7 @@ class TestH5ForestLabelProperties:
 
         # Mock the binding dictionaries
         h5f._app_keys_dict = {
+            "help": Mock(),
             "expand_attrs": Mock(),
             "shrink_attrs": Mock(),
             "dataset_mode": Mock(),
@@ -157,8 +158,8 @@ class TestH5ForestLabelProperties:
         labels = result.labels() if callable(result.labels) else result.labels
 
         # Should have: open_group (Enter), expand/shrink_attrs, dataset, goto,
-        # hist, plotting, window, search, move_ten, restore_tree, exit
-        assert len(labels) == 11
+        # hist, plotting, window, search, help, move_ten, restore_tree, exit
+        assert len(labels) == 12  # Updated to include help hotkey
 
     def test_hot_keys_with_tree_focus(self, mock_h5forest):
         """Test hot_keys when tree has focus."""
@@ -175,8 +176,8 @@ class TestH5ForestLabelProperties:
         labels = result.labels() if callable(result.labels) else result.labels
 
         # Should include tree keys and search when tree has focus
-        # Should have 11 labels
-        assert len(labels) == 11
+        # Should have 12 labels (updated to include help hotkey)
+        assert len(labels) == 12
 
     def test_hot_keys_with_expanded_attrs(self, mock_h5forest):
         """Test hot_keys shows shrink_attrs when attrs are expanded."""
@@ -185,8 +186,8 @@ class TestH5ForestLabelProperties:
         result = mock_h5forest.hot_keys
         labels = result.labels() if callable(result.labels) else result.labels
 
-        # Should have 11 labels (one of which is shrink, not expand)
-        assert len(labels) == 11
+        # Should have 12 labels (one of which is shrink, not expand)
+        assert len(labels) == 12  # Updated to include help hotkey
 
     def test_hot_keys_with_collapsed_attrs(self, mock_h5forest):
         """Test hot_keys shows expand_attrs when attrs are collapsed."""
@@ -195,8 +196,8 @@ class TestH5ForestLabelProperties:
         result = mock_h5forest.hot_keys
         labels = result.labels() if callable(result.labels) else result.labels
 
-        # Should have 11 labels (one of which is expand, not shrink)
-        assert len(labels) == 11
+        # Should have 12 labels (one of which is expand, not shrink)
+        assert len(labels) == 12  # Updated to include help hotkey
 
     def test_dataset_keys_returns_dynamic_layout(self, mock_h5forest):
         """Test that dataset_keys returns a DynamicLabelLayout."""
@@ -330,7 +331,7 @@ class TestH5ForestLabelProperties:
 
         # Should have basic keys
         labels = result.labels() if callable(result.labels) else result.labels
-        assert len(labels) == 11  # All keys including Enter and move_ten
+        assert len(labels) == 12  # All keys including Enter, help, and move_ten
 
     def test_hot_keys_without_tree_content_attribute(self, mock_h5forest):
         """Test hot_keys handles missing tree_content gracefully."""

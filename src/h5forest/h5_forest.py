@@ -8,6 +8,7 @@ Example Usage:
 
 """
 
+import argparse
 import sys
 import threading
 
@@ -148,6 +149,7 @@ class H5Forest:
         self.flag_values_visible = False
         self.flag_progress_bar = False
         self.flag_expanded_attrs = False
+        self.flag_help_visible = False
 
         # Define the leader key mode flags
         # NOTE: These must be unset when the leader mode is exited, and in
@@ -403,7 +405,8 @@ class H5Forest:
         labels.append(self._app_keys_dict["window_mode"])
         labels.append(self._app_keys_dict["search"])
 
-        # Other hot keys
+        # Help and other hot keys
+        labels.append(self._app_keys_dict["help"])
         labels.append(self._tree_keys_dict["move_ten"])
 
         if not self.flag_expanded_attrs:
@@ -635,6 +638,153 @@ class H5Forest:
         self._flag_search_mode = False
         self.mode_title.update_title("Normal Mode")
 
+    def _generate_help_text(self):
+        """Generate comprehensive help text for all modes and keybindings."""
+        help_text = f"""
+╔══════════════════════════════════════════════════════════════════════╗
+║                    H5FOREST HELP (v{__version__})                    ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+Press 'q' to close this help screen and return to Normal Mode.
+
+═══════════════════════════════════════════════════════════════════════
+                            OVERVIEW
+═══════════════════════════════════════════════════════════════════════
+
+h5forest is a modal TUI for exploring HDF5 files. Different modes provide
+different functionality. Press the mode key from Normal Mode to enter that
+mode, and 'q' to exit back to Normal Mode.
+
+═══════════════════════════════════════════════════════════════════════
+                          NORMAL MODE
+═══════════════════════════════════════════════════════════════════════
+
+The default mode for navigating the HDF5 file tree.
+
+  Navigation:
+    j / ↓         Move down one line
+    k / ↑         Move up one line
+    h / ←         Close current node
+    l / →         Open current node
+
+  Mode Switching:
+    ?             Show this help screen
+    s             Enter Search Mode (fuzzy search)
+    g             Enter Goto Mode (quick navigation)
+    d             Enter Dataset Mode (data analysis)
+    w             Enter Window Mode (focus management)
+    p             Enter Plotting Mode (scatter plots)
+    H             Enter Histogram Mode (distributions)
+
+  Display:
+    A             Toggle expand/collapse attributes panel
+    r             Restore tree to initial state
+
+  Exit:
+    q             Exit h5forest
+    Ctrl+q        Force exit h5forest
+
+═══════════════════════════════════════════════════════════════════════
+                          SEARCH MODE
+═══════════════════════════════════════════════════════════════════════
+
+Real-time fuzzy search to quickly find datasets and groups.
+
+  Type to search   Fuzzy match against all paths in file
+  Enter            Jump to first match
+  q                Exit to Normal Mode
+
+═══════════════════════════════════════════════════════════════════════
+                          GOTO MODE (g)
+═══════════════════════════════════════════════════════════════════════
+
+Quick navigation commands for jumping around the tree.
+
+  p             Go to parent node
+  n             Go to next sibling
+  N             Go to previous sibling
+  t             Go to top of tree (root)
+  b             Go to bottom of tree
+  s             Search by key name
+  q             Exit to Normal Mode
+
+═══════════════════════════════════════════════════════════════════════
+                        DATASET MODE (d)
+═══════════════════════════════════════════════════════════════════════
+
+Interact with datasets for data analysis and inspection.
+
+  v             View dataset values (with smart truncation)
+  m             Compute minimum value
+  M             Compute maximum value
+  a             Compute mean (average)
+  s             Compute standard deviation
+  r             View range of values (specify indices)
+  q             Exit to Normal Mode
+
+═══════════════════════════════════════════════════════════════════════
+                        WINDOW MODE (w)
+═══════════════════════════════════════════════════════════════════════
+
+Manage focus between different panels.
+
+  t             Focus on tree panel
+  a             Focus on attributes panel
+  v             Focus on values panel (if visible)
+  q             Exit to Normal Mode
+
+═══════════════════════════════════════════════════════════════════════
+                        PLOTTING MODE (p)
+═══════════════════════════════════════════════════════════════════════
+
+Create scatter plots from paired datasets.
+
+  x             Select dataset for x-axis
+  y             Select dataset for y-axis
+  X             Toggle x-axis scale (linear/log)
+  Y             Toggle y-axis scale (linear/log)
+  p             Generate and show plot
+  P             Save plot to file
+  r             Reset plot configuration
+  q             Exit to Normal Mode
+
+═══════════════════════════════════════════════════════════════════════
+                       HISTOGRAM MODE (H)
+═══════════════════════════════════════════════════════════════════════
+
+Generate histograms and analyze distributions.
+
+  d             Select dataset for histogram
+  b             Edit number of bins
+  X             Toggle x-axis scale (linear/log)
+  Y             Toggle y-axis scale (linear/log)
+  h             Generate and show histogram
+  H             Save histogram to file
+  r             Reset histogram configuration
+  q             Exit to Normal Mode
+
+═══════════════════════════════════════════════════════════════════════
+                            TIPS
+═══════════════════════════════════════════════════════════════════════
+
+• Large files: h5forest uses lazy loading for efficient memory usage
+• Progress bars: Long operations show progress indicators
+• Statistics: Computed on chunked data when possible for better performance
+• Terminal: Use a terminal with good Unicode support for best display
+• Resizing: Adjust terminal window and restart if display is cramped
+
+═══════════════════════════════════════════════════════════════════════
+                         MORE HELP
+═══════════════════════════════════════════════════════════════════════
+
+Documentation:  https://willjroper.github.io/h5forest/
+Issues/Bugs:    https://github.com/WillJRoper/h5forest/issues
+Repository:     https://github.com/WillJRoper/h5forest
+
+Press 'q' to close this help and return to Normal Mode.
+"""
+        return help_text
+
     def _init_text_areas(self):
         """Initialise the content for each frame."""
         # Buffer for the tree content itself
@@ -737,6 +887,15 @@ class H5Forest:
 
         self.hist_content = TextArea(
             text=self.histogram_plotter.default_plot_text,
+            scrollbar=True,
+            focusable=True,
+            read_only=True,
+        )
+
+        # Create help content with comprehensive mode and keybinding info
+        help_text = self._generate_help_text()
+        self.help_content = TextArea(
+            text=help_text,
             scrollbar=True,
             focusable=True,
             read_only=True,
@@ -940,6 +1099,15 @@ class H5Forest:
             ),
         )
 
+        # Set up the help frame (full-screen overlay)
+        self.help_frame = ConditionalContainer(
+            Frame(
+                self.help_content,
+                title="H5Forest Help",
+            ),
+            filter=Condition(lambda: self.flag_help_visible),
+        )
+
         # Set up the progress bar and buffer conditional containers
         self.progress_frame = ConditionalContainer(
             Frame(self.progress_bar_content, height=3),
@@ -962,6 +1130,7 @@ class H5Forest:
                             self.tree_frame,
                             HSplit(
                                 [
+                                    self.help_frame,
                                     self.expanded_attrs_frame,
                                     self.values_frame,
                                     self.plot_frame,
@@ -1170,16 +1339,34 @@ class H5Forest:
 
 def main():
     """Initialise and run the application."""
-    # First port of call, check we have been given a valid input
-    if len(sys.argv) != 2:
-        print("Usage: h5forest /path/to/file.hdf5")
-        sys.exit(1)
+    # Set up argument parser
+    parser = argparse.ArgumentParser(
+        prog="h5forest",
+        description="A Text-based User Interface (TUI) for exploring HDF5 files.",
+        epilog="Press '?' in Normal Mode for in-app help. "
+        "Press 'q' to exit.",
+    )
 
-    # Extract the filepath
-    filepath = sys.argv[1]
+    # Add positional argument for file path
+    parser.add_argument(
+        "filepath",
+        type=str,
+        help="Path to the HDF5 file to explore",
+    )
+
+    # Add version flag
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version=f"h5forest {__version__}",
+    )
+
+    # Parse arguments
+    args = parser.parse_args()
 
     # Set up the app
-    app = H5Forest(filepath)
+    app = H5Forest(args.filepath)
 
     # Lets get going!
     app.run()
