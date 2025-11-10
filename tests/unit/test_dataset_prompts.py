@@ -54,9 +54,7 @@ class TestDatasetPrompts:
         node.nbytes = 2 * 10**9  # 2 GB
         return node
 
-    def test_prompt_for_chunked_dataset_not_chunked(
-        self, mock_app, mock_node
-    ):
+    def test_prompt_for_chunked_dataset_not_chunked(self, mock_app, mock_node):
         """Test prompt with non-chunked dataset proceeds immediately."""
         callback = MagicMock()
 
@@ -69,7 +67,7 @@ class TestDatasetPrompts:
     def test_prompt_for_chunked_dataset_yes_to_chunks(
         self, mock_app, mock_chunked_node
     ):
-        """Test prompt with chunked dataset, user says yes to chunk-by-chunk."""
+        """Test prompt with chunked dataset, user says chunk-by-chunk."""
         callback = MagicMock()
 
         prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
@@ -89,7 +87,7 @@ class TestDatasetPrompts:
     def test_prompt_for_chunked_dataset_no_then_yes(
         self, mock_app, mock_chunked_node
     ):
-        """Test prompt with chunked dataset, user says no then yes to load all."""
+        """Test prompt with chunked dataset, user says no then yes."""
         callback = MagicMock()
 
         prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
@@ -155,9 +153,7 @@ class TestDatasetPrompts:
         """Test combined prompt with chunked dataset, user chooses load all."""
         callback = MagicMock()
 
-        prompt_for_dataset_operation(
-            mock_app, mock_chunked_node, callback
-        )
+        prompt_for_dataset_operation(mock_app, mock_chunked_node, callback)
 
         # Get first prompt callbacks
         first_on_no = mock_app.prompt_yn.call_args[0][2]
@@ -241,9 +237,7 @@ class TestDatasetPrompts:
         """Test combined prompt with chunked dataset, user chooses chunks."""
         callback = MagicMock()
 
-        prompt_for_dataset_operation(
-            mock_app, mock_chunked_node, callback
-        )
+        prompt_for_dataset_operation(mock_app, mock_chunked_node, callback)
 
         # Should prompt for chunked processing
         mock_app.prompt_yn.assert_called_once()
@@ -261,9 +255,7 @@ class TestDatasetPrompts:
         """Test combined prompt with chunked dataset, user aborts."""
         callback = MagicMock()
 
-        prompt_for_dataset_operation(
-            mock_app, mock_chunked_node, callback
-        )
+        prompt_for_dataset_operation(mock_app, mock_chunked_node, callback)
 
         # Get first prompt callbacks
         first_on_no = mock_app.prompt_yn.call_args[0][2]

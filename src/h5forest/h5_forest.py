@@ -9,7 +9,6 @@ Example Usage:
 """
 
 import argparse
-import sys
 import threading
 
 from prompt_toolkit import Application
@@ -1071,9 +1070,6 @@ class H5Forest:
             on_no (callable):
                 Callback to execute when user presses 'n'.
         """
-        # Store the current focus
-        current_focus = self.app.layout.current_window
-
         # Set the prompt message
         self.input_buffer_content.text = prompt
         self.mini_buffer_content.text = ""
@@ -1233,7 +1229,8 @@ def main():
     """Initialise and run the application."""
     parser = argparse.ArgumentParser(
         prog="h5forest",
-        description="A Text-based User Interface (TUI) for exploring HDF5 files.",
+        description="A Text-based User Interface (TUI) for exploring "
+        "HDF5 files.",
         epilog="Press 'q' to exit.",
     )
     parser.add_argument(

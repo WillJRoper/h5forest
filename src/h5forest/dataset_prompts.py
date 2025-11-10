@@ -1,5 +1,4 @@
 """Module for handling user prompts when interacting with datasets.
-
 This module provides an abstraction for prompting users before performing
 operations on chunked or large datasets. It ensures users are aware of
 the implications of their actions and can make informed decisions.
@@ -20,8 +19,8 @@ def prompt_for_chunked_dataset(app, node, operation_callback):
         node (Node):
             The dataset node to operate on.
         operation_callback (callable):
-            Function to call with signature: operation_callback(use_chunks, load_all)
-            where use_chunks is True to use chunked processing,
+            Function to call with signature: operation_callback(use_chunks,
+            load_all) where use_chunks is True to use chunked processing,
             and load_all is True to load all data at once.
     """
     # First, check if dataset is chunked
@@ -42,10 +41,16 @@ def prompt_for_chunked_dataset(app, node, operation_callback):
 
             # Calculate number of chunks
             if dataset.chunks:
-                # Total number of chunks = product of (shape[i] / chunks[i]) for each dimension
-                num_chunks = int(np.prod([
-                    np.ceil(s / c) for s, c in zip(dataset.shape, dataset.chunks)
-                ]))
+                # Total number of chunks = product of (shape[i] / chunks[i])
+                # for each dimension
+                num_chunks = int(
+                    np.prod(
+                        [
+                            np.ceil(s / c)
+                            for s, c in zip(dataset.shape, dataset.chunks)
+                        ]
+                    )
+                )
             else:
                 num_chunks = 1
     except (OSError, FileNotFoundError, KeyError):
@@ -85,7 +90,8 @@ def prompt_for_chunked_dataset(app, node, operation_callback):
     # Start the prompt workflow with enhanced message
     if isinstance(num_chunks, int):
         prompt_msg = (
-            f"Chunked Dataset found ({uncompressed_gb:.2f} GB, {num_chunks} chunks). "
+            f"Chunked Dataset found ({uncompressed_gb:.2f} GB, "
+            f"{num_chunks} chunks). "
             f"Should we process chunk by chunk? [y/n]:"
         )
     else:

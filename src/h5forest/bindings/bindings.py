@@ -209,7 +209,9 @@ def _init_app_bindings(app):
         except FileNotFoundError:
             # Clipboard tool not found
             if system == "Linux":
-                app.print("Error: xclip not found. Install with: apt install xclip")
+                app.print(
+                    "Error: xclip not found. Install with: apt install xclip"
+                )
             else:
                 app.print("Error: Clipboard tool not available")
         except Exception as e:
