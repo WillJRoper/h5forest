@@ -218,6 +218,7 @@ class ScatterPlotter(Plotter):
         split_text[2] = f"x-label:     {node.path}"
         self.plot_text = "\n".join(split_text)
 
+        @error_handler
         def run_in_thread():
             # Get the minimum and maximum values for the x and y axes
             self.x_min, self.x_max = node.get_min_max()
@@ -260,6 +261,7 @@ class ScatterPlotter(Plotter):
         split_text[3] = f"y-label:     {node.path}"
         self.plot_text = "\n".join(split_text)
 
+        @error_handler
         def run_in_thread():
             # Get the minimum and maximum values for the x and y axes
             self.y_min, self.y_max = node.get_min_max()
@@ -506,6 +508,7 @@ class HistogramPlotter(Plotter):
         split_text[2] = f"x-label:     {node.path}"
         self.plot_text = "\n".join(split_text)
 
+        @error_handler
         def run_in_thread():
             # Get the minimum and maximum values for the x and y axes
             self.x_min, self.x_max = node.get_min_max()
