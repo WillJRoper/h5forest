@@ -1,6 +1,6 @@
 # Plotting Mode
 
-Plotting Mode enables creation of scatter plots to visualize relationships between datasets. This mode provides tools for selecting data sources, configuring plot parameters, and generating matplotlib visualizations.
+Plotting Mode enables creation of scatter plots to visualize relationships between datasets. This mode provides tools for selecting data sources, configuring plot parameters, and generating `matplotlib` visualizations.
 
 ## Purpose
 
