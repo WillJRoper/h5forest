@@ -142,7 +142,8 @@ class TestErrorHandler:
             mock_forest.print.assert_called_once()
             error_msg = mock_forest.print.call_args[0][0]
             assert "_test_standalone_function" in error_msg
-            # The context should be just the function name when no dot in qualname
+            # The context should be just the function name when no dot in
+            # qualname
             assert "ERROR@_test_standalone_function" in error_msg
             assert result is None
 
