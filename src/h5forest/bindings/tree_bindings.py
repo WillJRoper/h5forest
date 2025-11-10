@@ -5,6 +5,8 @@ in this module should not be called directly, but are intended to be used by
 the application.
 """
 
+import threading
+
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding.key_processor import KeyPress
@@ -85,14 +87,24 @@ def _init_tree_bindings(app):
                 ),
                 bypass_readonly=True,
             )
-        else:  # Otherwise, open it
-            app.tree_buffer.set_document(
-                Document(
-                    app.tree.update_tree_text(node, current_row),
-                    cursor_position=current_pos,
-                ),
-                bypass_readonly=True,
-            )
+        else:  # Otherwise, open it in a background thread
+            def run_in_thread():
+                # Perform the blocking I/O operation in the background
+                tree_text = app.tree.update_tree_text(node, current_row)
+
+                # Update the tree buffer on the main thread
+                app.app.loop.call_soon_threadsafe(
+                    lambda: app.tree_buffer.set_document(
+                        Document(
+                            tree_text,
+                            cursor_position=current_pos,
+                        ),
+                        bypass_readonly=True,
+                    )
+                )
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
 
     # Bind the functions
     app.kb.add(
