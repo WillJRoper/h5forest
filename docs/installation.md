@@ -2,7 +2,7 @@
 
 ## Requirements
 
-h5forest requires Python 3.6 or higher and works on Linux, macOS, and Windows.
+h5forest requires Python 3.8 or higher and works on Linux, macOS, and Windows.
 
 ## Install from PyPI
 
@@ -15,9 +15,10 @@ pip install h5forest
 This will install h5forest and all required dependencies:
 
 - `h5py` - HDF5 file reading
-- `numpy` - Numerical operations  
+- `numpy` - Numerical operations
 - `prompt_toolkit` - Terminal user interface framework
 - `matplotlib` - Plotting functionality
+- `rapidfuzz` - Fuzzy searching
 
 ## Install from Source
 
@@ -50,16 +51,19 @@ h5forest /path/to/your/file.hdf5
 ### Common Issues
 
 **ImportError: No module named 'h5py'**
+
 ```bash
 pip install h5py
 ```
 
 **Permission errors on Linux/macOS**
+
 ```bash
 pip install --user h5forest
 ```
 
 **Terminal display issues**
+
 - Ensure your terminal supports Unicode characters
 - For best experience, use a terminal with 256 color support
 - Some features may not work properly in very old terminal emulators
