@@ -170,7 +170,7 @@ class TestDynamicLabelLayout:
         assert width == 20  # Fallback value
 
     def test_estimate_label_width_conditional_with_text(self):
-        """Test width estimation for ConditionalContainer with text attribute."""
+        """Test width estimation for ConditionalContainer with text."""
         layout = DynamicLabelLayout([])
 
         # Create a mock ConditionalContainer with content that has text
@@ -727,7 +727,7 @@ class TestDynamicLabelLayout:
     def test_pt_container_shutil_exception(
         self, mock_get_app, mock_get_terminal_size
     ):
-        """Test __pt_container__ fallback when shutil.get_terminal_size fails."""
+        """Test __pt_container__ fallback when shutil fails."""
         labels = [Label("Test")]
         layout = DynamicLabelLayout(labels)
 
@@ -786,7 +786,7 @@ class TestDynamicLabelLayout:
         assert text == ""
 
     def test_get_label_text_conditional_without_text(self):
-        """Test getting text from ConditionalContainer without text attribute."""
+        """Test getting text from ConditionalContainer without text."""
         layout = DynamicLabelLayout([])
 
         # Create ConditionalContainer with content that has no text
