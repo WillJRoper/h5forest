@@ -392,14 +392,6 @@ class H5Forest:
         """
         labels = []
 
-        # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
-        tree_has_focus = (
-            has_app
-            and hasattr(self, "tree_content")
-            and self.app.layout.has_focus(self.tree_content.content)
-        )
-
         # Always show Enter to open group in normal mode
         labels.append(self._tree_keys_dict["open_group"])
 
