@@ -6,6 +6,9 @@ module should not be called directly, but are intended to be used by the main
 application.
 """
 
+import threading
+import time
+
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
@@ -74,6 +77,51 @@ def _init_app_bindings(app):
         app.search_content.text = ""
         app.search_content.buffer.cursor_position = 0
         app.shift_focus(app.search_content)
+
+        # Start building the search index in the background
+        app.tree.get_all_paths()
+
+        # Start a pulsing animation while the index is building
+        def pulse_message():
+            pulse_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+            idx = 0
+
+            while app.tree.index_building:
+                # Show pulsing message
+                char = pulse_chars[idx % len(pulse_chars)]
+                app.app.loop.call_soon_threadsafe(
+                    lambda c=char: app.print(
+                        f"{c} Constructing search database..."
+                    )
+                )
+                idx += 1
+                time.sleep(0.1)  # Update every 100ms
+
+            # Clear the message when done
+            app.app.loop.call_soon_threadsafe(lambda: app.print(""))
+
+            # If user has already typed a query, trigger search update
+            def update_search():
+                query = app.search_content.text
+                if query:  # Only update if there's a query
+                    from prompt_toolkit.document import Document
+
+                    filtered_text = app.tree.filter_tree(query)
+                    app.tree_buffer.set_document(
+                        Document(
+                            filtered_text,
+                            cursor_position=0,
+                        ),
+                        bypass_readonly=True,
+                    )
+                    app.app.invalidate()
+
+            app.app.loop.call_soon_threadsafe(update_search)
+
+        # Only start pulse if index is actually building
+        if app.tree.index_building:
+            threading.Thread(target=pulse_message, daemon=True).start()
+
         event.app.invalidate()
 
     @error_handler
