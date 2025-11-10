@@ -50,7 +50,6 @@ Use keyboard shortcuts to switch between modes and perform actions. Press `q` to
 - **[Getting Started](installation.md)**: Installation and basic setup
 - **[Quick Start](quickstart.md)**: Get up and running in minutes
 - **[Mode Reference](modes/overview.md)**: Detailed guide to all interaction modes
-- **[Examples](examples/navigation.md)**: Practical usage examples
 - **[Contributing](contributing.md)**: Development setup and contribution guidelines
 - **[FAQ](faq.md)**: Common questions and troubleshooting
 

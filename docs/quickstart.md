@@ -147,14 +147,6 @@ Press **`q`** to exit any mode and return to Normal Mode. The hotkeys panel at t
 - **`M`** - Mean calculation
 - **`s`** - Standard deviation
 
-## Next Steps
-
-Now that you've covered the basics:
-
-- Read the [Mode Reference](modes/overview.md) for complete keyboard shortcuts
-- Check out [Examples](examples/navigation.md) for more complex workflows
-- See the [FAQ](faq.md) if you run into issues
-
 ## Tips for Success
 
 !!! tip "Vim Users"
