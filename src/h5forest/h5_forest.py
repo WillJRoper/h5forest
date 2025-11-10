@@ -400,7 +400,11 @@ class H5Forest:
             and self.app.layout.has_focus(self.tree_content.content)
         )
 
-        # Mode-switching keys first
+        # Open group first (when tree has focus)
+        if tree_has_focus:
+            labels.append(self._tree_keys_dict["open_group"])
+
+        # Mode-switching keys
         labels.append(self._app_keys_dict["dataset_mode"])
         labels.append(self._app_keys_dict["goto_mode"])
         labels.append(self._app_keys_dict["hist_mode"])
@@ -409,9 +413,6 @@ class H5Forest:
         labels.append(self._app_keys_dict["search"])
 
         # Other hot keys
-        if tree_has_focus:
-            labels.append(self._tree_keys_dict["open_group"])
-
         labels.append(self._tree_keys_dict["move_ten"])
 
         if not self.flag_expanded_attrs:
