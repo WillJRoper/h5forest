@@ -63,12 +63,14 @@ h5dump -H /path/to/your/file.h5
 **A:** Verify file format and integrity:
 
 1. **Check if it's a valid HDF5 file:**
+
    ```bash
    file /path/to/your/file.h5
    # Should show: "Hierarchical Data Format (version 5) data"
    ```
 
 2. **Test with standard tools:**
+
    ```bash
    h5ls /path/to/your/file.h5
    # Should list top-level groups/datasets
@@ -81,62 +83,27 @@ h5dump -H /path/to/your/file.h5
 
 ### Q: Large files are slow to open
 
-**A:** This is expected behavior - h5forest uses lazy loading:
-
-- **Initial loading:** Only the root level is read immediately
-- **Group expansion:** Children are loaded on-demand when you expand groups
-- **Performance:** Even multi-GB files should open quickly at the root level
-- **If still slow:** Check available memory and disk I/O
+**A:** For now, if you have a large number of Groups at the root level this is expected behavior. We do plan to introduce asynchronous tree construction in a future release to address this.
 
 ## Navigation and Interface
 
 ### Q: I'm lost in a deep hierarchy - how do I get back to the root?
 
-**A:** Use Jump Mode navigation:
+**A:** `q` will always exit and eventually return you to the root. Furthermore, once in normal mode you can press `r` to restore the TUI to the state it would be if you had just opened the file.
 
-```
-Press 'j' (enter Jump Mode)
-Press 't' (jump to top/root)
-Press 'q' (exit Jump Mode)
-```
+### Q: The interface looks cramped, help!
 
-### Q: The interface looks cramped - can I adjust panel sizes?
-
-**A:** Use these interface controls:
-
-- **`A`** - Toggle expanded attributes panel
-- **`w`** → **`a`** - Focus attributes panel for scrolling
-- **`c`** (in Dataset Mode) - Close values panel
-- **Window Mode (`w`)** - Manage panel focus
+**A:** While h5forest does its best to adapt to your terminal size, its not totally dynamic yet. You can try resizing your terminal window which will retrigger a redraw of the interface. If that doesn't help, you should exit, adjust your font size and re-open h5forest.
 
 ### Q: Keyboard shortcuts aren't working
 
-**A:** Check mode and focus:
-
-1. **Verify current mode:** Look at the hotkey display at the bottom
-2. **Check panel focus:** Some shortcuts only work in specific panels
-3. **Mode conflicts:** Exit current mode with **`q`** and try again
-4. **Terminal issues:** Ensure your terminal isn't intercepting key combinations
+**A:** If the key is displayed in the hotkey panel but doesn't work, please raise an issue with details of the issue (including your OS, terminal, and h5forest version). If the key isn't displayed, you may be in the wrong mode - check the mode indicator at the bottom of the screen and use `q` to exit to Normal Mode.
 
 ## Data Analysis
 
 ### Q: Statistical calculations are very slow
 
-**A:** This is normal for large datasets:
-
-- **Progress bars:** h5forest shows progress for time-intensive operations
-- **Chunked processing:** Large datasets are processed in chunks to prevent memory overflow
-- **Can be interrupted:** Use **`Ctrl+C`** to cancel if needed
-- **Patience:** Multi-GB datasets may take several minutes for full statistics
-
-### Q: Min/max shows unexpected values
-
-**A:** Check for data quality issues:
-
-1. **Verify data type:** Check metadata panel for correct data type
-2. **Check for outliers:** Use Dataset Mode value viewing (**`v`**) to sample data
-3. **Units:** Check attributes for unit information
-4. **Processing artifacts:** Compare with known data characteristics
+**A:** Is your dataset very large but not chunked? Statistics on large unchunked datasets can be slow due to the need to read all data at once. When chunked data is found, h5forest can read in manageable pieces. I'm afraid there's not much that can be done for unchunked datasets other than being patient or pre-processing the data into a chunked format. Note that exploring the file will still be fast even if statistics are slow.
 
 ### Q: "Unable to compute statistics" errors
 
@@ -154,12 +121,14 @@ Press 'q' (exit Jump Mode)
 **A:** Troubleshoot plot issues:
 
 1. **Check data compatibility:**
+
    ```
    Verify both datasets have compatible shapes
    Use Dataset Mode to check value ranges
    ```
 
 2. **Scale issues:**
+
    ```
    Try logarithmic scaling for wide value ranges
    Check for negative values with log scales
@@ -171,15 +140,6 @@ Press 'q' (exit Jump Mode)
    Check for NaN or infinite values
    ```
 
-### Q: Histograms look wrong or uninformative
-
-**A:** Optimize histogram parameters:
-
-- **Bin count:** Adjust number of bins in configuration (**`e`**)
-- **Scaling:** Try logarithmic y-axis for wide frequency ranges
-- **Range:** Focus on specific data ranges if outliers dominate
-- **Normalization:** Try different normalization options (count vs density)
-
 ### Q: Can't save plots or histograms
 
 **A:** Check save functionality:
@@ -187,60 +147,27 @@ Press 'q' (exit Jump Mode)
 1. **Use correct key:** **`P`** (capital) for plots, **`H`** (capital) for histograms
 2. **File permissions:** Ensure write permissions in current directory
 3. **Filename:** Provide valid filename when prompted
-4. **Dependencies:** Ensure matplotlib is properly installed
 
 ## Performance
 
-### Q: h5forest uses too much memory
-
-**A:** Memory optimization strategies:
-
-1. **Avoid expanding all groups:** Only expand what you need to examine
-2. **Use statistics instead of values:** Statistics use streaming algorithms
-3. **Range viewing:** Use Dataset Mode **`V`** instead of **`v`** for large datasets
-4. **Close panels:** Use **`c`** to close values panel when not needed
-
 ### Q: Operations freeze or become unresponsive
 
-**A:** Recovery options:
+**A:** Do you have lots of groups at a single level? This can cause delays as h5forest builds the tree structure. In most cases, h5forest should remain responsive and display progress indicators.
+
+Recovery options:
 
 1. **Wait for completion:** Check for progress bars indicating ongoing operations
-2. **Interrupt operations:** **`Ctrl+C`** to cancel statistical calculations
-3. **Force quit:** **`Ctrl+Q`** to exit h5forest immediately
-4. **Terminal reset:** If display is corrupted, restart terminal
+2. **Terminal reset:** If display is corrupted, exit and `clear` terminal, then restart h5forest.
 
-## Advanced Usage
-
-### Q: How do I analyze specific slices of multidimensional arrays?
-
-**A:** Use Dataset Mode range viewing:
-
-```
-Navigate to multidimensional dataset
-Press 'd' (Dataset Mode)
-Press 'V' (range viewing)
-Enter slice notation: 1000:2000 (elements 1000-1999)
-```
-
-Note: Currently supports 1D slicing - full multidimensional slicing is a planned feature.
+Should you encounter a freeze with no progress and unresponsive UI/exit keys, please report a bug with details of your system and file. In normal circumstances h5forest should remain responsive and abort any long-running operations.
 
 ### Q: Can h5forest handle compressed datasets?
 
 **A:** Yes, h5forest handles HDF5 compression transparently:
 
 - **Automatic decompression:** All compression types supported by h5py
-- **Performance:** Compressed data may be slower to access
+- **Performance:** Compressed data **may** be slower to access
 - **Memory usage:** Decompression happens in chunks to manage memory
-- **Statistics:** Work normally on compressed data
-
-### Q: How do I compare datasets across different files?
-
-**A:** Current workflow for cross-file comparison:
-
-1. **Open first file:** Analyze and document statistics
-2. **Close and open second file:** h5forest handles one file at a time
-3. **Compare manually:** Document findings from each file
-4. **Future feature:** Multi-file support is planned
 
 ## Troubleshooting
 
@@ -256,25 +183,15 @@ Note: Currently supports 1D slicing - full multidimensional slicing is a planned
 
 ### Q: Display is corrupted or garbled
 
-**A:** Terminal display recovery:
+**A:** Terminal display recovery (there's nothing fancy here):
 
 ```bash
 # Reset terminal display
-reset
+clear
 
-# Or restart h5forest
-Ctrl+Q (force quit)
+# Restart h5forest
 h5forest /path/to/file.h5
 ```
-
-### Q: Feature X from the documentation doesn't work
-
-**A:** Check version and implementation status:
-
-1. **Version check:** Some features may be version-specific
-2. **Development status:** h5forest is actively developed - some documented features may be planned
-3. **Mode requirements:** Ensure you're in the correct mode for the feature
-4. **Update:** Try updating to the latest version
 
 ## Getting Help
 
@@ -304,14 +221,3 @@ h5forest /path/to/file.h5
 - **Documentation:** Improvements and examples
 - **Code contributions:** Follow project contribution guidelines
 - **Testing:** Try h5forest with different file types and report issues
-
-## Performance Tips
-
-!!! tip "Memory Management"
-    Use statistical functions instead of value viewing for large datasets - they use streaming algorithms that don't load all data into memory.
-
-!!! tip "Navigation Efficiency"
-    Learn Jump Mode shortcuts (**`j`** → **`t`**, **`k`**, **`n`**, **`p`**) for quick navigation in large files.
-
-!!! warning "Terminal Compatibility"
-    h5forest requires a modern terminal with Unicode support. Very old or limited terminals may not display correctly.

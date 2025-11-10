@@ -89,91 +89,9 @@ pytest -x
 pytest -l
 ```
 
-## Test Categories
-
-### Unit Tests (`tests/unit/`)
-
-Test individual components in isolation:
-
-- **Node Tests** (`test_node.py`): 20+ tests covering Node class functionality
-  - Initialization with different HDF5 objects
-  - Parent-child relationships and hierarchy
-  - Text generation for tree display
-  - State management (expansion, highlighting)
-  - Metadata and attribute handling
-
-- **Tree Tests** (`test_tree.py`): 24+ tests covering Tree class and TreeProcessor
-  - Tree construction from HDF5 files
-  - Text generation and formatting
-  - Navigation and node management
-  - TreeProcessor styling functionality
-
-- **Utils Tests** (`test_utils.py`): 9+ tests covering utility functions
-  - DynamicTitle class functionality
-  - Window size detection
-  - Helper function behavior
-
-### Test Fixtures
-
-The test suite uses several types of fixtures:
-
-#### HDF5 File Fixtures (`tests/fixtures/`)
-
-- `simple.h5`: Basic structure with groups and datasets
-- `complex.h5`: Multi-level hierarchy with nested groups
-- `attributes.h5`: Extensive metadata and attributes
-- `empty.h5`: Empty file for edge case testing
-
-#### Shared Fixtures (`conftest.py`)
-
-- `temp_h5_file`: Creates temporary HDF5 files for testing
-- `simple_h5_file`: Provides path to simple test file
-- `complex_h5_file`: Provides path to complex test file  
-- `attributes_h5_file`: Provides path to attributes test file
-- `mock_prompt_toolkit_io`: Sets up mock I/O for TUI testing
-
-## Current Test Coverage
-
-The test suite achieves approximately **28% code coverage** focusing on core functionality:
-
-### Covered Components
-
-✅ **Node class** - Comprehensive coverage of:
-- Initialization and hierarchy building
-- HDF5 object handling (groups vs datasets)
-- Text generation and formatting
-- State management and navigation
-- Attribute and metadata parsing
-
-✅ **Tree class** - Good coverage of:
-- Tree construction and management
-- Text generation and updates
-- Navigation and cursor tracking
-- TreeProcessor styling
-
-✅ **Utils module** - Basic coverage of:
-- DynamicTitle functionality
-- Helper functions
-
-### Areas for Future Coverage
-
-⏳ **H5Forest main application**
-- TUI integration testing
-- Keybinding functionality
-- Layout management
-- Application lifecycle
-
-⏳ **Bindings modules**
-- Keybinding registration
-- Modal system behavior
-- User interaction flows
-
-⏳ **Plotting modules**
-- Visualization generation
-- Plot data handling
-- Interactive plotting features
-
 ## Contributing Tests
+
+We aim to have 100% test coverage (though getting to exactly 100% is not always feasible). When contributing new features or bug fixes, please include appropriate tests and make sure the coverage is not decreased.
 
 ### Writing New Tests
 
@@ -189,13 +107,13 @@ When adding new functionality, include tests that cover:
 ```python
 class TestComponentName:
     """Test cases for ComponentName class."""
-    
+
     def test_method_does_expected_behavior(self):
         """Test that method performs expected behavior under normal conditions."""
-        
+
     def test_method_handles_edge_case(self):
         """Test that method handles edge case appropriately."""
-        
+
     def test_method_raises_error_on_invalid_input(self):
         """Test that method raises appropriate error for invalid input."""
 ```
@@ -225,6 +143,7 @@ To add new HDF5 test files:
 4. Document the fixture purpose
 
 Example:
+
 ```python
 # In conftest.py
 @pytest.fixture
@@ -236,77 +155,17 @@ def my_test_file():
 ## Continuous Integration
 
 Tests run automatically on:
+
 - Pull requests to `main` or `develop` branches
 - Direct pushes to `main` or `develop` branches
 
 The CI workflow:
+
 - Tests against Python 3.8, 3.9, 3.10, 3.11, 3.12
 - Runs linting checks with ruff
 - Executes full test suite
 - Generates coverage reports
 - Must pass for PR approval
-
-## Troubleshooting Tests
-
-### Common Issues
-
-**HDF5 file access errors:**
-```bash
-# Ensure HDF5 libraries are installed
-# Ubuntu/Debian:
-sudo apt-get install libhdf5-dev pkg-config
-
-# macOS:
-brew install hdf5 pkg-config
-
-# Then reinstall h5py
-pip uninstall h5py
-pip install h5py
-```
-
-**Import errors:**
-```bash
-# Install package in development mode
-pip install -e ".[dev,test]"
-```
-
-**Path issues in tests:**
-```bash
-# Run tests from project root
-cd /path/to/h5forest
-pytest
-```
-
-### Debug Mode
-
-```bash
-# Drop into debugger on failure
-pytest --pdb
-
-# Debug specific test
-pytest --pdb tests/unit/test_node.py::test_specific_function
-
-# Print debugging output
-pytest -s  # Don't capture stdout
-```
-
-## Performance Considerations
-
-The test suite is designed to run quickly:
-- Uses small test files (< 1MB each)
-- Mocks external dependencies where possible
-- Isolates tests to avoid side effects
-- Parallelization-ready (can use `pytest-xdist`)
-
-For faster test runs during development:
-```bash
-# Run tests in parallel
-pip install pytest-xdist
-pytest -n auto
-
-# Run only tests that changed
-pytest --testmon
-```
 
 ## Best Practices
 

@@ -1,6 +1,6 @@
 # Quick Start
 
-Get started with h5forest in minutes. This guide covers everything you need to begin exploring HDF5 files interactively.
+Get started with `h5forest` in minutes. This guide covers everything you need to begin exploring HDF5 files interactively.
 
 ## Installation
 
@@ -97,7 +97,7 @@ Press **`v`** to see actual data values:
  [2.34 5.67 8.90]
  [3.45 6.78 9.01]
  ...
- 
+
 Showing 1000/3000000 elements.
 ```
 
@@ -109,15 +109,15 @@ Press **`m`** to get min/max values. For large datasets, you'll see a progress b
 
 h5forest uses a modal interface (similar to Vim) where different keyboard shortcuts become active depending on your current task:
 
-| Key | Mode | Purpose |
-|-----|------|---------|
-| **Default** | Normal Mode | Navigate the file tree |
-| **`s`** | Search Mode | Find datasets and groups |
-| **`d`** | Dataset Mode | Analyze data and compute statistics |
-| **`g`** | Goto Mode | Jump to specific locations |
-| **`w`** | Window Mode | Manage panel layout |
-| **`p`** | Plotting Mode | Create scatter plots |
-| **`H`** | Histogram Mode | Generate histograms |
+| Key         | Mode           | Purpose                             |
+| ----------- | -------------- | ----------------------------------- |
+| **Default** | Normal Mode    | Navigate the file tree              |
+| **`s`**     | Search Mode    | Find datasets and groups            |
+| **`d`**     | Dataset Mode   | Analyze data and compute statistics |
+| **`g`**     | Goto Mode      | Jump to specific locations          |
+| **`w`**     | Window Mode    | Manage panel layout                 |
+| **`p`**     | Plotting Mode  | Create scatter plots                |
+| **`H`**     | Histogram Mode | Generate histograms                 |
 
 Press **`q`** to exit any mode and return to Normal Mode. The hotkeys panel at the bottom always shows what's available in your current mode.
 
@@ -157,11 +157,8 @@ Now that you've covered the basics:
 
 ## Tips for Success
 
-!!! tip "Performance with Large Files"
-    h5forest uses lazy loading and chunked processing. Large files load quickly, and statistics are computed efficiently even for massive datasets.
-
 !!! tip "Vim Users"
-    If you're familiar with Vim, you'll feel right at home with the modal interface and keyboard shortcuts.
+If you're familiar with Vim, you'll feel right at home with the modal interface and keyboard shortcuts.
 
 !!! warning "Terminal Compatibility"
-    For the best experience, use a modern terminal emulator with Unicode and 256-color support.
+For the best experience, use a modern terminal emulator with Unicode and 256-color support.

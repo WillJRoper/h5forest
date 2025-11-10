@@ -5,6 +5,7 @@ Normal Mode is the default mode in h5forest and serves as the foundation for all
 ## Purpose
 
 Normal Mode is designed for:
+
 - Navigating the HDF5 file tree structure
 - Expanding and collapsing groups
 - Viewing metadata and attributes
@@ -14,33 +15,33 @@ Normal Mode is designed for:
 
 ### Tree Navigation
 
-| Key | Action | Description |
-|-----|--------|-------------|
-| **`↑`** / **`k`** | Move up | Move cursor up one line |
-| **`↓`** / **`j`** | Move down | Move cursor down one line |
-| **`{`** | Jump up | Move cursor up 10 lines |
-| **`}`** | Jump down | Move cursor down 10 lines |
-| **`Enter`** | Expand/Collapse | Toggle expansion of selected group |
+| Key               | Action          | Description                        |
+| ----------------- | --------------- | ---------------------------------- |
+| **`↑`** / **`k`** | Move up         | Move cursor up one line            |
+| **`↓`** / **`j`** | Move down       | Move cursor down one line          |
+| **`{`**           | Jump up         | Move cursor up 10 lines            |
+| **`}`**           | Jump down       | Move cursor down 10 lines          |
+| **`Enter`**       | Expand/Collapse | Toggle expansion of selected group |
 
 ### Mode Switching
 
-| Key | Mode | Description |
-|-----|------|-------------|
-| **`g`** | Goto Mode | Quick navigation commands |
-| **`d`** | Dataset Mode | Data analysis and statistics |
-| **`w`** | Window Mode | Panel and focus management |
-| **`p`** | Plotting Mode | Create scatter plots |
-| **`H`** | Histogram Mode | Generate histograms |
-| **`s`** | Search Mode | Fuzzy search through tree |
+| Key     | Mode           | Description                  |
+| ------- | -------------- | ---------------------------- |
+| **`g`** | Goto Mode      | Quick navigation commands    |
+| **`d`** | Dataset Mode   | Data analysis and statistics |
+| **`w`** | Window Mode    | Panel and focus management   |
+| **`p`** | Plotting Mode  | Create scatter plots         |
+| **`H`** | Histogram Mode | Generate histograms          |
+| **`s`** | Search Mode    | Fuzzy search through tree    |
 
 ### Interface Control
 
-| Key | Action | Description |
-|-----|--------|-------------|
-| **`A`** | Toggle Attributes | Expand/shrink attributes panel |
-| **`r`** | Restore Tree | Reset tree to initial state (collapses all, clears search results) |
-| **`q`** | Quit | Exit application |
-| **`Ctrl+Q`** | Force Quit | Force exit application |
+| Key          | Action            | Description                                                        |
+| ------------ | ----------------- | ------------------------------------------------------------------ |
+| **`A`**      | Toggle Attributes | Expand/shrink attributes panel                                     |
+| **`r`**      | Restore Tree      | Reset tree to initial state (collapses all, clears search results) |
+| **`q`**      | Quit              | Exit application                                                   |
+| **`Ctrl+Q`** | Force Quit        | Force exit application                                             |
 
 ## Basic Usage
 
@@ -51,7 +52,7 @@ Normal Mode is designed for:
 
 ## Visual Indicators
 
-- **`▶`**: Collapsed group 
+- **`▶`**: Collapsed group
 - **`▼`**: Expanded group
 - **No symbol**: Dataset or empty group
 
