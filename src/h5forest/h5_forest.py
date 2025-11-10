@@ -177,6 +177,7 @@ class H5Forest:
 
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
+        self.mode_title = DynamicTitle("Normal Mode")
 
         # Attach the hexbin plotter
         self.scatter_plotter = ScatterPlotter()
@@ -642,6 +643,7 @@ class H5Forest:
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
         self._flag_search_mode = False
+        self.mode_title.update_title("Normal Mode")
 
     def _init_text_areas(self):
         """Initialise the content for each frame."""
@@ -913,7 +915,7 @@ class H5Forest:
             ]
         )
         self.hotkeys_frame = ConditionalContainer(
-            Frame(self.hotkeys_panel),
+            Frame(self.hotkeys_panel, title=self.mode_title),
             filter=Condition(
                 lambda: self.flag_normal_mode
                 or self.flag_jump_mode
