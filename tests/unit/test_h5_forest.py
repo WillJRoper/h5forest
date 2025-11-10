@@ -1039,7 +1039,7 @@ class TestH5ForestMain:
         """Test main function with no arguments."""
         from h5forest.h5_forest import main
 
-        with patch("h5forest.h5_forest.sys.argv", ["h5forest"]):
+        with patch("sys.argv", ["h5forest"]):
             # argparse exits with code 2 on argument errors
             with pytest.raises(SystemExit) as exc_info:
                 main()
@@ -1051,9 +1051,7 @@ class TestH5ForestMain:
         """Test main function with too many arguments."""
         from h5forest.h5_forest import main
 
-        with patch(
-            "h5forest.h5_forest.sys.argv", ["h5forest", "file1.h5", "file2.h5"]
-        ):
+        with patch("sys.argv", ["h5forest", "file1.h5", "file2.h5"]):
             # argparse exits with code 2 on argument errors
             with pytest.raises(SystemExit) as exc_info:
                 main()
@@ -1065,7 +1063,7 @@ class TestH5ForestMain:
         """Test main function with valid file."""
         from h5forest.h5_forest import H5Forest, main
 
-        with patch("h5forest.h5_forest.sys.argv", ["h5forest", temp_h5_file]):
+        with patch("sys.argv", ["h5forest", temp_h5_file]):
             with patch.object(H5Forest, "run") as mock_run:
                 main()
 
