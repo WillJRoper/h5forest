@@ -336,7 +336,8 @@ class WaitIndicator:
         Args:
             app: The H5Forest application instance
             message (str): The message to display (e.g., "Loading data...")
-            update_interval (float): Seconds between animation updates (default: 0.1)
+            update_interval (float): Seconds between animation updates
+                (default: 0.1)
         """
         self.app = app
         self.message = message
@@ -356,9 +357,7 @@ class WaitIndicator:
             time.sleep(self.update_interval)
 
         # Clear the message when done
-        self.app.app.loop.call_soon_threadsafe(
-            lambda: self.app.print("")
-        )
+        self.app.app.loop.call_soon_threadsafe(lambda: self.app.print(""))
 
     def start(self):
         """Start the spinning indicator."""
