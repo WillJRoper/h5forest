@@ -32,6 +32,9 @@ class TestHistBindings:
         app.histogram_plotter.close = MagicMock()
         app.histogram_plotter.plot_params = {"data": "test_data"}
         app.histogram_plotter.plot_text = ""
+        app.histogram_plotter.x_min = 1.0
+        app.histogram_plotter.x_max = 100.0
+        app.histogram_plotter.assign_data_thread = None
         app.hist_content = MagicMock()
         app.hist_content.text = (
             "data:        <key>\n"

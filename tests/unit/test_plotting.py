@@ -865,7 +865,8 @@ class TestScatterPlotterErrorHandling:
         # Verify error was printed
         mock_forest.print.assert_called_once()
         error_msg = mock_forest.print.call_args[0][0]
-        assert "data range not available" in error_msg
+        assert "failed to determine x-axis data range" in error_msg
+        assert "See error above for details" in error_msg
 
     @patch("h5forest.h5_forest.H5Forest")
     @patch("h5forest.plotting.plt.figure")
@@ -912,7 +913,8 @@ class TestScatterPlotterErrorHandling:
         # Verify error was printed
         mock_forest.print.assert_called_once()
         error_msg = mock_forest.print.call_args[0][0]
-        assert "data range not available" in error_msg
+        assert "failed to determine y-axis data range" in error_msg
+        assert "See error above for details" in error_msg
 
 
 class TestHistogramPlotterErrorHandling:
@@ -1099,7 +1101,8 @@ class TestHistogramPlotterErrorHandling:
         # Verify error was printed
         mock_forest.print.assert_called_once()
         error_msg = mock_forest.print.call_args[0][0]
-        assert "data range not available" in error_msg
+        assert "failed to determine data range" in error_msg
+        assert "See error above for details" in error_msg
 
 
 class TestHistogramPlotter:

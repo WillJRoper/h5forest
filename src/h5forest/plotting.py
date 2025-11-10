@@ -375,17 +375,18 @@ class ScatterPlotter(Plotter):
         from h5forest.h5_forest import H5Forest
 
         # Check that min/max values are available
+        # If None after joining threads, it means get_min_max() failed
         if self.x_min is None or self.x_max is None:
             H5Forest().print(
-                "Cannot create plot: x-axis data range not available. "
-                "Please try again."
+                "Cannot plot: failed to determine x-axis data range. "
+                "See error above for details."
             )
             return
 
         if self.y_min is None or self.y_max is None:
             H5Forest().print(
-                "Cannot create plot: y-axis data range not available. "
-                "Please try again."
+                "Cannot plot: failed to determine y-axis data range. "
+                "See error above for details."
             )
             return
 
@@ -558,10 +559,11 @@ class HistogramPlotter(Plotter):
             get_app().invalidate()
 
             # Check that min/max values are available
+            # If None after joining thread, it means get_min_max() failed
             if self.x_min is None or self.x_max is None:
                 H5Forest().print(
-                    "Cannot compute histogram: data range not available. "
-                    "Please try again."
+                    "Cannot compute histogram: failed to determine data range. "
+                    "See error above for details."
                 )
                 return
 
@@ -660,10 +662,11 @@ class HistogramPlotter(Plotter):
         y_scale = split_text[4].split(": ")[1].strip()
 
         # Check that histogram was computed successfully
+        # If None after joining thread, it means compute_hist failed
         if self.hist is None:
             H5Forest().print(
                 "Cannot plot histogram: histogram computation failed. "
-                "Please try again."
+                "See error above for details."
             )
             return
 

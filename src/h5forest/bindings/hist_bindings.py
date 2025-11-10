@@ -31,6 +31,19 @@ def _init_hist_bindings(app):
     @error_handler
     def edit_bins(event):
         """Edit the number of bins."""
+        # Wait for data assignment thread to finish if it's running
+        if app.histogram_plotter.assign_data_thread is not None:
+            app.histogram_plotter.assign_data_thread.join()
+            app.histogram_plotter.assign_data_thread = None
+
+        # Check if x_min/x_max are available (needed to compute histogram)
+        if app.histogram_plotter.x_min is None or app.histogram_plotter.x_max is None:
+            app.print(
+                "Cannot edit bins: data range not yet computed. "
+                "Please select a dataset first (Enter)"
+            )
+            return
+
         # Get the current text
         split_text = app.hist_content.text.split("\n")
 
@@ -56,6 +69,19 @@ def _init_hist_bindings(app):
     @error_handler
     def toggle_x_scale(event):
         """Toggle the x-axis scale between linear and log."""
+        # Wait for data assignment thread to finish if it's running
+        if app.histogram_plotter.assign_data_thread is not None:
+            app.histogram_plotter.assign_data_thread.join()
+            app.histogram_plotter.assign_data_thread = None
+
+        # Check if x_min/x_max are available
+        if app.histogram_plotter.x_min is None or app.histogram_plotter.x_max is None:
+            app.print(
+                "Cannot toggle x-scale: data range not yet computed. "
+                "Please select a dataset first (Enter)"
+            )
+            return
+
         # Get the current text
         split_text = app.hist_content.text.split("\n")
 
@@ -64,6 +90,17 @@ def _init_hist_bindings(app):
 
         # Toggle the scale
         new_scale = "log" if current_scale == "linear" else "linear"
+
+        # If toggling to log, validate data is compatible
+        if new_scale == "log":
+            if app.histogram_plotter.x_min <= 0:
+                app.print(
+                    f"Cannot use log scale on x-axis: data contains "
+                    f"{'zero' if app.histogram_plotter.x_min == 0 else 'negative'} values "
+                    f"(min = {app.histogram_plotter.x_min})"
+                )
+                return
+
         split_text[3] = f"x-scale:     {new_scale}"
 
         # Update the text
@@ -75,6 +112,19 @@ def _init_hist_bindings(app):
     @error_handler
     def toggle_y_scale(event):
         """Toggle the y-axis scale between linear and log."""
+        # Wait for data assignment thread to finish if it's running
+        if app.histogram_plotter.assign_data_thread is not None:
+            app.histogram_plotter.assign_data_thread.join()
+            app.histogram_plotter.assign_data_thread = None
+
+        # Check if x_min/x_max are available (needed to compute histogram)
+        if app.histogram_plotter.x_min is None or app.histogram_plotter.x_max is None:
+            app.print(
+                "Cannot toggle y-scale: data range not yet computed. "
+                "Please select a dataset first (Enter)"
+            )
+            return
+
         # Get the current text
         split_text = app.hist_content.text.split("\n")
 
@@ -83,6 +133,11 @@ def _init_hist_bindings(app):
 
         # Toggle the scale
         new_scale = "log" if current_scale == "linear" else "linear"
+
+        # Note: We can't validate y-scale until histogram is computed
+        # (y-scale applies to histogram counts, not data values)
+        # Validation will happen when the histogram is plotted
+
         split_text[4] = f"y-scale:     {new_scale}"
 
         # Update the text
