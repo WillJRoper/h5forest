@@ -562,8 +562,8 @@ class HistogramPlotter(Plotter):
             # If None after joining thread, it means get_min_max() failed
             if self.x_min is None or self.x_max is None:
                 H5Forest().print(
-                    "Cannot compute histogram: failed to determine data range. "
-                    "See error above for details."
+                    "Cannot compute histogram: failed to determine data "
+                    "range. See error above for details."
                 )
                 return
 

@@ -1,6 +1,5 @@
 """A module containing functions for graceful error handling."""
 
-import inspect
 import traceback
 from pathlib import Path
 
@@ -45,10 +44,10 @@ def error_handler(func):
 
             # Try to get class name if this is a method
             qualname = func.__qualname__
-            if '.' in qualname:
+            if "." in qualname:
                 # It's a method, extract class name
-                class_name = qualname.rsplit('.', 1)[0]
-                method_name = qualname.rsplit('.', 1)[1]
+                class_name = qualname.rsplit(".", 1)[0]
+                method_name = qualname.rsplit(".", 1)[1]
                 context = f"{class_name}.{method_name}"
             else:
                 # It's a function

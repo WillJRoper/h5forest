@@ -486,7 +486,9 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.plot_content.text
 
-    def test_toggle_x_scale_to_log_with_zero_values(self, mock_app, mock_event):
+    def test_toggle_x_scale_to_log_with_zero_values(
+        self, mock_app, mock_event
+    ):
         """Test toggling x scale to log when x_min is 0."""
         mock_app.scatter_plotter.x_min = 0
         _init_plot_bindings(mock_app)
@@ -505,7 +507,9 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.plot_content.text
 
-    def test_toggle_x_scale_to_log_with_negative_values(self, mock_app, mock_event):
+    def test_toggle_x_scale_to_log_with_negative_values(
+        self, mock_app, mock_event
+    ):
         """Test toggling x scale to log when x_min is negative."""
         mock_app.scatter_plotter.x_min = -5.0
         _init_plot_bindings(mock_app)
@@ -543,7 +547,9 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "y-scale:     linear" in mock_app.plot_content.text
 
-    def test_toggle_y_scale_to_log_with_zero_values(self, mock_app, mock_event):
+    def test_toggle_y_scale_to_log_with_zero_values(
+        self, mock_app, mock_event
+    ):
         """Test toggling y scale to log when y_min is 0."""
         mock_app.scatter_plotter.y_min = 0
         _init_plot_bindings(mock_app)
@@ -562,7 +568,9 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "y-scale:     linear" in mock_app.plot_content.text
 
-    def test_toggle_y_scale_to_log_with_negative_values(self, mock_app, mock_event):
+    def test_toggle_y_scale_to_log_with_negative_values(
+        self, mock_app, mock_event
+    ):
         """Test toggling y scale to log when y_min is negative."""
         mock_app.scatter_plotter.y_min = -5.0
         _init_plot_bindings(mock_app)
@@ -584,6 +592,7 @@ class TestPlotBindings:
     def test_toggle_x_scale_with_running_thread(self, mock_app, mock_event):
         """Test toggling x scale with a running assignx_thread."""
         from unittest.mock import MagicMock
+
         # Create a mock thread
         mock_thread = MagicMock()
         mock_app.scatter_plotter.assignx_thread = mock_thread
@@ -603,6 +612,7 @@ class TestPlotBindings:
     def test_toggle_y_scale_with_running_thread(self, mock_app, mock_event):
         """Test toggling y scale with a running assigny_thread."""
         from unittest.mock import MagicMock
+
         # Create a mock thread
         mock_thread = MagicMock()
         mock_app.scatter_plotter.assigny_thread = mock_thread
@@ -639,7 +649,19 @@ class TestPlotBindings:
         """Test that all expected keys are bound."""
         _init_plot_bindings(mock_app)
 
-        expected_keys = ["x", "y", "X", "Y", "c-m", "p", "P", "r", "e", "J", "q"]
+        expected_keys = [
+            "x",
+            "y",
+            "X",
+            "Y",
+            "c-m",
+            "p",
+            "P",
+            "r",
+            "e",
+            "J",
+            "q",
+        ]
 
         for key in expected_keys:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]

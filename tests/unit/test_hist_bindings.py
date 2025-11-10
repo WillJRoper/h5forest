@@ -86,7 +86,8 @@ class TestHistBindings:
         )
         bindings = [b for b in mock_app.kb.bindings if "c-m" in str(b.keys)]
         assert len(bindings) > 0
-        # Find the edit_hist_entry binding (the one that requires focus on hist_content)
+        # Find the edit_hist_entry binding (the one that requires focus on
+        # hist_content)
         handler = None
         for binding in bindings:
             if binding.filter():
@@ -297,7 +298,9 @@ class TestHistBindings:
                 break
         if handler:
             handler(mock_event)
-            mock_app.histogram_plotter.set_data_key.assert_called_once_with(node)
+            mock_app.histogram_plotter.set_data_key.assert_called_once_with(
+                node
+            )
 
     def test_select_data_with_group(self, mock_app, mock_event):
         """Test selecting data with group node (should fail)."""
@@ -445,7 +448,9 @@ class TestHistBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.hist_content.text
 
-    def test_toggle_x_scale_to_log_with_zero_values(self, mock_app, mock_event):
+    def test_toggle_x_scale_to_log_with_zero_values(
+        self, mock_app, mock_event
+    ):
         """Test toggling x scale to log when x_min is 0."""
         mock_app.histogram_plotter.x_min = 0
         _init_hist_bindings(mock_app)
@@ -464,7 +469,9 @@ class TestHistBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.hist_content.text
 
-    def test_toggle_x_scale_to_log_with_negative_values(self, mock_app, mock_event):
+    def test_toggle_x_scale_to_log_with_negative_values(
+        self, mock_app, mock_event
+    ):
         """Test toggling x scale to log when x_min is negative."""
         mock_app.histogram_plotter.x_min = -5.0
         _init_hist_bindings(mock_app)
@@ -524,6 +531,7 @@ class TestHistBindings:
     def test_toggle_x_scale_with_running_thread(self, mock_app, mock_event):
         """Test toggling x scale with a running assign_data_thread."""
         from unittest.mock import MagicMock
+
         # Create a mock thread
         mock_thread = MagicMock()
         mock_app.histogram_plotter.assign_data_thread = mock_thread
@@ -543,6 +551,7 @@ class TestHistBindings:
     def test_edit_bins_with_running_thread(self, mock_app, mock_event):
         """Test editing bins with a running assign_data_thread."""
         from unittest.mock import MagicMock
+
         # Create a mock thread
         mock_thread = MagicMock()
         mock_app.histogram_plotter.assign_data_thread = mock_thread

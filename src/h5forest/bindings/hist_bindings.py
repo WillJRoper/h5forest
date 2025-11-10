@@ -103,9 +103,7 @@ def _init_hist_bindings(app):
         if new_scale == "log":
             if app.histogram_plotter.x_min <= 0:
                 value_type = (
-                    "zero"
-                    if app.histogram_plotter.x_min == 0
-                    else "negative"
+                    "zero" if app.histogram_plotter.x_min == 0 else "negative"
                 )
                 app.print(
                     f"Cannot use log scale on x-axis: data contains "
