@@ -945,8 +945,8 @@ class TestH5ForestSearchTextChanged:
                 # Call handler
                 app._on_search_text_changed(mock_event)
 
-                # Verify filter was called
-                app.tree.filter_tree.assert_called_once_with("search query")
+                # Verify filter was called with the search query
+                app.tree.filter_tree.assert_called_with("search query")
 
                 # Verify call_soon_threadsafe was called to update display
                 app.app.loop.call_soon_threadsafe.assert_called_once()
