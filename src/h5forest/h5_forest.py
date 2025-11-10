@@ -400,9 +400,8 @@ class H5Forest:
             and self.app.layout.has_focus(self.tree_content.content)
         )
 
-        # Open group first (when tree has focus)
-        if tree_has_focus:
-            labels.append(self._tree_keys_dict["open_group"])
+        # Always show Enter to open group in normal mode
+        labels.append(self._tree_keys_dict["open_group"])
 
         # Mode-switching keys
         labels.append(self._app_keys_dict["dataset_mode"])
