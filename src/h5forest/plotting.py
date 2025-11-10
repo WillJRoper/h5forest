@@ -4,9 +4,9 @@ This is only ever called from the h5forest module and is not intended to be
 used directly by the user.
 """
 
-import os
 import threading
 import warnings
+from pathlib import Path
 
 import h5py
 import matplotlib.pyplot as plt
@@ -66,6 +66,14 @@ class Plotter:
         plt.show()
 
     @error_handler
+    def close(self):
+        """Close the figure if it exists."""
+        if self.fig is not None:
+            plt.close(self.fig)
+            self.fig = None
+            self.ax = None
+
+    @error_handler
     def save(self):
         """Save the plot and reset everything."""
         from h5forest.h5_forest import H5Forest
@@ -84,7 +92,7 @@ class Plotter:
         H5Forest().input(
             "Enter the filepath to save the plot: ",
             save_callback,
-            mini_buffer_text=os.getcwd() + "/",
+            mini_buffer_text=str(Path.cwd()) + "/",
         )
 
     @error_handler
@@ -210,6 +218,7 @@ class ScatterPlotter(Plotter):
         split_text[2] = f"x-label:     {node.path}"
         self.plot_text = "\n".join(split_text)
 
+        @error_handler
         def run_in_thread():
             # Get the minimum and maximum values for the x and y axes
             self.x_min, self.x_max = node.get_min_max()
@@ -252,6 +261,7 @@ class ScatterPlotter(Plotter):
         split_text[3] = f"y-label:     {node.path}"
         self.plot_text = "\n".join(split_text)
 
+        @error_handler
         def run_in_thread():
             # Get the minimum and maximum values for the x and y axes
             self.y_min, self.y_max = node.get_min_max()
@@ -361,13 +371,59 @@ class ScatterPlotter(Plotter):
 
                             pb.advance(step=x_data.size)
 
+        # Validate data for log scales
+        from h5forest.h5_forest import H5Forest
+
+        # Check that min/max values are available
+        # If None after joining threads, it means get_min_max() failed
+        if self.x_min is None or self.x_max is None:
+            H5Forest().print(
+                "Cannot plot: failed to determine x-axis data range. "
+                "See error above for details."
+            )
+            return
+
+        if self.y_min is None or self.y_max is None:
+            H5Forest().print(
+                "Cannot plot: failed to determine y-axis data range. "
+                "See error above for details."
+            )
+            return
+
+        if x_scale == "log":
+            if self.x_min <= 0:
+                H5Forest().print(
+                    f"Cannot use log scale on x-axis: data contains "
+                    f"{'zero' if self.x_min == 0 else 'negative'} values "
+                    f"(min = {self.x_min})"
+                )
+                return
+
+        if y_scale == "log":
+            if self.y_min <= 0:
+                H5Forest().print(
+                    f"Cannot use log scale on y-axis: data contains "
+                    f"{'zero' if self.y_min == 0 else 'negative'} values "
+                    f"(min = {self.y_min})"
+                )
+                return
+
         # Set the labels
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel(y_label)
 
-        # Set the scale
-        self.ax.set_xscale(x_scale)
-        self.ax.set_yscale(y_scale)
+        # Set the scale with error handling
+        try:
+            self.ax.set_xscale(x_scale)
+        except Exception as e:
+            H5Forest().print(f"Error setting x-scale to {x_scale}: {str(e)}")
+            return
+
+        try:
+            self.ax.set_yscale(y_scale)
+        except Exception as e:
+            H5Forest().print(f"Error setting y-scale to {y_scale}: {str(e)}")
+            return
 
         self.plot_thread = threading.Thread(target=run_in_thread)
         self.plot_thread.start()
@@ -453,6 +509,7 @@ class HistogramPlotter(Plotter):
         split_text[2] = f"x-label:     {node.path}"
         self.plot_text = "\n".join(split_text)
 
+        @error_handler
         def run_in_thread():
             # Get the minimum and maximum values for the x and y axes
             self.x_min, self.x_max = node.get_min_max()
@@ -479,6 +536,8 @@ class HistogramPlotter(Plotter):
         @error_handler
         def run_in_thread():
             """Compute the histogram."""
+            from h5forest.h5_forest import H5Forest
+
             # Unpack the node
             node = self.plot_params["data"]
 
@@ -499,8 +558,24 @@ class HistogramPlotter(Plotter):
             # If we got this far we're ready to go so force a redraw
             get_app().invalidate()
 
-            # Define the bins
+            # Check that min/max values are available
+            # If None after joining thread, it means get_min_max() failed
+            if self.x_min is None or self.x_max is None:
+                H5Forest().print(
+                    "Cannot compute histogram: failed to determine data "
+                    "range. See error above for details."
+                )
+                return
+
+            # Validate data for log scale
             if x_scale == "log":
+                if self.x_min <= 0:
+                    H5Forest().print(
+                        f"Cannot use log scale: data contains "
+                        f"{'zero' if self.x_min == 0 else 'negative'} values "
+                        f"(min = {self.x_min})"
+                    )
+                    return
                 bins = np.logspace(
                     np.log10(self.x_min), np.log10(self.x_max), nbins + 1
                 )
@@ -574,6 +649,8 @@ class HistogramPlotter(Plotter):
             text (str):
                 The text to extract the plot parameters from.
         """
+        from h5forest.h5_forest import H5Forest
+
         # Don't move on until the histogram is computed
         self.compute_hist_thread.join()
         self.compute_hist_thread = None
@@ -583,6 +660,26 @@ class HistogramPlotter(Plotter):
         x_label = split_text[2].split(": ")[1].strip()
         x_scale = split_text[3].split(": ")[1].strip()
         y_scale = split_text[4].split(": ")[1].strip()
+
+        # Check that histogram was computed successfully
+        # If None after joining thread, it means compute_hist failed
+        if self.hist is None:
+            H5Forest().print(
+                "Cannot plot histogram: histogram computation failed. "
+                "See error above for details."
+            )
+            return
+
+        # Validate y-axis for log scale (check histogram values)
+        if y_scale == "log":
+            hist_min = np.min(self.hist)
+            if hist_min <= 0:
+                H5Forest().print(
+                    f"Cannot use log scale on y-axis: histogram contains "
+                    f"{'zero' if hist_min == 0 else 'negative'} counts "
+                    f"(min = {hist_min})"
+                )
+                return
 
         # Create the figure
         self.fig = plt.figure(figsize=(3.5, 3.5))
@@ -599,9 +696,18 @@ class HistogramPlotter(Plotter):
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel("$N$")
 
-        # Set the scale
-        self.ax.set_xscale(x_scale)
-        self.ax.set_yscale(y_scale)
+        # Set the scale with error handling
+        try:
+            self.ax.set_xscale(x_scale)
+        except Exception as e:
+            H5Forest().print(f"Error setting x-scale to {x_scale}: {str(e)}")
+            return
+
+        try:
+            self.ax.set_yscale(y_scale)
+        except Exception as e:
+            H5Forest().print(f"Error setting y-scale to {y_scale}: {str(e)}")
+            return
 
     def reset(self):
         """Reset the histogram."""

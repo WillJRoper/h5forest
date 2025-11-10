@@ -1008,20 +1008,6 @@ class TestH5ForestMain:
                 # Verify run was called
                 mock_run.assert_called_once()
 
-    def test_main_name_guard(self):
-        """Test __name__ == '__main__' guard exists in module."""
-        # The __main__ guard (line 883) is standard Python boilerplate
-        # It cannot be easily covered by unit tests as it requires
-        # running the module as __main__, which conflicts with pytest
-        import inspect
-
-        from h5forest import h5_forest
-
-        # Verify the guard exists in the source
-        source = inspect.getsource(h5_forest)
-        assert 'if __name__ == "__main__":' in source
-        assert "main()" in source
-
 
 class TestH5ForestIntegration:
     """Integration tests for H5Forest."""

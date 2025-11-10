@@ -15,6 +15,152 @@ def _init_hist_bindings(app):
     """Set up the bindings for histogram mode."""
 
     @error_handler
+    def select_data(event):
+        """Select the dataset for the histogram."""
+        # Get the node under the cursor
+        node = app.tree.get_current_node(app.current_row)
+
+        # Exit if the node is not a Dataset
+        if node.is_group:
+            app.print(f"{node.path} is not a Dataset")
+            return
+
+        # Set the text in the histogram area
+        app.hist_content.text = app.histogram_plotter.set_data_key(node)
+
+    @error_handler
+    def edit_bins(event):
+        """Edit the number of bins."""
+        # Wait for data assignment thread to finish if it's running
+        if app.histogram_plotter.assign_data_thread is not None:
+            app.histogram_plotter.assign_data_thread.join()
+            app.histogram_plotter.assign_data_thread = None
+
+        # Check if x_min/x_max are available (needed to compute histogram)
+        if (
+            app.histogram_plotter.x_min is None
+            or app.histogram_plotter.x_max is None
+        ):
+            app.print(
+                "Cannot edit bins: data range not yet computed. "
+                "Please select a dataset first (Enter)"
+            )
+            return
+
+        # Get the current text
+        split_text = app.hist_content.text.split("\n")
+
+        # Get the current bins value
+        current_bins = split_text[1].split(": ")[1].strip()
+
+        def edit_bins_callback():
+            """Update the bins value."""
+            # Strip the user input
+            user_input = app.user_input.strip()
+
+            # Update the text
+            split_text[1] = f"nbins:       {user_input}"
+            app.hist_content.text = "\n".join(split_text)
+            app.histogram_plotter.plot_text = app.hist_content.text
+
+            # Return to tree focus
+            app.shift_focus(app.tree_content)
+
+        # Get the modified entry from the user
+        app.input(
+            "Number of bins", edit_bins_callback, mini_buffer_text=current_bins
+        )
+
+    @error_handler
+    def toggle_x_scale(event):
+        """Toggle the x-axis scale between linear and log."""
+        # Wait for data assignment thread to finish if it's running
+        if app.histogram_plotter.assign_data_thread is not None:
+            app.histogram_plotter.assign_data_thread.join()
+            app.histogram_plotter.assign_data_thread = None
+
+        # Check if x_min/x_max are available
+        if (
+            app.histogram_plotter.x_min is None
+            or app.histogram_plotter.x_max is None
+        ):
+            app.print(
+                "Cannot toggle x-scale: data range not yet computed. "
+                "Please select a dataset first (Enter)"
+            )
+            return
+
+        # Get the current text
+        split_text = app.hist_content.text.split("\n")
+
+        # Get the current x-scale
+        current_scale = split_text[3].split(": ")[1].strip()
+
+        # Toggle the scale
+        new_scale = "log" if current_scale == "linear" else "linear"
+
+        # If toggling to log, validate data is compatible
+        if new_scale == "log":
+            if app.histogram_plotter.x_min <= 0:
+                value_type = (
+                    "zero" if app.histogram_plotter.x_min == 0 else "negative"
+                )
+                app.print(
+                    f"Cannot use log scale on x-axis: data contains "
+                    f"{value_type} values "
+                    f"(min = {app.histogram_plotter.x_min})"
+                )
+                return
+
+        split_text[3] = f"x-scale:     {new_scale}"
+
+        # Update the text
+        app.hist_content.text = "\n".join(split_text)
+        app.histogram_plotter.plot_text = app.hist_content.text
+
+        app.app.invalidate()
+
+    @error_handler
+    def toggle_y_scale(event):
+        """Toggle the y-axis scale between linear and log."""
+        # Wait for data assignment thread to finish if it's running
+        if app.histogram_plotter.assign_data_thread is not None:
+            app.histogram_plotter.assign_data_thread.join()
+            app.histogram_plotter.assign_data_thread = None
+
+        # Check if x_min/x_max are available (needed to compute histogram)
+        if (
+            app.histogram_plotter.x_min is None
+            or app.histogram_plotter.x_max is None
+        ):
+            app.print(
+                "Cannot toggle y-scale: data range not yet computed. "
+                "Please select a dataset first (Enter)"
+            )
+            return
+
+        # Get the current text
+        split_text = app.hist_content.text.split("\n")
+
+        # Get the current y-scale
+        current_scale = split_text[4].split(": ")[1].strip()
+
+        # Toggle the scale
+        new_scale = "log" if current_scale == "linear" else "linear"
+
+        # Note: We can't validate y-scale until histogram is computed
+        # (y-scale applies to histogram counts, not data values)
+        # Validation will happen when the histogram is plotted
+
+        split_text[4] = f"y-scale:     {new_scale}"
+
+        # Update the text
+        app.hist_content.text = "\n".join(split_text)
+        app.histogram_plotter.plot_text = app.hist_content.text
+
+        app.app.invalidate()
+
+    @error_handler
     def edit_hist_entry(event):
         """Edit histogram param under cursor."""
         # Get the current position and row in the plot content
@@ -128,14 +274,28 @@ def _init_hist_bindings(app):
     @error_handler
     def reset_hist(event):
         """Reset the histogram content."""
+        app.histogram_plotter.close()
         app.hist_content.text = app.histogram_plotter.reset()
         app.return_to_normal_mode()
         app.default_focus()
 
     @error_handler
-    def edit_hist(event):
-        """Edit the histogram."""
-        app.shift_focus(app.hist_content)
+    def jump_to_config(event):
+        """Toggle between configuration window and tree view."""
+        if app.app.layout.has_focus(app.hist_content):
+            # Already in config, jump back to tree
+            app.shift_focus(app.tree_content)
+        else:
+            # In tree, jump to config
+            app.shift_focus(app.hist_content)
+
+    @error_handler
+    def exit_hist_mode(event):
+        """Exit histogram mode."""
+        app.histogram_plotter.close()
+        app.hist_content.text = app.histogram_plotter.reset()
+        app.return_to_normal_mode()
+        app.default_focus()
 
     def exit_edit_hist(event):
         """Exit the edit mode."""
@@ -144,18 +304,35 @@ def _init_hist_bindings(app):
     # Bind the functions
     app.kb.add(
         "enter",
+        filter=Condition(
+            lambda: app.flag_hist_mode
+            and not app.app.layout.has_focus(app.hist_content)
+        ),
+    )(select_data)
+    app.kb.add(
+        "enter",
         filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
     )(edit_hist_entry)
+    app.kb.add("b", filter=Condition(lambda: app.flag_hist_mode))(edit_bins)
+    app.kb.add("x", filter=Condition(lambda: app.flag_hist_mode))(
+        toggle_x_scale
+    )
+    app.kb.add("y", filter=Condition(lambda: app.flag_hist_mode))(
+        toggle_y_scale
+    )
     app.kb.add("h", filter=Condition(lambda: app.flag_hist_mode))(plot_hist)
     app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
     app.kb.add("r", filter=Condition(lambda: app.flag_hist_mode))(reset_hist)
+    app.kb.add("J", filter=Condition(lambda: app.flag_hist_mode))(
+        jump_to_config
+    )
     app.kb.add(
-        "e",
+        "q",
         filter=Condition(
             lambda: app.flag_hist_mode
-            and len(app.histogram_plotter.plot_params) > 0
+            and not app.app.layout.has_focus(app.hist_content)
         ),
-    )(edit_hist)
+    )(exit_hist_mode)
     app.kb.add(
         "q",
         filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
@@ -164,13 +341,18 @@ def _init_hist_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "edit_config": Label("e → Edit Config"),
+        "select_data": Label("Enter → Select data"),
         "edit_entry": Label("Enter → Edit entry"),
+        "edit_bins": Label("b → Edit bins"),
+        "toggle_x_scale": Label("x → Toggle x-scale"),
+        "toggle_y_scale": Label("y → Toggle y-scale"),
         "show_hist": Label("h → Show Histogram"),
         "save_hist": Label("H → Save Histogram"),
+        "jump_config": Label("J → Jump to Config"),
+        "jump_tree": Label("J → Jump to tree"),
         "reset": Label("r → Reset"),
         "exit_mode": Label("q → Exit Hist Mode"),
-        "exit_config": Label("q → Exit Config"),
+        "exit_config": Label("q → Exit Hist Config"),
     }
 
     return hot_keys

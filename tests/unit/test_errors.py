@@ -7,6 +7,12 @@ import pytest
 from h5forest.errors import error_handler
 
 
+# Module-level function for testing error_handler with function context
+def _test_standalone_function():
+    """A standalone function (not a method) for testing."""
+    raise ValueError("test error")
+
+
 class TestErrorHandler:
     """Test the error_handler decorator."""
 
@@ -98,6 +104,48 @@ class TestErrorHandler:
 
         result = test_function("a", "b", kwarg1="c")
         assert result == "a-b-c"
+
+    def test_error_handler_with_empty_traceback(self):
+        """Test error_handler when traceback is empty."""
+
+        @error_handler
+        def test_function():
+            raise ValueError("test error")
+
+        with patch("h5forest.h5_forest.H5Forest") as mock_forest_class:
+            with patch("traceback.extract_tb") as mock_extract_tb:
+                mock_extract_tb.return_value = []  # Empty traceback
+                mock_forest = Mock()
+                mock_forest_class.return_value = mock_forest
+
+                result = test_function()
+
+                # Should use "unknown" as location
+                mock_forest.print.assert_called_once()
+                error_msg = mock_forest.print.call_args[0][0]
+                assert "unknown" in error_msg
+                assert result is None
+
+    def test_error_handler_with_function_context(self):
+        """Test error_handler with a function (not a method) context."""
+
+        # Use the module-level function which has a simple qualname
+        wrapped = error_handler(_test_standalone_function)
+
+        with patch("h5forest.h5_forest.H5Forest") as mock_forest_class:
+            mock_forest = Mock()
+            mock_forest_class.return_value = mock_forest
+
+            result = wrapped()
+
+            # Should use function name as context (not Class.method)
+            mock_forest.print.assert_called_once()
+            error_msg = mock_forest.print.call_args[0][0]
+            assert "_test_standalone_function" in error_msg
+            # The context should be just the function name when no dot in
+            # qualname
+            assert "ERROR@_test_standalone_function" in error_msg
+            assert result is None
 
     def test_error_handler_exception_logging(self):
         """Test that error_handler properly handles exception information."""

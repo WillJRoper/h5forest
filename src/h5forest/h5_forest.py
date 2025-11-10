@@ -378,16 +378,12 @@ class H5Forest:
             self.search_content
         )
 
-    @property
-    def hot_keys(self):
+    def _get_hot_keys(self):
         """
-        Return the hot keys for normal mode, filtered based on current state.
-
-        This combines app and tree keys and filters based on flags like
-        flag_expanded_attrs and tree focus.
+        Get the hot keys for normal mode based on current state.
 
         Returns:
-            DynamicLabelLayout: Layout with filtered labels.
+            list: List of Label widgets.
         """
         labels = []
 
@@ -420,7 +416,24 @@ class H5Forest:
         labels.append(self._app_keys_dict["restore_tree"])
         labels.append(self._app_keys_dict["exit"])
 
-        return DynamicLabelLayout(labels)
+        return labels
+
+    @property
+    def hot_keys(self):
+        """
+        Return the hot keys for normal mode, filtered based on current state.
+
+        This combines app and tree keys and filters based on flags like
+        flag_expanded_attrs and tree focus.
+
+        Returns:
+            DynamicLabelLayout: Layout with filtered labels.
+        """
+        return DynamicLabelLayout(self._get_hot_keys)
+
+    def _get_dataset_keys(self):
+        """Get the hot keys for dataset mode."""
+        return self._dataset_keys_list
 
     @property
     def dataset_keys(self):
@@ -432,7 +445,11 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with dataset labels.
         """
-        return DynamicLabelLayout(self._dataset_keys_list)
+        return DynamicLabelLayout(self._get_dataset_keys)
+
+    def _get_goto_keys(self):
+        """Get the hot keys for goto mode."""
+        return self._goto_keys_list
 
     @property
     def goto_keys(self):
@@ -444,17 +461,14 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with goto labels.
         """
-        return DynamicLabelLayout(self._goto_keys_list)
+        return DynamicLabelLayout(self._get_goto_keys)
 
-    @property
-    def window_keys(self):
+    def _get_window_keys(self):
         """
-        Return the hot keys for window mode, filtered based on current state.
-
-        Filters based on focus and flag_values_visible.
+        Get the hot keys for window mode based on current state.
 
         Returns:
-            DynamicLabelLayout: Layout with filtered labels.
+            list: List of Label widgets.
         """
         labels = []
 
@@ -483,7 +497,63 @@ class H5Forest:
 
         labels.append(self._window_keys_dict["exit"])
 
-        return DynamicLabelLayout(labels)
+        return labels
+
+    @property
+    def window_keys(self):
+        """
+        Return the hot keys for window mode, filtered based on current state.
+
+        Filters based on focus and flag_values_visible.
+
+        Returns:
+            DynamicLabelLayout: Layout with filtered labels.
+        """
+        return DynamicLabelLayout(self._get_window_keys)
+
+    def _get_plot_keys(self):
+        """
+        Get the hot keys for plotting mode, filtered based on current state.
+
+        Returns:
+            list: List of Label widgets for current state.
+        """
+        labels = []
+
+        # Check if app exists (it won't during initialization)
+        has_app = hasattr(self, "app") and self.app is not None
+
+        # If config panel is focused, show only config-specific keys
+        if has_app and self.app.layout.has_focus(self.plot_content):
+            labels.append(self._plot_keys_dict["edit_entry"])
+            labels.append(self._plot_keys_dict["jump_tree"])
+            labels.append(self._plot_keys_dict["exit_config"])
+            return labels
+
+        # Otherwise show full tree view keys
+        labels.append(self._plot_keys_dict["edit_config"])
+        labels.append(self._plot_keys_dict["jump_config"])
+
+        # Show axis selection only if not already set
+        if "x" not in self.scatter_plotter.plot_params:
+            labels.append(self._plot_keys_dict["select_x"])
+
+        if "y" not in self.scatter_plotter.plot_params:
+            labels.append(self._plot_keys_dict["select_y"])
+
+        # Show scale toggles
+        labels.append(self._plot_keys_dict["toggle_x_scale"])
+        labels.append(self._plot_keys_dict["toggle_y_scale"])
+
+        # Show plot/save only if there are params
+        if len(self.scatter_plotter) > 0:
+            labels.append(self._plot_keys_dict["plot"])
+            labels.append(self._plot_keys_dict["save_plot"])
+
+        labels.append(self._plot_keys_dict["reset"])
+        labels.append(self._plot_keys_dict["exit_mode"])
+
+        return labels
 
     @property
     def plot_keys(self):
@@ -495,40 +565,39 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with filtered labels.
         """
+        return DynamicLabelLayout(self._get_plot_keys)
+
+    def _get_hist_keys(self):
+        """
+        Get the hot keys for histogram mode, filtered on current state.
+
+        Returns:
+            list: List of Label widgets for current state.
+        """
         labels = []
 
         # Check if app exists (it won't during initialization)
         has_app = hasattr(self, "app") and self.app is not None
 
-        # Show edit config only if there are plot params
-        if len(self.scatter_plotter.plot_params) > 0:
-            labels.append(self._plot_keys_dict["edit_config"])
+        # If config panel is focused, show only config-specific keys
+        if has_app and self.app.layout.has_focus(self.hist_content):
+            labels.append(self._hist_keys_dict["edit_entry"])
+            labels.append(self._hist_keys_dict["jump_tree"])
+            labels.append(self._hist_keys_dict["exit_config"])
+            return labels
 
-        # Show edit entry only if plot content has focus
-        if has_app and self.app.layout.has_focus(self.plot_content):
-            labels.append(self._plot_keys_dict["edit_entry"])
+        # Otherwise show full tree view keys
+        labels.append(self._hist_keys_dict["select_data"])
+        labels.append(self._hist_keys_dict["edit_bins"])
+        labels.append(self._hist_keys_dict["toggle_x_scale"])
+        labels.append(self._hist_keys_dict["toggle_y_scale"])
+        labels.append(self._hist_keys_dict["show_hist"])
+        labels.append(self._hist_keys_dict["save_hist"])
+        labels.append(self._hist_keys_dict["jump_config"])
+        labels.append(self._hist_keys_dict["reset"])
+        labels.append(self._hist_keys_dict["exit_mode"])
 
-        # Show axis selection only if not already set
-        if "x" not in self.scatter_plotter.plot_params:
-            labels.append(self._plot_keys_dict["select_x"])
-
-        if "y" not in self.scatter_plotter.plot_params:
-            labels.append(self._plot_keys_dict["select_y"])
-
-        # Show plot/save only if there are params
-        if len(self.scatter_plotter) > 0:
-            labels.append(self._plot_keys_dict["plot"])
-            labels.append(self._plot_keys_dict["save_plot"])
-
-        labels.append(self._plot_keys_dict["reset"])
-
-        # Show appropriate exit label based on focus
-        if has_app and self.app.layout.has_focus(self.plot_content):
-            labels.append(self._plot_keys_dict["exit_config"])
-        else:
-            labels.append(self._plot_keys_dict["exit_mode"])
-
-        return DynamicLabelLayout(labels)
+        return labels
 
     @property
     def hist_keys(self):
@@ -540,30 +609,11 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with filtered labels.
         """
-        labels = []
+        return DynamicLabelLayout(self._get_hist_keys)
 
-        # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
-
-        # Show edit config only if there are plot params
-        if len(self.histogram_plotter.plot_params) > 0:
-            labels.append(self._hist_keys_dict["edit_config"])
-
-        # Show edit entry only if hist content has focus
-        if has_app and self.app.layout.has_focus(self.hist_content):
-            labels.append(self._hist_keys_dict["edit_entry"])
-
-        labels.append(self._hist_keys_dict["show_hist"])
-        labels.append(self._hist_keys_dict["save_hist"])
-        labels.append(self._hist_keys_dict["reset"])
-
-        # Show appropriate exit label based on focus
-        if has_app and self.app.layout.has_focus(self.hist_content):
-            labels.append(self._hist_keys_dict["exit_config"])
-        else:
-            labels.append(self._hist_keys_dict["exit_mode"])
-
-        return DynamicLabelLayout(labels)
+    def _get_search_keys(self):
+        """Get the hot keys for search mode."""
+        return self._search_keys_list
 
     @property
     def search_keys(self):
@@ -575,7 +625,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with search labels.
         """
-        return DynamicLabelLayout(self._search_keys_list)
+        return DynamicLabelLayout(self._get_search_keys)
 
     def return_to_normal_mode(self):
         """Return to normal mode."""
@@ -1022,6 +1072,54 @@ class H5Forest:
                 The text area to focus on.
         """
         self.app.layout.focus(focused_area)
+        self.update_hotkeys_panel()
+
+    def update_hotkeys_panel(self):
+        """
+        Update the hotkeys panel to reflect current focus and state.
+
+        This method reconstructs the hotkeys panel content based on the
+        current mode and focus state. It should be called whenever focus
+        changes or when the displayed hotkeys need to be refreshed.
+        """
+        # Reconstruct the hotkeys panel with fresh label layouts
+        from prompt_toolkit.filters import Condition
+        from prompt_toolkit.layout.containers import ConditionalContainer
+
+        self.hotkeys_panel.children = [
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_hot_keys),
+                filter=Condition(lambda: self.flag_normal_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_goto_keys),
+                filter=Condition(lambda: self.flag_jump_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_dataset_keys),
+                filter=Condition(lambda: self.flag_dataset_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_window_keys),
+                filter=Condition(lambda: self.flag_window_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_plot_keys),
+                filter=Condition(lambda: self.flag_plotting_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_hist_keys),
+                filter=Condition(lambda: self.flag_hist_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_search_keys),
+                filter=Condition(lambda: self.flag_search_mode),
+            ),
+        ]
+
+        # Force a redraw of the interface to reflect updated hotkeys
+        if hasattr(self, "app") and self.app is not None:
+            self.app.invalidate()
 
     def _create_mouse_handler(self, content_area):
         def mouse_handler(mouse_event):
@@ -1058,7 +1156,7 @@ class H5Forest:
 
 
 def main():
-    """Intialise and run the application."""
+    """Initialise and run the application."""
     # First port of call, check we have been given a valid input
     if len(sys.argv) != 2:
         print("Usage: h5forest /path/to/file.hdf5")
@@ -1072,7 +1170,3 @@ def main():
 
     # Lets get going!
     app.run()
-
-
-if __name__ == "__main__":
-    main()
