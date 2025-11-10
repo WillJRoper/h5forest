@@ -372,8 +372,23 @@ class ScatterPlotter(Plotter):
         # Validate data for log scales
         from h5forest.h5_forest import H5Forest
 
+        # Check that min/max values are available
+        if self.x_min is None or self.x_max is None:
+            H5Forest().print(
+                "Cannot create plot: x-axis data range not available. "
+                "Please try again."
+            )
+            return
+
+        if self.y_min is None or self.y_max is None:
+            H5Forest().print(
+                "Cannot create plot: y-axis data range not available. "
+                "Please try again."
+            )
+            return
+
         if x_scale == "log":
-            if self.x_min is not None and self.x_min <= 0:
+            if self.x_min <= 0:
                 H5Forest().print(
                     f"Cannot use log scale on x-axis: data contains "
                     f"{'zero' if self.x_min == 0 else 'negative'} values "
@@ -382,7 +397,7 @@ class ScatterPlotter(Plotter):
                 return
 
         if y_scale == "log":
-            if self.y_min is not None and self.y_min <= 0:
+            if self.y_min <= 0:
                 H5Forest().print(
                     f"Cannot use log scale on y-axis: data contains "
                     f"{'zero' if self.y_min == 0 else 'negative'} values "
@@ -539,9 +554,17 @@ class HistogramPlotter(Plotter):
             # If we got this far we're ready to go so force a redraw
             get_app().invalidate()
 
+            # Check that min/max values are available
+            if self.x_min is None or self.x_max is None:
+                H5Forest().print(
+                    "Cannot compute histogram: data range not available. "
+                    "Please try again."
+                )
+                return
+
             # Validate data for log scale
             if x_scale == "log":
-                if self.x_min is not None and self.x_min <= 0:
+                if self.x_min <= 0:
                     H5Forest().print(
                         f"Cannot use log scale: data contains "
                         f"{'zero' if self.x_min == 0 else 'negative'} values "
