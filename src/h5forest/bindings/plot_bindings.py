@@ -274,9 +274,6 @@ def _init_plot_bindings(app):
     app.kb.add("e", filter=Condition(lambda: app.flag_plotting_mode))(
         edit_plot
     )
-    app.kb.add("J", filter=Condition(lambda: app.flag_plotting_mode))(
-        jump_to_config
-    )
     app.kb.add(
         "q",
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
@@ -286,8 +283,7 @@ def _init_plot_bindings(app):
     # The app will use property methods to filter based on state
     hot_keys = {
         "edit_config": Label("e → Edit Config"),
-        "jump_config": Label("J → Jump to Config"),
-        "jump_tree": Label("J → Jump to tree"),
+        "edit_tree": Label("e → Back To Tree"),
         "edit_entry": Label("Enter → Edit entry"),
         "select_x": Label("x → Select x-axis"),
         "select_y": Label("y → Select y-axis"),

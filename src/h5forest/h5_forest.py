@@ -532,14 +532,13 @@ class H5Forest:
 
         # If config panel is focused, show only config-specific keys
         if has_app and self.app.layout.has_focus(self.plot_content):
+            labels.append(self._plot_keys_dict["edit_tree"])
             labels.append(self._plot_keys_dict["edit_entry"])
-            labels.append(self._plot_keys_dict["jump_tree"])
             labels.append(self._plot_keys_dict["exit_config"])
             return labels
 
         # Otherwise show full tree view keys
         labels.append(self._plot_keys_dict["edit_config"])
-        labels.append(self._plot_keys_dict["jump_config"])
 
         # Show axis selection only if not already set
         if "x" not in self.scatter_plotter.plot_params:
@@ -588,8 +587,8 @@ class H5Forest:
 
         # If config panel is focused, show only config-specific keys
         if has_app and self.app.layout.has_focus(self.hist_content):
+            labels.append(self._hist_keys_dict["edit_tree"])
             labels.append(self._hist_keys_dict["edit_entry"])
-            labels.append(self._hist_keys_dict["jump_tree"])
             labels.append(self._hist_keys_dict["exit_config"])
             return labels
 
@@ -600,7 +599,7 @@ class H5Forest:
         labels.append(self._hist_keys_dict["toggle_y_scale"])
         labels.append(self._hist_keys_dict["show_hist"])
         labels.append(self._hist_keys_dict["save_hist"])
-        labels.append(self._hist_keys_dict["jump_config"])
+        labels.append(self._hist_keys_dict["edit_config"])
         labels.append(self._hist_keys_dict["reset"])
         labels.append(self._hist_keys_dict["exit_mode"])
 
