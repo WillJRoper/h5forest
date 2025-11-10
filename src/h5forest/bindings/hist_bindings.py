@@ -267,8 +267,13 @@ def _init_hist_bindings(app):
 
     @error_handler
     def jump_to_config(event):
-        """Jump to the configuration window."""
-        app.shift_focus(app.hist_content)
+        """Toggle between configuration window and tree view."""
+        if app.app.layout.has_focus(app.hist_content):
+            # Already in config, jump back to tree
+            app.shift_focus(app.tree_content)
+        else:
+            # In tree, jump to config
+            app.shift_focus(app.hist_content)
         app.app.invalidate()
 
     @error_handler
@@ -326,6 +331,7 @@ def _init_hist_bindings(app):
         "show_hist": Label("h → Show Histogram"),
         "save_hist": Label("H → Save Histogram"),
         "jump_config": Label("J → Jump to Config"),
+        "jump_tree": Label("J → Jump to tree"),
         "reset": Label("r → Reset"),
         "exit_mode": Label("q → Exit Hist Mode"),
         "exit_config": Label("q → Exit Hist Config"),

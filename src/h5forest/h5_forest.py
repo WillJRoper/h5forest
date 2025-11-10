@@ -500,13 +500,16 @@ class H5Forest:
         # Check if app exists (it won't during initialization)
         has_app = hasattr(self, "app") and self.app is not None
 
-        # Always show edit and jump config (can access config anytime)
-        labels.append(self._plot_keys_dict["edit_config"])
-        labels.append(self._plot_keys_dict["jump_config"])
-
-        # Show edit entry only if plot content has focus
+        # If config panel is focused, show only config-specific keys
         if has_app and self.app.layout.has_focus(self.plot_content):
             labels.append(self._plot_keys_dict["edit_entry"])
+            labels.append(self._plot_keys_dict["jump_tree"])
+            labels.append(self._plot_keys_dict["exit_config"])
+            return DynamicLabelLayout(labels)
+
+        # Otherwise show full tree view keys
+        labels.append(self._plot_keys_dict["edit_config"])
+        labels.append(self._plot_keys_dict["jump_config"])
 
         # Show axis selection only if not already set
         if "x" not in self.scatter_plotter.plot_params:
@@ -525,12 +528,7 @@ class H5Forest:
             labels.append(self._plot_keys_dict["save_plot"])
 
         labels.append(self._plot_keys_dict["reset"])
-
-        # Show appropriate exit label based on focus
-        if has_app and self.app.layout.has_focus(self.plot_content):
-            labels.append(self._plot_keys_dict["exit_config"])
-        else:
-            labels.append(self._plot_keys_dict["exit_mode"])
+        labels.append(self._plot_keys_dict["exit_mode"])
 
         return DynamicLabelLayout(labels)
 
@@ -549,30 +547,23 @@ class H5Forest:
         # Check if app exists (it won't during initialization)
         has_app = hasattr(self, "app") and self.app is not None
 
-        # Show select data or edit entry based on focus
+        # If config panel is focused, show only config-specific keys
         if has_app and self.app.layout.has_focus(self.hist_content):
             labels.append(self._hist_keys_dict["edit_entry"])
-        else:
-            labels.append(self._hist_keys_dict["select_data"])
+            labels.append(self._hist_keys_dict["jump_tree"])
+            labels.append(self._hist_keys_dict["exit_config"])
+            return DynamicLabelLayout(labels)
 
-        # Show bins and scale toggles
+        # Otherwise show full tree view keys
+        labels.append(self._hist_keys_dict["select_data"])
         labels.append(self._hist_keys_dict["edit_bins"])
         labels.append(self._hist_keys_dict["toggle_x_scale"])
         labels.append(self._hist_keys_dict["toggle_y_scale"])
-
         labels.append(self._hist_keys_dict["show_hist"])
         labels.append(self._hist_keys_dict["save_hist"])
-
-        # Always show jump config (can jump to config anytime)
         labels.append(self._hist_keys_dict["jump_config"])
-
         labels.append(self._hist_keys_dict["reset"])
-
-        # Show appropriate exit label based on focus
-        if has_app and self.app.layout.has_focus(self.hist_content):
-            labels.append(self._hist_keys_dict["exit_config"])
-        else:
-            labels.append(self._hist_keys_dict["exit_mode"])
+        labels.append(self._hist_keys_dict["exit_mode"])
 
         return DynamicLabelLayout(labels)
 

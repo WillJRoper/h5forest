@@ -71,7 +71,7 @@ class TestHistBindings:
 
         hot_keys = _init_hist_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        assert len(hot_keys) == 11
+        assert len(hot_keys) == 12
         for key, value in hot_keys.items():
             assert isinstance(key, str)
             assert isinstance(value, Label)
