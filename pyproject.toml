@@ -61,6 +61,7 @@ docs = [
 [project.urls]
 "Homepage" = "https://github.com/WillJRoper/h5forest"
 "Repository" = "https://github.com/WillJRoper/h5forest"
+"Documentation" = "https://willjroper.github.io/h5forest/"
 
 [project.scripts]
 h5forest = "h5forest.h5_forest:main"
