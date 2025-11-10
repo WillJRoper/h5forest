@@ -8,6 +8,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.dataset_prompts import prompt_for_dataset_operation
 from h5forest.errors import error_handler
 from h5forest.utils import WaitIndicator
 
@@ -26,8 +27,13 @@ def _init_hist_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        # Set the text in the histogram area
-        app.hist_content.text = app.histogram_plotter.set_data_key(node)
+        def run_operation(use_chunks):
+            """Set histogram data after user confirmation."""
+            # Set the text in the histogram area
+            app.hist_content.text = app.histogram_plotter.set_data_key(node)
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     @error_handler
     def edit_bins(event):
@@ -240,18 +246,36 @@ def _init_hist_bindings(app):
                 app.print(f"{node.path} is not a Dataset")
                 return
 
-            # Set the text in the plotting area
-            app.hist_content.text = app.histogram_plotter.set_data_key(node)
+            def run_operation(use_chunks):
+                """Set histogram data and plot after user confirmation."""
+                # Set the text in the plotting area
+                app.hist_content.text = app.histogram_plotter.set_data_key(
+                    node
+                )
 
-        # Compute and plot the histogram with wait indicator
-        with WaitIndicator(app, "Generating histogram..."):
-            # Compute the histogram
-            app.hist_content.text = app.histogram_plotter.compute_hist(
-                app.hist_content.text
-            )
+                # Compute and plot the histogram with wait indicator
+                with WaitIndicator(app, "Generating histogram..."):
+                    # Compute the histogram
+                    app.hist_content.text = app.histogram_plotter.compute_hist(
+                        app.hist_content.text
+                    )
 
-            # Get the plot
-            app.histogram_plotter.plot_and_show(app.hist_content.text)
+                    # Get the plot
+                    app.histogram_plotter.plot_and_show(app.hist_content.text)
+
+            # Prompt user if needed, then run operation
+            prompt_for_dataset_operation(app, node, run_operation)
+        else:
+            # Already have data, just plot
+            # Compute and plot the histogram with wait indicator
+            with WaitIndicator(app, "Generating histogram..."):
+                # Compute the histogram
+                app.hist_content.text = app.histogram_plotter.compute_hist(
+                    app.hist_content.text
+                )
+
+                # Get the plot
+                app.histogram_plotter.plot_and_show(app.hist_content.text)
 
     @error_handler
     def save_hist(event):
@@ -266,16 +290,32 @@ def _init_hist_bindings(app):
                 app.print(f"{node.path} is not a Dataset")
                 return
 
-            # Set the text in the plotting area
-            app.hist_content.text = app.histogram_plotter.set_data_key(node)
+            def run_operation(use_chunks):
+                """Set histogram data and save after user confirmation."""
+                # Set the text in the plotting area
+                app.hist_content.text = app.histogram_plotter.set_data_key(
+                    node
+                )
 
-        # Compute the histogram
-        app.hist_content.text = app.histogram_plotter.compute_hist(
-            app.hist_content.text
-        )
+                # Compute the histogram
+                app.hist_content.text = app.histogram_plotter.compute_hist(
+                    app.hist_content.text
+                )
 
-        # Get the plot
-        app.histogram_plotter.plot_and_save(app.hist_content.text)
+                # Get the plot
+                app.histogram_plotter.plot_and_save(app.hist_content.text)
+
+            # Prompt user if needed, then run operation
+            prompt_for_dataset_operation(app, node, run_operation)
+        else:
+            # Already have data, just save
+            # Compute the histogram
+            app.hist_content.text = app.histogram_plotter.compute_hist(
+                app.hist_content.text
+            )
+
+            # Get the plot
+            app.histogram_plotter.plot_and_save(app.hist_content.text)
 
     @error_handler
     def reset_hist(event):
