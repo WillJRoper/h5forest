@@ -426,6 +426,139 @@ class TestHistBindings:
         assert "y-scale:     linear" in mock_app.hist_content.text
         mock_app.app.invalidate.assert_called()
 
+    def test_toggle_x_scale_with_none_x_min(self, mock_app, mock_event):
+        """Test toggling x scale when x_min is None."""
+        mock_app.histogram_plotter.x_min = None
+        mock_app.histogram_plotter.x_max = None
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("x",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "data range not yet computed" in error_msg
+        # Verify scale was NOT changed
+        assert "x-scale:     linear" in mock_app.hist_content.text
+
+    def test_toggle_x_scale_to_log_with_zero_values(self, mock_app, mock_event):
+        """Test toggling x scale to log when x_min is 0."""
+        mock_app.histogram_plotter.x_min = 0
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("x",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "Cannot use log scale" in error_msg
+        assert "zero" in error_msg
+        # Verify scale was NOT changed
+        assert "x-scale:     linear" in mock_app.hist_content.text
+
+    def test_toggle_x_scale_to_log_with_negative_values(self, mock_app, mock_event):
+        """Test toggling x scale to log when x_min is negative."""
+        mock_app.histogram_plotter.x_min = -5.0
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("x",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "Cannot use log scale" in error_msg
+        assert "negative" in error_msg
+        # Verify scale was NOT changed
+        assert "x-scale:     linear" in mock_app.hist_content.text
+
+    def test_toggle_y_scale_with_none_x_min(self, mock_app, mock_event):
+        """Test toggling y scale when x_min is None."""
+        mock_app.histogram_plotter.x_min = None
+        mock_app.histogram_plotter.x_max = None
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("y",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "data range not yet computed" in error_msg
+        # Verify scale was NOT changed
+        assert "y-scale:     linear" in mock_app.hist_content.text
+
+    def test_edit_bins_with_none_x_min(self, mock_app, mock_event):
+        """Test editing bins when x_min is None."""
+        mock_app.histogram_plotter.x_min = None
+        mock_app.histogram_plotter.x_max = None
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("b",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify error message was printed
+        mock_app.print.assert_called_once()
+        error_msg = mock_app.print.call_args[0][0]
+        assert "data range not yet computed" in error_msg
+        # Verify input was NOT called
+        mock_app.input.assert_not_called()
+
+    def test_toggle_x_scale_with_running_thread(self, mock_app, mock_event):
+        """Test toggling x scale with a running assign_data_thread."""
+        from unittest.mock import MagicMock
+        # Create a mock thread
+        mock_thread = MagicMock()
+        mock_app.histogram_plotter.assign_data_thread = mock_thread
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("x",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify thread was joined
+        mock_thread.join.assert_called_once()
+        # Verify scale was toggled
+        assert "x-scale:     log" in mock_app.hist_content.text
+
+    def test_edit_bins_with_running_thread(self, mock_app, mock_event):
+        """Test editing bins with a running assign_data_thread."""
+        from unittest.mock import MagicMock
+        # Create a mock thread
+        mock_thread = MagicMock()
+        mock_app.histogram_plotter.assign_data_thread = mock_thread
+        _init_hist_bindings(mock_app)
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("b",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+        # Verify thread was joined
+        mock_thread.join.assert_called_once()
+        # Verify input was called (since x_min/x_max are valid)
+        mock_app.input.assert_called_once()
+
     def test_exit_hist_mode(self, mock_app, mock_event):
         """Test exiting histogram mode."""
         _init_hist_bindings(mock_app)
