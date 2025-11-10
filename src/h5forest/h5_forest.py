@@ -31,6 +31,7 @@ from h5forest.bindings import (
     _init_app_bindings,
     _init_dataset_bindings,
     _init_goto_bindings,
+    _init_help_bindings,
     _init_hist_bindings,
     _init_plot_bindings,
     _init_search_bindings,
@@ -172,6 +173,7 @@ class H5Forest:
         self._app_keys_dict = _init_app_bindings(self)
         self._tree_keys_dict = _init_tree_bindings(self)
         self._dataset_keys_list = _init_dataset_bindings(self)
+        self._help_keys_list = _init_help_bindings(self)
         self._goto_keys_list = _init_goto_bindings(self)
         self._window_keys_dict = _init_window_bindings(self)
         self._plot_keys_dict = _init_plot_bindings(self)
@@ -646,12 +648,7 @@ class H5Forest:
 
     def _get_help_keys(self):
         """Get the hot keys for help mode."""
-        from prompt_toolkit.widgets import Label
-
-        return [
-            Label("j/k or ↓/↑ → Navigate"),
-            Label("q → Exit Help"),
-        ]
+        return self._help_keys_list
 
     @property
     def help_keys(self):

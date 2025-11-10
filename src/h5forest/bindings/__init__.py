@@ -1,5 +1,6 @@
 from h5forest.bindings.bindings import _init_app_bindings
 from h5forest.bindings.dataset_bindings import _init_dataset_bindings
+from h5forest.bindings.help_bindings import _init_help_bindings
 from h5forest.bindings.hist_bindings import _init_hist_bindings
 from h5forest.bindings.jump_bindings import _init_goto_bindings
 from h5forest.bindings.plot_bindings import _init_plot_bindings
