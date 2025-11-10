@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.widgets import Label
 
 from h5forest.bindings.dataset_bindings import _init_dataset_bindings
 
@@ -40,7 +41,6 @@ class TestDatasetBindings:
 
     def test_init_dataset_bindings_returns_hotkeys(self, mock_app):
         """Test that _init_dataset_bindings returns a list of Labels."""
-        from prompt_toolkit.widgets import Label
 
         hot_keys = _init_dataset_bindings(mock_app)
         assert isinstance(hot_keys, list)

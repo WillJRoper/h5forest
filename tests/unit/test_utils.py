@@ -3,7 +3,12 @@
 from unittest.mock import MagicMock, Mock, patch
 
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
+from prompt_toolkit.layout import (
+    ConditionalContainer,
+    HSplit,
+    VSplit,
+    Window,
+)
 from prompt_toolkit.widgets import Label
 
 from h5forest.utils import (
@@ -84,7 +89,6 @@ class TestGetWindowSizeSimple:
 
     def test_get_window_size_import_exists(self):
         """Test that get_window_size function can be imported."""
-        from h5forest.utils import get_window_size
 
         assert callable(get_window_size)
 
@@ -170,7 +174,7 @@ class TestDynamicLabelLayout:
         assert width == 20  # Fallback value
 
     def test_estimate_label_width_conditional_with_text(self):
-        """Test width estimation for ConditionalContainer with text attribute."""
+        """Test width estimation for ConditionalContainer with text."""
         layout = DynamicLabelLayout([])
 
         # Create a mock ConditionalContainer with content that has text
@@ -464,7 +468,6 @@ class TestDynamicLabelLayout:
         assert len(children) == 3
 
         # Verify children are Windows (line 301 coverage)
-        from prompt_toolkit.layout import Window
         for child in children:
             assert isinstance(child, (Window, VSplit))
 
@@ -727,7 +730,7 @@ class TestDynamicLabelLayout:
     def test_pt_container_shutil_exception(
         self, mock_get_app, mock_get_terminal_size
     ):
-        """Test __pt_container__ fallback when shutil.get_terminal_size fails."""
+        """Test __pt_container__ fallback when shutil fails."""
         labels = [Label("Test")]
         layout = DynamicLabelLayout(labels)
 
@@ -786,7 +789,7 @@ class TestDynamicLabelLayout:
         assert text == ""
 
     def test_get_label_text_conditional_without_text(self):
-        """Test getting text from ConditionalContainer without text attribute."""
+        """Test getting text from ConditionalContainer without text."""
         layout = DynamicLabelLayout([])
 
         # Create ConditionalContainer with content that has no text
