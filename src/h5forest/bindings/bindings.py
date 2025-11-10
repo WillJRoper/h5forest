@@ -31,26 +31,31 @@ def _init_app_bindings(app):
         """Enter goto mode."""
         app._flag_normal_mode = False
         app._flag_jump_mode = True
+        app.mode_title.update_title("Goto Mode")
 
     def dataset_leader_mode(event):
         """Enter dataset mode."""
         app._flag_normal_mode = False
         app._flag_dataset_mode = True
+        app.mode_title.update_title("Dataset Mode")
 
     def window_leader_mode(event):
         """Enter window mode."""
         app._flag_normal_mode = False
         app._flag_window_mode = True
+        app.mode_title.update_title("Window Mode")
 
     def plotting_leader_mode(event):
         """Enter plotting mode."""
         app._flag_normal_mode = False
         app._flag_plotting_mode = True
+        app.mode_title.update_title("Plotting Mode")
 
     def hist_leader_mode(event):
         """Enter hist mode."""
         app._flag_normal_mode = False
         app._flag_hist_mode = True
+        app.mode_title.update_title("Histogram Mode")
 
     @error_handler
     def exit_leader_mode(event):
@@ -77,6 +82,7 @@ def _init_app_bindings(app):
 
         app._flag_normal_mode = False
         app._flag_search_mode = True
+        app.mode_title.update_title("Search Mode")
         app.search_content.text = ""
         app.search_content.buffer.cursor_position = 0
         app.shift_focus(app.search_content)
