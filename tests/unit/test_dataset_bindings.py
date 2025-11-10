@@ -48,12 +48,8 @@ class TestDatasetBindings:
         for item in hot_keys:
             assert isinstance(item, Label)
 
-    @patch("h5forest.bindings.dataset_bindings.prompt_for_large_dataset")
-    def test_show_values(self, mock_prompt, mock_app, mock_event):
+    def test_show_values(self, mock_app, mock_event):
         """Test showing dataset values."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback()
-
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -87,12 +83,8 @@ class TestDatasetBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    @patch("h5forest.bindings.dataset_bindings.prompt_for_large_dataset")
-    def test_show_values_empty_text(self, mock_prompt, mock_app, mock_event):
+    def test_show_values_empty_text(self, mock_app, mock_event):
         """Test showing values when text is empty."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback()
-
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -107,12 +99,8 @@ class TestDatasetBindings:
         handler(mock_event)
         assert mock_app.flag_values_visible is False
 
-    @patch("h5forest.bindings.dataset_bindings.prompt_for_large_dataset")
-    def test_show_values_in_range(self, mock_prompt, mock_app, mock_event):
+    def test_show_values_in_range(self, mock_app, mock_event):
         """Test showing values in a range."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback()
-
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -135,14 +123,8 @@ class TestDatasetBindings:
         )
         assert mock_app.values_content.text == "range values"
 
-    @patch("h5forest.bindings.dataset_bindings.prompt_for_large_dataset")
-    def test_show_values_in_range_invalid_input(
-        self, mock_prompt, mock_app, mock_event
-    ):
+    def test_show_values_in_range_invalid_input(self, mock_app, mock_event):
         """Test showing values in range with invalid input."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback()
-
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -177,14 +159,8 @@ class TestDatasetBindings:
         mock_app.print.assert_called_once_with("/group is not a Dataset")
         mock_app.input.assert_not_called()
 
-    @patch("h5forest.bindings.dataset_bindings.prompt_for_large_dataset")
-    def test_show_values_in_range_empty_text(
-        self, mock_prompt, mock_app, mock_event
-    ):
+    def test_show_values_in_range_empty_text(self, mock_app, mock_event):
         """Test showing values in range when text is empty."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback()
-
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
