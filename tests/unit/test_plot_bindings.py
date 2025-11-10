@@ -91,7 +91,7 @@ class TestPlotBindings:
 
         hot_keys = _init_plot_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        assert len(hot_keys) == 13
+        assert len(hot_keys) == 12
         for key, value in hot_keys.items():
             assert isinstance(key, str)
             assert isinstance(value, Label)
@@ -659,7 +659,6 @@ class TestPlotBindings:
             "P",
             "r",
             "e",
-            "J",
             "q",
         ]
 
@@ -683,7 +682,7 @@ class TestPlotBindings:
         # Should be a dict with Label values
         from prompt_toolkit.widgets import Label
 
-        assert len(hot_keys) == 13
+        assert len(hot_keys) == 12
 
         # All values should be Labels
         for key, value in hot_keys.items():
@@ -698,7 +697,7 @@ class TestPlotBindings:
         bindings = [
             b
             for b in mock_app.kb.bindings
-            if b.keys == ("J",) and b.filter is not None
+            if b.keys == ("e",) and b.filter is not None
         ]
         handler = bindings[0].handler
         handler(mock_event)
@@ -715,7 +714,7 @@ class TestPlotBindings:
         bindings = [
             b
             for b in mock_app.kb.bindings
-            if b.keys == ("J",) and b.filter is not None
+            if b.keys == ("e",) and b.filter is not None
         ]
         handler = bindings[0].handler
         handler(mock_event)
