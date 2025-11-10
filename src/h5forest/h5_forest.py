@@ -412,6 +412,7 @@ class H5Forest:
         else:
             labels.append(self._app_keys_dict["shrink_attrs"])
 
+        labels.append(self._app_keys_dict["copy_key"])
         labels.append(self._app_keys_dict["restore_tree"])
         labels.append(self._app_keys_dict["exit"])
 
