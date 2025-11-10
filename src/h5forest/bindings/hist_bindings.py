@@ -345,15 +345,15 @@ def _init_hist_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "select_data": Label("Enter → Select data"),
+        "edit_config": Label("e → Edit Config"),
+        "edit_tree": Label("e → Back To Tree"),
         "edit_entry": Label("Enter → Edit entry"),
+        "select_data": Label("Enter → Select data"),
         "edit_bins": Label("b → Edit bins"),
         "toggle_x_scale": Label("x → Toggle x-scale"),
         "toggle_y_scale": Label("y → Toggle y-scale"),
         "show_hist": Label("h → Show Histogram"),
         "save_hist": Label("H → Save Histogram"),
-        "edit_config": Label("e → Edit Config"),
-        "edit_tree": Label("e → Back To Tree"),
         "reset": Label("r → Reset"),
         "exit_mode": Label("q → Exit Hist Mode"),
         "exit_config": Label("q → Exit Hist Config"),

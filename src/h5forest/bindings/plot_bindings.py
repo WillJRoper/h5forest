@@ -234,12 +234,7 @@ def _init_plot_bindings(app):
 
     @error_handler
     def edit_plot(event):
-        """Edit the plot."""
-        app.shift_focus(app.plot_content)
-
-    @error_handler
-    def jump_to_config(event):
-        """Toggle between configuration window and tree view."""
+        """Edit the plot configuration."""
         if app.app.layout.has_focus(app.plot_content):
             # Already in config, jump back to tree
             app.shift_focus(app.tree_content)
