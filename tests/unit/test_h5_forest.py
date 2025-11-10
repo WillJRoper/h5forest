@@ -75,6 +75,7 @@ class TestH5ForestInitialization:
         assert app.flag_values_visible is False
         assert app.flag_progress_bar is False
         assert app.flag_expanded_attrs is False
+        assert app.flag_help_visible is False
         assert app._flag_normal_mode is True
         assert app._flag_jump_mode is False
         assert app._flag_dataset_mode is False

@@ -1121,25 +1121,31 @@ Press 'q' to close this help and return to Normal Mode.
             ]
         )
 
+        # Main content area (hidden when help is visible)
+        main_content = ConditionalContainer(
+            VSplit(
+                [
+                    self.tree_frame,
+                    HSplit(
+                        [
+                            self.expanded_attrs_frame,
+                            self.values_frame,
+                            self.plot_frame,
+                            self.hist_frame,
+                        ],
+                        width=Dimension(min=0, max=columns // 2),
+                    ),
+                ]
+            ),
+            filter=Condition(lambda: not self.flag_help_visible),
+        )
+
         # Layout using split views
         self.layout = Layout(
             HSplit(
                 [
-                    VSplit(
-                        [
-                            self.tree_frame,
-                            HSplit(
-                                [
-                                    self.help_frame,
-                                    self.expanded_attrs_frame,
-                                    self.values_frame,
-                                    self.plot_frame,
-                                    self.hist_frame,
-                                ],
-                                width=Dimension(min=0, max=columns // 2),
-                            ),
-                        ]
-                    ),
+                    main_content,
+                    self.help_frame,
                     VSplit(
                         [
                             self.metadata_frame,
