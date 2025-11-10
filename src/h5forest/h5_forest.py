@@ -1078,13 +1078,13 @@ class H5Forest:
         """
         Update the hotkeys panel to reflect current focus and state.
 
-        This method reconstructs the hotkeys panel content based on the current
-        mode and focus state. It should be called whenever focus changes or when
-        the displayed hotkeys need to be refreshed.
+        This method reconstructs the hotkeys panel content based on the
+        current mode and focus state. It should be called whenever focus
+        changes or when the displayed hotkeys need to be refreshed.
         """
         # Reconstruct the hotkeys panel with fresh label layouts
-        from prompt_toolkit.layout.containers import ConditionalContainer, HSplit
         from prompt_toolkit.filters import Condition
+        from prompt_toolkit.layout.containers import ConditionalContainer
 
         self.hotkeys_panel.children = [
             ConditionalContainer(

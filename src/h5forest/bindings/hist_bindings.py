@@ -37,7 +37,10 @@ def _init_hist_bindings(app):
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available (needed to compute histogram)
-        if app.histogram_plotter.x_min is None or app.histogram_plotter.x_max is None:
+        if (
+            app.histogram_plotter.x_min is None
+            or app.histogram_plotter.x_max is None
+        ):
             app.print(
                 "Cannot edit bins: data range not yet computed. "
                 "Please select a dataset first (Enter)"
@@ -64,7 +67,9 @@ def _init_hist_bindings(app):
             app.shift_focus(app.tree_content)
 
         # Get the modified entry from the user
-        app.input("Number of bins", edit_bins_callback, mini_buffer_text=current_bins)
+        app.input(
+            "Number of bins", edit_bins_callback, mini_buffer_text=current_bins
+        )
 
     @error_handler
     def toggle_x_scale(event):
@@ -75,7 +80,10 @@ def _init_hist_bindings(app):
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available
-        if app.histogram_plotter.x_min is None or app.histogram_plotter.x_max is None:
+        if (
+            app.histogram_plotter.x_min is None
+            or app.histogram_plotter.x_max is None
+        ):
             app.print(
                 "Cannot toggle x-scale: data range not yet computed. "
                 "Please select a dataset first (Enter)"
@@ -94,9 +102,14 @@ def _init_hist_bindings(app):
         # If toggling to log, validate data is compatible
         if new_scale == "log":
             if app.histogram_plotter.x_min <= 0:
+                value_type = (
+                    "zero"
+                    if app.histogram_plotter.x_min == 0
+                    else "negative"
+                )
                 app.print(
                     f"Cannot use log scale on x-axis: data contains "
-                    f"{'zero' if app.histogram_plotter.x_min == 0 else 'negative'} values "
+                    f"{value_type} values "
                     f"(min = {app.histogram_plotter.x_min})"
                 )
                 return
@@ -118,7 +131,10 @@ def _init_hist_bindings(app):
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available (needed to compute histogram)
-        if app.histogram_plotter.x_min is None or app.histogram_plotter.x_max is None:
+        if (
+            app.histogram_plotter.x_min is None
+            or app.histogram_plotter.x_max is None
+        ):
             app.print(
                 "Cannot toggle y-scale: data range not yet computed. "
                 "Please select a dataset first (Enter)"
@@ -300,12 +316,18 @@ def _init_hist_bindings(app):
         filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
     )(edit_hist_entry)
     app.kb.add("b", filter=Condition(lambda: app.flag_hist_mode))(edit_bins)
-    app.kb.add("x", filter=Condition(lambda: app.flag_hist_mode))(toggle_x_scale)
-    app.kb.add("y", filter=Condition(lambda: app.flag_hist_mode))(toggle_y_scale)
+    app.kb.add("x", filter=Condition(lambda: app.flag_hist_mode))(
+        toggle_x_scale
+    )
+    app.kb.add("y", filter=Condition(lambda: app.flag_hist_mode))(
+        toggle_y_scale
+    )
     app.kb.add("h", filter=Condition(lambda: app.flag_hist_mode))(plot_hist)
     app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
     app.kb.add("r", filter=Condition(lambda: app.flag_hist_mode))(reset_hist)
-    app.kb.add("J", filter=Condition(lambda: app.flag_hist_mode))(jump_to_config)
+    app.kb.add("J", filter=Condition(lambda: app.flag_hist_mode))(
+        jump_to_config
+    )
     app.kb.add(
         "q",
         filter=Condition(
