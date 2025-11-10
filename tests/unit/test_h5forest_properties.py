@@ -158,7 +158,8 @@ class TestH5ForestLabelProperties:
         labels = result.labels() if callable(result.labels) else result.labels
 
         # Should have: open_group (Enter), expand/shrink_attrs, dataset, goto,
-        # hist, plotting, window, search, move_ten, copy_key, restore_tree, exit
+        # hist, plotting, window, search, move_ten, copy_key, restore_tree,
+        # exit
         assert len(labels) == 12
 
     def test_hot_keys_with_tree_focus(self, mock_h5forest):
@@ -331,7 +332,9 @@ class TestH5ForestLabelProperties:
 
         # Should have basic keys
         labels = result.labels() if callable(result.labels) else result.labels
-        assert len(labels) == 12  # All keys including Enter, move_ten, and copy_key
+        assert (
+            len(labels) == 12
+        )  # All keys including Enter, move_ten, and copy_key
 
     def test_hot_keys_without_tree_content_attribute(self, mock_h5forest):
         """Test hot_keys handles missing tree_content gracefully."""
