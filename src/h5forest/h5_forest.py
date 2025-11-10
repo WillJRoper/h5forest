@@ -1118,7 +1118,7 @@ class H5Forest:
         ]
 
         # Force a redraw of the interface to reflect updated hotkeys
-        if hasattr(self, 'app') and self.app is not None:
+        if hasattr(self, "app") and self.app is not None:
             self.app.invalidate()
 
     def _create_mouse_handler(self, content_area):
