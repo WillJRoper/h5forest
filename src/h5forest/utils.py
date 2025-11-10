@@ -1,6 +1,8 @@
 """A module containing utility functions and classes for the HDF5 viewer."""
 
 import os
+import threading
+import time
 
 from prompt_toolkit.application import get_app
 from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
@@ -304,3 +306,81 @@ class DynamicLabelLayout:
                     )
 
         return HSplit(row_containers)
+
+
+class WaitIndicator:
+    """
+    A reusable spinning wait indicator for blocking operations.
+
+    This class provides a pulsing animated spinner with custom message
+    to show users that the application is working on a task.
+
+    Usage:
+        indicator = WaitIndicator(app, "Loading data...")
+        indicator.start()
+        # ... do blocking work ...
+        indicator.stop()
+
+    Or use as a context manager:
+        with WaitIndicator(app, "Loading data..."):
+            # ... do blocking work ...
+    """
+
+    # Braille spinner characters for smooth animation
+    SPINNER_CHARS = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    def __init__(self, app, message, update_interval=0.1):
+        """
+        Initialize the wait indicator.
+
+        Args:
+            app: The H5Forest application instance
+            message (str): The message to display (e.g., "Loading data...")
+            update_interval (float): Seconds between animation updates
+                (default: 0.1)
+        """
+        self.app = app
+        self.message = message
+        self.update_interval = update_interval
+        self.running = False
+        self.thread = None
+
+    def _animate(self):
+        """Run the animation loop in a background thread."""
+        idx = 0
+        while self.running:
+            char = self.SPINNER_CHARS[idx % len(self.SPINNER_CHARS)]
+            self.app.app.loop.call_soon_threadsafe(
+                lambda c=char: self.app.print(f"{c} {self.message}")
+            )
+            idx += 1
+            time.sleep(self.update_interval)
+
+        # Clear the message when done
+        self.app.app.loop.call_soon_threadsafe(lambda: self.app.print(""))
+
+    def start(self):
+        """Start the spinning indicator."""
+        if self.running:
+            return  # Already running
+
+        self.running = True
+        self.thread = threading.Thread(target=self._animate, daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        """Stop the spinning indicator."""
+        self.running = False
+        if self.thread:
+            self.thread.join(timeout=1.0)  # Wait up to 1 second
+            self.thread = None
+
+    def __enter__(self):
+        """Context manager entry - start the indicator."""
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - stop the indicator."""
+        self.stop()
+        return False  # Don't suppress exceptions
