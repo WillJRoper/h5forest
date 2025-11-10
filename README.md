@@ -7,29 +7,29 @@
 [![codecov](https://codecov.io/gh/WillJRoper/h5forest/branch/main/graph/badge.svg)](https://codecov.io/gh/WillJRoper/h5forest)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-HDF5 Forest (`h5forest`) is a Text-based User Interface (TUI) for exploring HDF5 files.
-
-📚 **[Read the documentation](https://willjroper.github.io/h5forest/)** for installation, usage guides, and examples.
-
+HDF5 Forest (`h5forest`) is a Text-based User Interface (TUI) for exploring HDF5 files. 
+      
 `h5ls` works, and `h5glance` is a great improvement, so "Why bother?" I hear you ask. 
 
 Well, `h5forest` brings interactivity and new functionality not available in its long-standing brethren. `h5forest` includes:
 
+<img src="https://github.com/user-attachments/assets/38b92869-6768-41f4-833c-d8b4ad6c6ad5"
+     alt="SCR-20241021-belp"
+     width="550"
+     align="right">
+
 - An interactive interface capable of handling large files with deep hierarchies.
-- Real-time metadata and attribute displays.
-- A modal system for interacting with the file (I use Neovim by the way).
-- Lazy loading, making the most of chunked data.
-- Peeking inside Datasets.
-- Computing statistics on the fly.
-- Generation of quick diagnostics.
 - Fully asynchronous operation for a blazingly fast (🔥) and responsive feel.
-- A fully terminal-based interface with vim motions (did I mention?...).
+- A real-time metadata and attribute display.
+- Memory efficiency with lazy loading.
+- Peeking inside Datasets.
+- On-the-fly statistics. 
 - Fuzzy search with real-time filtering to quickly find datasets and groups.
+- A fully terminal-based interface with vim motions (I use Neovim by the way...).
 
-![SCR-20241021-belp](https://github.com/user-attachments/assets/38b92869-6768-41f4-833c-d8b4ad6c6ad5)
+<br clear="right">
 
-The following features are coming soon:
-- Renaming of Datasets and Groups.
+For more details [read the documentation](https://willjroper.github.io/h5forest/) for installation, usage guides, and examples.
 
 ## Getting started
 
