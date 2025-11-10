@@ -23,10 +23,10 @@ Histogram Mode is designed for:
 
 | Key     | Action              | Description                                        |
 | ------- | ------------------- | -------------------------------------------------- |
+| **`e`** | Edit Config         | Jump to configuration window for advanced editing  |
 | **`b`** | Edit Bins           | Edit the number of histogram bins                  |
 | **`x`** | Toggle X-Scale      | Toggle x-axis between linear and logarithmic scale |
 | **`y`** | Toggle Y-Scale      | Toggle y-axis between linear and logarithmic scale |
-| **`J`** | Jump to Config      | Jump to configuration window for advanced editing  |
 | **`r`** | Reset Configuration | Reset histogram configuration to defaults          |
 
 ### Direct Configuration Editing (When in Config Window)
@@ -100,7 +100,7 @@ Histogram Mode provides direct key bindings for common configuration tasks, elim
 
 ### Advanced Configuration Window
 
-**Jump to Config** (**`J`**)
+**Edit Config** (**`e`**)
 
 - Switches to the full configuration window for advanced editing
 - Allows editing of all parameters
