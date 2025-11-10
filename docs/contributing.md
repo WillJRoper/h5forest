@@ -23,14 +23,54 @@ We welcome contributions to h5forest! This guide will help you get started with 
    pip install -e ".[dev,test]"
    ```
 
-3. **Verify installation:**
+   This installs h5forest along with development dependencies:
+   - `ruff` - Code linting and formatting
+   - `pytest` - Testing framework
+   - Additional testing utilities
+
+3. **Install documentation tools (optional):**
+   ```bash
+   pip install -e ".[docs]"
+   ```
+
+   This enables local documentation building with:
+   - `mkdocs` - Documentation site generator
+   - `mkdocs-material` - Material theme for MkDocs
+   - Related plugins and extensions
+
+4. **Install pre-commit hooks:**
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+   Pre-commit hooks automatically enforce our code quality standards. Pull requests that don't pass these checks will be rejected by our CI workflows.
+
+   The hooks perform the following checks:
+   - **Ruff linting and formatting** - Ensures code style consistency (PEP 8, 79 char lines, etc.)
+   - **Merge conflict detection** - Prevents accidental merge conflict markers
+   - **Large file prevention** - Stops large files from being added
+   - **Case conflict checks** - Avoids filename case issues across operating systems
+
+   Once installed, these checks run automatically on staged files before every commit, catching issues early and saving time in the review process.
+
+   You can also run them manually:
+   ```bash
+   # Run on all files
+   pre-commit run --all-files
+
+   # Run on specific files
+   pre-commit run --files path/to/file.py
+   ```
+
+5. **Verify installation:**
    ```bash
    # Run tests
    pytest
-   
+
    # Check linting
    ruff check .
-   
+
    # Try the application
    h5forest tests/fixtures/simple.h5
    ```
@@ -94,19 +134,51 @@ We welcome contributions to h5forest! This guide will help you get started with 
 
 ### Code Style
 
-We use [ruff](https://docs.astral.sh/ruff/) for code formatting and linting:
+We use [ruff](https://docs.astral.sh/ruff/) for code formatting and linting. All code must pass ruff checks before being merged.
 
-- **Line length:** 79 characters
-- **Import sorting:** Alphabetical with isort rules
-- **Quote style:** Double quotes for strings
+**Formatting Rules:**
+
+- **Line length:** Maximum 79 characters (PEP 8 compliant)
 - **Indentation:** 4 spaces (no tabs)
+- **Quote style:** Double quotes for strings (single quotes for dictionary keys when appropriate)
+- **Blank lines:** Two blank lines between top-level definitions, one between methods
+- **Trailing whitespace:** Not allowed
+- **Import sorting:** Organized alphabetically with isort rules
+
+**Import Organization:**
+
+```python
+# Standard library imports
+import os
+import sys
+from pathlib import Path
+
+# Third-party imports
+import h5py
+import numpy as np
+from prompt_toolkit import Application
+
+# Local application imports
+from h5forest.node import Node
+from h5forest.tree import Tree
+```
+
+**Naming Conventions:**
+
+- **Classes:** `PascalCase` (e.g., `TreeProcessor`, `DatasetNode`)
+- **Functions/Methods:** `snake_case` (e.g., `process_data`, `get_metadata`)
+- **Constants:** `UPPER_SNAKE_CASE` (e.g., `MAX_DISPLAY_ITEMS`, `DEFAULT_CHUNK_SIZE`)
+- **Private members:** Prefix with single underscore (e.g., `_internal_method`)
+- **Variables:** `snake_case` (e.g., `file_path`, `node_count`)
 
 ### Code Quality
 
-- **Type hints:** Encouraged but not required
-- **Docstrings:** Required for public functions and classes
-- **Comments:** Use sparingly, prefer self-documenting code
+- **Type hints:** Strongly encouraged for function signatures and class attributes
+- **Docstrings:** Required for all public functions, classes, and modules
+- **Comments:** Use sparingly; prefer self-documenting code. When needed, explain *why*, not *what*
 - **Error handling:** Handle errors gracefully with informative messages
+- **DRY principle:** Don't Repeat Yourself - extract common logic into reusable functions
+- **SOLID principles:** Follow object-oriented design principles where applicable
 
 ### Example Code Style
 
@@ -206,6 +278,22 @@ def example_function(param1: str, param2: int = 10) -> bool:
 - Update relevant documentation when changing functionality
 - Add new documentation for new features
 - Keep examples up to date
+
+### Building Documentation Locally
+
+To build and preview the documentation:
+
+```bash
+# Install documentation dependencies
+pip install -e ".[docs]"
+
+# Serve documentation locally with live reload
+mkdocs serve
+```
+
+Then visit `http://localhost:8000` in your browser to view the documentation.
+
+The documentation will automatically rebuild as you make changes to the markdown files.
 
 ## Types of Contributions
 

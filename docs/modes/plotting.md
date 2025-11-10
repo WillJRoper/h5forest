@@ -1,6 +1,6 @@
 # Plotting Mode
 
-Plotting Mode is for when you need to turn your mysterious numerical soup into beautiful scatter plots. Because sometimes the only way to understand your data is to throw it at a graph and see what sticks.
+Plotting Mode enables creation of scatter plots to visualize relationships between datasets. This mode provides tools for selecting data sources, configuring plot parameters, and generating publication-quality visualizations.
 
 ## Purpose
 
@@ -69,8 +69,8 @@ From Normal Mode, press **`p`** to enter Plotting Mode.
 
 ## Requirements and Notes
 
-- Only works with numeric datasets (sorry, but you can't plot your grocery list)
-- Both datasets should have compatible shapes - mismatched arrays are like trying to dance with someone who has three legs
-- Large datasets are automatically subsampled so your computer doesn't catch fire
-- Plot appears in right panel when generated (assuming you've done everything correctly)
-- Configuration settings persist while in Plotting Mode, unlike your motivation on Monday mornings
+- Only works with numeric datasets
+- Both datasets must have compatible shapes for proper visualization
+- Large datasets are automatically subsampled to maintain performance
+- Generated plots appear in the right panel
+- Configuration settings persist throughout the current Plotting Mode session

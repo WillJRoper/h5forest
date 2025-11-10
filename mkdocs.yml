@@ -69,13 +69,14 @@ plugins:
 
 nav:
   - Home: index.md
-  - Getting Started:
+  - Quick Start: quickstart.md
+  - The Basics:
     - Installation: installation.md
-    - Quick Start: quickstart.md
     - Basic Usage: usage.md
   - Mode Reference:
     - Overview: modes/overview.md
     - Normal Mode: modes/normal.md
+    - Search Mode: modes/search.md
     - Goto Mode: modes/jump.md
     - Dataset Mode: modes/dataset.md
     - Window Mode: modes/window.md

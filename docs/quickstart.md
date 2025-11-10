@@ -1,21 +1,31 @@
 # Quick Start
 
-This guide will get you up and running with h5forest in just a few minutes.
+Get started with h5forest in minutes. This guide covers everything you need to begin exploring HDF5 files interactively.
 
-## Basic Usage
+## Installation
 
-Launch h5forest with any HDF5 file:
+Install h5forest using pip:
+
+```bash
+pip install h5forest
+```
+
+For detailed installation instructions including troubleshooting, see the [Installation Guide](installation.md).
+
+## Launch h5forest
+
+Open any HDF5 file:
 
 ```bash
 h5forest /path/to/your/file.hdf5
 ```
 
-You'll see the main interface with several panels:
+You'll see the interactive interface with several panels:
 
-- **Tree Panel** (left): Hierarchical view of your HDF5 file
+- **Tree Panel** (left): Hierarchical view of your HDF5 file structure
 - **Metadata Panel** (bottom left): Information about the selected item
-- **Attributes Panel** (bottom right): Attributes of the selected item
-- **Hotkeys Panel** (bottom): Available keyboard shortcuts
+- **Attributes Panel** (bottom right): HDF5 attributes for the selected item
+- **Hotkeys Panel** (bottom): Context-sensitive keyboard shortcuts
 
 ## Basic Navigation
 
@@ -97,18 +107,19 @@ Press **`m`** to get min/max values. For large datasets, you'll see a progress b
 
 ## Understanding Modes
 
-h5forest uses a modal interface. The available modes are:
+h5forest uses a modal interface (similar to Vim) where different keyboard shortcuts become active depending on your current task:
 
 | Key | Mode | Purpose |
 |-----|------|---------|
-| **Default** | Normal Mode | Basic navigation |
-| **`d`** | Dataset Mode | Data analysis |
-| **`g`** | Goto Mode | Quick navigation |
-| **`w`** | Window Mode | Panel management |
+| **Default** | Normal Mode | Navigate the file tree |
+| **`s`** | Search Mode | Find datasets and groups |
+| **`d`** | Dataset Mode | Analyze data and compute statistics |
+| **`g`** | Goto Mode | Jump to specific locations |
+| **`w`** | Window Mode | Manage panel layout |
 | **`p`** | Plotting Mode | Create scatter plots |
 | **`H`** | Histogram Mode | Generate histograms |
 
-Each mode shows different hotkeys at the bottom of the screen.
+Press **`q`** to exit any mode and return to Normal Mode. The hotkeys panel at the bottom always shows what's available in your current mode.
 
 ## Quick Reference
 
@@ -121,8 +132,9 @@ Each mode shows different hotkeys at the bottom of the screen.
 
 ### Mode Switching
 
+- **`s`** - Search mode (fuzzy find datasets/groups)
 - **`d`** - Dataset analysis mode
-- **`g`** - Goto navigation mode  
+- **`g`** - Goto navigation mode
 - **`w`** - Window management mode
 - **`p`** - Plotting mode
 - **`H`** - Histogram mode

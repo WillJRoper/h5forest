@@ -1,6 +1,6 @@
 # Dataset Mode
 
-Dataset Mode is where the magic happens - or where you discover your data is complete nonsense. Either way, it's comprehensive.
+Dataset Mode provides comprehensive tools for examining and analyzing HDF5 dataset contents. Use this mode to inspect actual data values, compute statistics, and validate data quality.
 
 ## Purpose
 
@@ -55,7 +55,8 @@ From Normal Mode, navigate to any dataset and press **`d`** to enter Dataset Mod
 
 ## Notes
 
-- Only works when a dataset (not group) is selected - because asking for statistics on a folder is like asking for the average color of a rainbow
-- Large datasets show progress bars so you know it's actually doing something and hasn't just given up on life
-- Statistics work on numeric data; strings just show you their values and shrug
-- Values panel opens on the right side of screen (we're not monsters)
+- Only available when a dataset is selected (not a group)
+- Large datasets display progress bars during statistical computations
+- Statistical operations require numeric data types
+- String datasets display their values but cannot compute numerical statistics
+- Values panel appears on the right side of the screen
