@@ -104,8 +104,12 @@ class Tree:
         self.all_node_paths_lock = (
             threading.Lock()
         )  # Protect concurrent access
-        self.paths_initialized = False  # Track if we've started collecting paths
-        self.index_building = False  # Track if we're currently building the index
+        self.paths_initialized = (
+            False  # Track if we've started collecting paths
+        )
+        self.index_building = (
+            False  # Track if we're currently building the index
+        )
 
         # Store the original tree state for search restoration
         self.original_tree_text = None
@@ -331,7 +335,9 @@ class Tree:
                 # Mark index building as complete
                 self.index_building = False
 
-        self.unpack_thread = threading.Thread(target=run_in_thread, daemon=True)
+        self.unpack_thread = threading.Thread(
+            target=run_in_thread, daemon=True
+        )
         self.unpack_thread.start()
 
         # We'll join this thread in the filter function (filter_tree)

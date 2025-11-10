@@ -90,21 +90,22 @@ def _init_app_bindings(app):
                 # Show pulsing message
                 char = pulse_chars[idx % len(pulse_chars)]
                 app.app.loop.call_soon_threadsafe(
-                    lambda c=char: app.print(f"{c} Constructing search database...")
+                    lambda c=char: app.print(
+                        f"{c} Constructing search database..."
+                    )
                 )
                 idx += 1
                 time.sleep(0.1)  # Update every 100ms
 
             # Clear the message when done
-            app.app.loop.call_soon_threadsafe(
-                lambda: app.print("")
-            )
+            app.app.loop.call_soon_threadsafe(lambda: app.print(""))
 
             # If user has already typed a query, trigger search update
             def update_search():
                 query = app.search_content.text
                 if query:  # Only update if there's a query
                     from prompt_toolkit.document import Document
+
                     filtered_text = app.tree.filter_tree(query)
                     app.tree_buffer.set_document(
                         Document(
