@@ -166,8 +166,8 @@ def test_filter_tree_multiple_searches(temp_h5_file):
     result1 = tree.filter_tree("group")
     assert result1, "First search should have results"
 
-    # Second search with different query
-    result2 = tree.filter_tree("dataset")
+    # Second search with different query (search for "data")
+    result2 = tree.filter_tree("data")
     assert result2, "Second search should have results"
 
     # Clear search
