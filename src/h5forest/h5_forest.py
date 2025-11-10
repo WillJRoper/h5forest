@@ -515,6 +515,10 @@ class H5Forest:
         if "y" not in self.scatter_plotter.plot_params:
             labels.append(self._plot_keys_dict["select_y"])
 
+        # Show scale toggles
+        labels.append(self._plot_keys_dict["toggle_x_scale"])
+        labels.append(self._plot_keys_dict["toggle_y_scale"])
+
         # Show plot/save only if there are params
         if len(self.scatter_plotter) > 0:
             labels.append(self._plot_keys_dict["plot"])
@@ -545,16 +549,24 @@ class H5Forest:
         # Check if app exists (it won't during initialization)
         has_app = hasattr(self, "app") and self.app is not None
 
-        # Show edit config only if there are plot params
-        if len(self.histogram_plotter.plot_params) > 0:
-            labels.append(self._hist_keys_dict["edit_config"])
-
-        # Show edit entry only if hist content has focus
+        # Show select data or edit entry based on focus
         if has_app and self.app.layout.has_focus(self.hist_content):
             labels.append(self._hist_keys_dict["edit_entry"])
+        else:
+            labels.append(self._hist_keys_dict["select_data"])
+
+        # Show bins and scale toggles
+        labels.append(self._hist_keys_dict["edit_bins"])
+        labels.append(self._hist_keys_dict["toggle_x_scale"])
+        labels.append(self._hist_keys_dict["toggle_y_scale"])
 
         labels.append(self._hist_keys_dict["show_hist"])
         labels.append(self._hist_keys_dict["save_hist"])
+
+        # Show jump to config only if there are plot params
+        if len(self.histogram_plotter.plot_params) > 0:
+            labels.append(self._hist_keys_dict["jump_config"])
+
         labels.append(self._hist_keys_dict["reset"])
 
         # Show appropriate exit label based on focus
