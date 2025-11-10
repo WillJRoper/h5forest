@@ -169,14 +169,17 @@ def _init_app_bindings(app):
         """Toggle the help screen visibility."""
         app.flag_help_visible = not app.flag_help_visible
         if app.flag_help_visible:
+            app.mode_title.update_title("Help Mode")
             app.shift_focus(app.help_content)
         else:
+            app.mode_title.update_title("Normal Mode")
             app.default_focus()
         event.app.invalidate()
 
     def close_help(event):
         """Close the help screen."""
         app.flag_help_visible = False
+        app.mode_title.update_title("Normal Mode")
         app.default_focus()
         event.app.invalidate()
 

@@ -405,8 +405,7 @@ class H5Forest:
         labels.append(self._app_keys_dict["window_mode"])
         labels.append(self._app_keys_dict["search"])
 
-        # Help and other hot keys
-        labels.append(self._app_keys_dict["help"])
+        # Other hot keys
         labels.append(self._tree_keys_dict["move_ten"])
 
         if not self.flag_expanded_attrs:
@@ -416,6 +415,7 @@ class H5Forest:
 
         labels.append(self._app_keys_dict["restore_tree"])
         labels.append(self._app_keys_dict["exit"])
+        labels.append(self._app_keys_dict["help"])
 
         return labels
 
@@ -627,6 +627,22 @@ class H5Forest:
         """
         return DynamicLabelLayout(self._get_search_keys)
 
+    def _get_help_keys(self):
+        """Get the hot keys for help mode."""
+        from prompt_toolkit.widgets import Label
+
+        return [Label("q → Exit Help")]
+
+    @property
+    def help_keys(self):
+        """
+        Return the hot keys for help mode.
+
+        Returns:
+            DynamicLabelLayout: Layout with help labels.
+        """
+        return DynamicLabelLayout(self._get_help_keys)
+
     def return_to_normal_mode(self):
         """Return to normal mode."""
         self._flag_normal_mode = True
@@ -640,20 +656,12 @@ class H5Forest:
 
     def _generate_help_text(self):
         """Generate comprehensive help text for all modes and keybindings."""
-        help_text = f"""
+        help_text = """
 ╔══════════════════════════════════════════════════════════════════════╗
-║                    H5FOREST HELP (v{__version__})                    ║
+║                          H5FOREST HELP                               ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 Press 'q' to close this help screen and return to Normal Mode.
-
-═══════════════════════════════════════════════════════════════════════
-                            OVERVIEW
-═══════════════════════════════════════════════════════════════════════
-
-h5forest is a modal TUI for exploring HDF5 files. Different modes provide
-different functionality. Press the mode key from Normal Mode to enter that
-mode, and 'q' to exit back to Normal Mode.
 
 ═══════════════════════════════════════════════════════════════════════
                           NORMAL MODE
@@ -1061,6 +1069,10 @@ Press 'q' to close this help and return to Normal Mode.
                     content=self.search_keys,
                     filter=Condition(lambda: self.flag_search_mode),
                 ),
+                ConditionalContainer(
+                    content=self.help_keys,
+                    filter=Condition(lambda: self.flag_help_visible),
+                ),
             ]
         )
         self.hotkeys_frame = ConditionalContainer(
@@ -1073,6 +1085,7 @@ Press 'q' to close this help and return to Normal Mode.
                 or self.flag_plotting_mode
                 or self.flag_hist_mode
                 or self.flag_search_mode
+                or self.flag_help_visible
             ),
         )
 
