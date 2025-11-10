@@ -429,7 +429,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with filtered labels.
         """
-        return DynamicLabelLayout(lambda: self._get_hot_keys())
+        return DynamicLabelLayout(self._get_hot_keys)
 
     def _get_dataset_keys(self):
         """Get the hot keys for dataset mode."""
@@ -445,7 +445,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with dataset labels.
         """
-        return DynamicLabelLayout(lambda: self._get_dataset_keys())
+        return DynamicLabelLayout(self._get_dataset_keys)
 
     def _get_goto_keys(self):
         """Get the hot keys for goto mode."""
@@ -461,7 +461,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with goto labels.
         """
-        return DynamicLabelLayout(lambda: self._get_goto_keys())
+        return DynamicLabelLayout(self._get_goto_keys)
 
     def _get_window_keys(self):
         """
@@ -509,7 +509,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with filtered labels.
         """
-        return DynamicLabelLayout(lambda: self._get_window_keys())
+        return DynamicLabelLayout(self._get_window_keys)
 
     def _get_plot_keys(self):
         """
@@ -565,7 +565,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with filtered labels.
         """
-        return DynamicLabelLayout(lambda: self._get_plot_keys())
+        return DynamicLabelLayout(self._get_plot_keys)
 
     def _get_hist_keys(self):
         """
@@ -609,7 +609,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with filtered labels.
         """
-        return DynamicLabelLayout(lambda: self._get_hist_keys())
+        return DynamicLabelLayout(self._get_hist_keys)
 
     def _get_search_keys(self):
         """Get the hot keys for search mode."""
@@ -625,7 +625,7 @@ class H5Forest:
         Returns:
             DynamicLabelLayout: Layout with search labels.
         """
-        return DynamicLabelLayout(lambda: self._get_search_keys())
+        return DynamicLabelLayout(self._get_search_keys)
 
     def return_to_normal_mode(self):
         """Return to normal mode."""
