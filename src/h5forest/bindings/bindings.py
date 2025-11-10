@@ -173,8 +173,8 @@ def _init_app_bindings(app):
         # Get the current node
         node = app.tree.get_current_node(app.current_row)
 
-        # Get the HDF5 key path (without filename)
-        hdf5_key = node.path
+        # Get the HDF5 key path (without filename and leading slashes)
+        hdf5_key = node.path.lstrip("/")
 
         # Copy to clipboard using platform-specific command
         try:
