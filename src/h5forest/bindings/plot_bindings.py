@@ -52,7 +52,10 @@ def _init_plot_bindings(app):
             app.scatter_plotter.assignx_thread = None
 
         # Check if x_min/x_max are available
-        if app.scatter_plotter.x_min is None or app.scatter_plotter.x_max is None:
+        if (
+            app.scatter_plotter.x_min is None
+            or app.scatter_plotter.x_max is None
+        ):
             app.print(
                 "Cannot toggle x-scale: x-axis data range not yet computed. "
                 "Please select x-axis dataset first (x)"
@@ -71,9 +74,12 @@ def _init_plot_bindings(app):
         # If toggling to log, validate data is compatible
         if new_scale == "log":
             if app.scatter_plotter.x_min <= 0:
+                value_type = (
+                    "zero" if app.scatter_plotter.x_min == 0 else "negative"
+                )
                 app.print(
                     f"Cannot use log scale on x-axis: data contains "
-                    f"{'zero' if app.scatter_plotter.x_min == 0 else 'negative'} values "
+                    f"{value_type} values "
                     f"(min = {app.scatter_plotter.x_min})"
                 )
                 return
@@ -95,7 +101,10 @@ def _init_plot_bindings(app):
             app.scatter_plotter.assigny_thread = None
 
         # Check if y_min/y_max are available
-        if app.scatter_plotter.y_min is None or app.scatter_plotter.y_max is None:
+        if (
+            app.scatter_plotter.y_min is None
+            or app.scatter_plotter.y_max is None
+        ):
             app.print(
                 "Cannot toggle y-scale: y-axis data range not yet computed. "
                 "Please select y-axis dataset first (y)"
@@ -114,9 +123,12 @@ def _init_plot_bindings(app):
         # If toggling to log, validate data is compatible
         if new_scale == "log":
             if app.scatter_plotter.y_min <= 0:
+                value_type = (
+                    "zero" if app.scatter_plotter.y_min == 0 else "negative"
+                )
                 app.print(
                     f"Cannot use log scale on y-axis: data contains "
-                    f"{'zero' if app.scatter_plotter.y_min == 0 else 'negative'} values "
+                    f"{value_type} values "
                     f"(min = {app.scatter_plotter.y_min})"
                 )
                 return
@@ -255,7 +267,9 @@ def _init_plot_bindings(app):
         save_scatter
     )
     app.kb.add("r", filter=Condition(lambda: app.flag_plotting_mode))(reset)
-    app.kb.add("e", filter=Condition(lambda: app.flag_plotting_mode))(edit_plot)
+    app.kb.add("e", filter=Condition(lambda: app.flag_plotting_mode))(
+        edit_plot
+    )
     app.kb.add("J", filter=Condition(lambda: app.flag_plotting_mode))(
         jump_to_config
     )
