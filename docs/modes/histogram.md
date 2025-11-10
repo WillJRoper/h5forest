@@ -88,6 +88,7 @@ Histogram Mode now provides direct key bindings for common configuration tasks, 
 
 **Edit Number of Bins** (**`b`**)
 - Directly edit the number of histogram bins
+- Validates data range is computed before allowing edit
 - Prompts for new bin count
 - Updates configuration immediately
 - No need to navigate to configuration window
@@ -95,14 +96,17 @@ Histogram Mode now provides direct key bindings for common configuration tasks, 
 **Toggle X-Scale** (**`x`**)
 - Instantly toggle x-axis between linear and logarithmic scale
 - Particularly useful for data spanning multiple orders of magnitude
-- Shows updated scale in configuration display
-- May show error if log scale is incompatible with data (negative/zero values)
+- Validates data range is computed before allowing toggle
+- Checks data compatibility when switching to log scale (must be strictly positive)
+- Shows clear error if log scale is incompatible with data (negative/zero values)
+- Updates configuration display immediately
 
 **Toggle Y-Scale** (**`y`**)
 - Toggle y-axis (frequency) between linear and logarithmic scale
+- Validates data range is computed before allowing toggle
 - Useful when histogram bins have very different counts
 - Reveals structure in low-frequency bins
-- May show error if histogram contains zero counts with log scale
+- Validation for log scale occurs when histogram is plotted (checks for zero counts)
 
 ### Advanced Configuration Window
 
@@ -327,11 +331,16 @@ Histograms reveal important data properties:
 - Appropriate error messages
 - Suggestions for data validation
 
+**Data Range Validation**
+- **Data range not yet computed**: Operations like toggling scales or editing bins require the data range to be computed first. If you see "data range not yet computed", ensure you've selected a dataset with **`Enter`** and wait for the background computation to complete.
+- **Thread synchronization**: The system automatically waits for data range computation to finish before allowing scale toggles or bin edits, preventing race conditions.
+
 **Logarithmic Scale Errors**
-- **Negative values with log x-scale**: Error message indicates data contains negative values incompatible with logarithmic x-axis
-- **Zero values with log x-scale**: Error message indicates data contains zero values incompatible with logarithmic x-axis
-- **Zero histogram counts with log y-scale**: Error message indicates some bins have zero counts, incompatible with logarithmic y-axis
-- **Solution**: Switch back to linear scale or filter/transform data appropriately
+- **Negative values with log x-scale**: Error message indicates data contains negative values incompatible with logarithmic x-axis. Shows exact minimum value for diagnosis.
+- **Zero values with log x-scale**: Error message indicates data contains zero values incompatible with logarithmic x-axis. Shows exact minimum value for diagnosis.
+- **Zero histogram counts with log y-scale**: Error message indicates some bins have zero counts, incompatible with logarithmic y-axis. Shows exact minimum count for diagnosis.
+- **Immediate validation**: Scale compatibility is checked immediately when toggling to log scale, providing instant feedback.
+- **Solution**: Switch back to linear scale or filter/transform data appropriately. For detailed error information, see the specific error message above the generic failure notice.
 
 **Extreme Values**
 - Automatic handling of infinite values
