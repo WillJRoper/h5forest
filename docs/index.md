@@ -1,4 +1,4 @@
-# h5forest
+# H5forest
 
 **A Text-based User Interface (TUI) for exploring HDF5 files**
 
@@ -69,6 +69,7 @@ Traditional HDF5 tools work well for quick inspections, but h5forest excels when
 h5forest is developed by [Will Roper](https://github.com/WillJRoper).
 
 **Get Involved:**
+
 - **Contribute:** See our [Contributing Guide](contributing.md) for development setup and guidelines
 - **Report Issues:** Submit bug reports and feature requests on [GitHub Issues](https://github.com/WillJRoper/h5forest/issues)
 - **Discussions:** Join conversations on [GitHub Discussions](https://github.com/WillJRoper/h5forest/discussions)
@@ -76,4 +77,4 @@ h5forest is developed by [Will Roper](https://github.com/WillJRoper).
 
 ## License
 
-h5forest is released under the MIT License. See the [LICENSE](https://github.com/WillJRoper/h5forest/blob/main/LICENSE) file for details.
+h5forest is released under the GPL v3 License. See the [LICENSE](https://github.com/WillJRoper/h5forest/blob/main/LICENSE) file for details.
