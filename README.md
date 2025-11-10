@@ -53,7 +53,7 @@ on the command line to get started exploring a file.
 
 "Why has no one done this before? Let’s nominate him for a peerage." - Professor incapable of peerage nomination.
 
-"Nice" - Previous supervisor.
+"Nice" - PhD supervisor.
 
 
 
