@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.widgets import Label
 
 from h5forest.bindings.hist_bindings import _init_hist_bindings
 
@@ -67,7 +68,6 @@ class TestHistBindings:
 
     def test_init_hist_bindings_returns_hotkeys(self, mock_app):
         """Test that _init_hist_bindings returns a dict of Labels."""
-        from prompt_toolkit.widgets import Label
 
         hot_keys = _init_hist_bindings(mock_app)
         assert isinstance(hot_keys, dict)
@@ -547,7 +547,6 @@ class TestHistBindings:
 
     def test_toggle_x_scale_with_running_thread(self, mock_app, mock_event):
         """Test toggling x scale with a running assign_data_thread."""
-        from unittest.mock import MagicMock
 
         # Create a mock thread
         mock_thread = MagicMock()
@@ -567,7 +566,6 @@ class TestHistBindings:
 
     def test_edit_bins_with_running_thread(self, mock_app, mock_event):
         """Test editing bins with a running assign_data_thread."""
-        from unittest.mock import MagicMock
 
         # Create a mock thread
         mock_thread = MagicMock()
@@ -587,7 +585,6 @@ class TestHistBindings:
 
     def test_toggle_y_scale_with_running_thread(self, mock_app, mock_event):
         """Test toggling y scale with a running assign_data_thread."""
-        from unittest.mock import MagicMock
 
         # Create a mock thread
         mock_thread = MagicMock()
