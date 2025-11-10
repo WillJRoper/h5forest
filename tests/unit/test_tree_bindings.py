@@ -255,14 +255,38 @@ class TestTreeBindings:
             10  # Must be <= len("expanded tree text") = 18
         )
 
-        bindings = [b for b in mock_app.kb.bindings if "c-m" in str(b.keys)]
-        handler = bindings[0].handler
-        handler(mock_event)
+        # Mock threading.Thread to execute the target function immediately
+        with patch("h5forest.bindings.tree_bindings.threading.Thread") as mock_thread:
+            # Make Thread().start() execute the target function immediately
+            def mock_thread_constructor(*args, **kwargs):
+                target = kwargs.get("target")
+                mock_instance = MagicMock()
+
+                def start():
+                    if target:
+                        target()
+
+                mock_instance.start = start
+                return mock_instance
+
+            mock_thread.side_effect = mock_thread_constructor
+
+            bindings = [b for b in mock_app.kb.bindings if "c-m" in str(b.keys)]
+            handler = bindings[0].handler
+            handler(mock_event)
 
         # Verify update_tree_text was called
         mock_app.tree.update_tree_text.assert_called_once_with(node, 3)
 
-        # Verify tree buffer was updated
+        # Verify tree buffer was updated via call_soon_threadsafe
+        # The lambda was called, which should have called set_document
+        mock_app.app.loop.call_soon_threadsafe.assert_called_once()
+
+        # Execute the lambda that was passed to call_soon_threadsafe
+        callback = mock_app.app.loop.call_soon_threadsafe.call_args[0][0]
+        callback()
+
+        # Now verify set_document was called
         mock_app.tree_buffer.set_document.assert_called_once()
         call_args = mock_app.tree_buffer.set_document.call_args
         doc = call_args[0][0]
