@@ -11,6 +11,7 @@ Example usage:
 """
 
 import threading
+from pathlib import Path
 
 import h5py
 from prompt_toolkit.layout.processors import Processor, Transformation
@@ -77,9 +78,7 @@ class Tree:
         """
         # Store the file path we're working with
         self.filepath = filepath
-        self.filename = (
-            filepath.split("/")[-1].replace(".h5", "").replace(".hdf5", "")
-        )
+        self.filename = Path(filepath).stem
 
         # Initialise a container to store nodes by row in the tree output
         self.nodes_by_row = []

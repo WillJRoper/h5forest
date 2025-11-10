@@ -58,12 +58,40 @@ class TestPlotter:
         plotter.show()
         mock_show.assert_called_once()
 
-    @patch("h5forest.plotting.os.getcwd")
+    @patch("h5forest.plotting.plt.close")
+    def test_close_with_figure(self, mock_close):
+        """Test close method with existing figure."""
+        plotter = Plotter()
+        fig_mock = Mock()
+        plotter.fig = fig_mock
+        plotter.ax = Mock()
+
+        plotter.close()
+
+        mock_close.assert_called_once_with(fig_mock)
+        assert plotter.fig is None
+        assert plotter.ax is None
+
+    @patch("h5forest.plotting.plt.close")
+    def test_close_without_figure(self, mock_close):
+        """Test close method when no figure exists."""
+        plotter = Plotter()
+        plotter.fig = None
+        plotter.ax = None
+
+        plotter.close()
+
+        # close should not be called if fig is None
+        mock_close.assert_not_called()
+        assert plotter.fig is None
+        assert plotter.ax is None
+
+    @patch("h5forest.plotting.Path.cwd")
     @patch("h5forest.h5_forest.H5Forest")
-    def test_save(self, mock_forest_class, mock_getcwd):
+    def test_save(self, mock_forest_class, mock_cwd):
         """Test save method with file path input."""
         # Setup mocks
-        mock_getcwd.return_value = "/tmp"
+        mock_cwd.return_value = Mock(__str__=Mock(return_value="/tmp"))
         mock_forest = Mock()
         mock_forest.user_input = "/tmp/test.png"
         mock_forest_class.return_value = mock_forest
@@ -105,11 +133,11 @@ class TestPlotter:
         plotter._plot.assert_called_once_with(text)
         mock_show.assert_called_once()
 
-    @patch("h5forest.plotting.os.getcwd")
+    @patch("h5forest.plotting.Path.cwd")
     @patch("h5forest.h5_forest.H5Forest")
-    def test_plot_and_save(self, mock_forest_class, mock_getcwd):
+    def test_plot_and_save(self, mock_forest_class, mock_cwd):
         """Test plot_and_save method."""
-        mock_getcwd.return_value = "/tmp"
+        mock_cwd.return_value = Mock(__str__=Mock(return_value="/tmp"))
         mock_forest = Mock()
         mock_forest.user_input = "/tmp/test.png"
         mock_forest_class.return_value = mock_forest
@@ -348,6 +376,12 @@ class TestScatterPlotter:
 
         plotter.plot_params = {"x": x_node, "y": y_node}
 
+        # Set min/max values (normally computed in set_x_key/set_y_key)
+        plotter.x_min = 1.0
+        plotter.x_max = 5.0
+        plotter.y_min = 2.0
+        plotter.y_max = 10.0
+
         # Setup mock HDF5 file
         mock_hdf = Mock()
         x_data = np.array([1, 2, 3, 4, 5])
@@ -426,6 +460,12 @@ class TestScatterPlotter:
         y_node.size = 10
 
         plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Set min/max values (normally computed in set_x_key/set_y_key)
+        plotter.x_min = 1.0
+        plotter.x_max = 10.0
+        plotter.y_min = 10.0
+        plotter.y_max = 100.0
 
         # Setup mock HDF5 file with chunked data
         mock_hdf = Mock()
@@ -515,6 +555,12 @@ class TestScatterPlotter:
 
         plotter.plot_params = {"x": x_node, "y": y_node}
 
+        # Set min/max values (normally computed in set_x_key/set_y_key)
+        plotter.x_min = 1.0
+        plotter.x_max = 1000.0
+        plotter.y_min = 1.0
+        plotter.y_max = 1000000.0
+
         # Setup mock HDF5 file
         mock_hdf = Mock()
         x_data = np.array([1, 10, 100, 1000])
@@ -571,6 +617,12 @@ class TestScatterPlotter:
 
         plotter.plot_params = {"x": x_node, "y": y_node}
 
+        # Set min/max values (normally computed in set_x_key/set_y_key)
+        plotter.x_min = 1.0
+        plotter.x_max = 3.0
+        plotter.y_min = 4.0
+        plotter.y_max = 6.0
+
         # Setup mock HDF5 file
         mock_hdf = Mock()
         x_data = np.array([1, 2, 3])
@@ -607,6 +659,665 @@ class TestScatterPlotter:
         # Verify scatter was called with star marker
         call_kwargs = mock_ax.scatter.call_args[1]
         assert call_kwargs["marker"] == "*"
+
+
+class TestScatterPlotterErrorHandling:
+    """Test error handling in ScatterPlotter."""
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_with_negative_x_values_log_scale(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test that log scale on x-axis with negative values shows error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+
+        # Set min/max with negative values
+        plotter.x_min = -10.0
+        plotter.x_max = 100.0
+        plotter.y_min = 1.0
+        plotter.y_max = 100.0
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        # Create plot text with log x-scale
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     log\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Cannot use log scale on x-axis" in error_msg
+        assert "negative" in error_msg
+
+        # Verify scale was NOT set (function returned early)
+        mock_ax.set_xscale.assert_not_called()
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_with_zero_x_values_log_scale(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test that log scale on x-axis with zero values shows error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+
+        # Set min/max with zero
+        plotter.x_min = 0.0
+        plotter.x_max = 100.0
+        plotter.y_min = 1.0
+        plotter.y_max = 100.0
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        # Create plot text with log x-scale
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     log\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Cannot use log scale on x-axis" in error_msg
+        assert "zero" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_with_negative_y_values_log_scale(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test that log scale on y-axis with negative values shows error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+
+        # Set min/max with negative y values
+        plotter.x_min = 1.0
+        plotter.x_max = 100.0
+        plotter.y_min = -5.0
+        plotter.y_max = 100.0
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        # Create plot text with log y-scale
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     log\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Cannot use log scale on y-axis" in error_msg
+        assert "negative" in error_msg
+
+        # Verify scale was NOT set (function returned early)
+        mock_ax.set_yscale.assert_not_called()
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_with_none_x_values(self, mock_figure, mock_forest_class):
+        """Test that None x_min/x_max shows appropriate error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+
+        # Set min/max to None (not yet computed)
+        plotter.x_min = None
+        plotter.x_max = None
+        plotter.y_min = 1.0
+        plotter.y_max = 100.0
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        # Create plot text
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "failed to determine x-axis data range" in error_msg
+        assert "See error above for details" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_with_none_y_values(self, mock_figure, mock_forest_class):
+        """Test that None y_min/y_max shows appropriate error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+
+        # Set min/max to None (not yet computed)
+        plotter.x_min = 1.0
+        plotter.x_max = 100.0
+        plotter.y_min = None
+        plotter.y_max = None
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        # Create plot text
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "failed to determine y-axis data range" in error_msg
+        assert "See error above for details" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_set_xscale_exception_handling(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test exception handling when set_xscale fails."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+        plotter.x_min = 1.0
+        plotter.x_max = 100.0
+        plotter.y_min = 1.0
+        plotter.y_max = 100.0
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure with ax that raises exception on set_xscale
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_ax.set_xscale.side_effect = ValueError("Invalid scale")
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Error setting x-scale" in error_msg
+        assert "Invalid scale" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_set_yscale_exception_handling(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test exception handling when set_yscale fails."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+        plotter.x_min = 1.0
+        plotter.x_max = 100.0
+        plotter.y_min = 1.0
+        plotter.y_max = 100.0
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure with ax that raises exception on set_yscale
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_ax.set_yscale.side_effect = ValueError("Invalid scale")
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Error setting y-scale" in error_msg
+        assert "Invalid scale" in error_msg
+
+
+class TestHistogramPlotterErrorHandling:
+    """Test error handling in HistogramPlotter."""
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.get_app")
+    @patch("h5forest.plotting.h5py.File")
+    def test_compute_hist_with_negative_values_log_scale(
+        self, mock_h5py_file, mock_get_app, mock_forest_class
+    ):
+        """Test that log scale with negative data values shows error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+        mock_app = Mock()
+        mock_get_app.return_value = mock_app
+
+        plotter = HistogramPlotter()
+
+        # Create mock node
+        node = Mock()
+        node.filepath = "/tmp/test.h5"
+        node.path = "/hist_data"
+        node.chunks = 1
+        node.is_chunked = False
+
+        plotter.plot_params = {"data": node}
+        plotter.x_min = -10.0  # Negative minimum
+        plotter.x_max = 100.0
+
+        # Create compute text with log scale
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       10\n"
+            "x-label:     Data\n"
+            "x-scale:     log\n"
+            "y-scale:     linear\n"
+        )
+
+        plotter.compute_hist(text)
+
+        # Wait for thread to complete
+        if plotter.compute_hist_thread is not None:
+            plotter.compute_hist_thread.join()
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Cannot use log scale" in error_msg
+        assert "negative" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.get_app")
+    @patch("h5forest.plotting.h5py.File")
+    def test_compute_hist_with_zero_values_log_scale(
+        self, mock_h5py_file, mock_get_app, mock_forest_class
+    ):
+        """Test that log scale with zero data values shows error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+        mock_app = Mock()
+        mock_get_app.return_value = mock_app
+
+        plotter = HistogramPlotter()
+
+        # Create mock node
+        node = Mock()
+        node.filepath = "/tmp/test.h5"
+        node.path = "/hist_data"
+        node.chunks = 1
+        node.is_chunked = False
+
+        plotter.plot_params = {"data": node}
+        plotter.x_min = 0.0  # Zero minimum
+        plotter.x_max = 100.0
+
+        # Create compute text with log scale
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       10\n"
+            "x-label:     Data\n"
+            "x-scale:     log\n"
+            "y-scale:     linear\n"
+        )
+
+        plotter.compute_hist(text)
+
+        # Wait for thread to complete
+        if plotter.compute_hist_thread is not None:
+            plotter.compute_hist_thread.join()
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Cannot use log scale" in error_msg
+        assert "zero" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_hist_with_zero_counts_log_yscale(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test that log y-scale with zero histogram counts shows error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = HistogramPlotter()
+
+        # Setup histogram data with zeros
+        plotter.hist = np.array([0, 1, 2, 3, 4])
+        plotter.xs = np.array([1, 2, 3, 4, 5])
+        plotter.widths = np.array([0.8, 0.8, 0.8, 0.8, 0.8])
+
+        # Mock compute thread
+        plotter.compute_hist_thread = Mock()
+        plotter.compute_hist_thread.join = Mock()
+
+        # Setup mock figure
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        # Create plot text with log y-scale
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       5\n"
+            "x-label:     Data Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     log\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Cannot use log scale on y-axis" in error_msg
+        assert "zero" in error_msg
+
+        # Verify scale was NOT set (function returned early)
+        mock_ax.set_yscale.assert_not_called()
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.get_app")
+    @patch("h5forest.plotting.h5py.File")
+    def test_compute_hist_with_none_values(
+        self, mock_h5py_file, mock_get_app, mock_forest_class
+    ):
+        """Test that None x_min/x_max shows appropriate error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+        mock_app = Mock()
+        mock_get_app.return_value = mock_app
+
+        plotter = HistogramPlotter()
+
+        # Create mock node
+        node = Mock()
+        node.filepath = "/tmp/test.h5"
+        node.path = "/hist_data"
+        node.chunks = 1
+        node.is_chunked = False
+
+        plotter.plot_params = {"data": node}
+        plotter.x_min = None  # Not yet computed
+        plotter.x_max = None
+
+        # Create compute text
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       10\n"
+            "x-label:     Data\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
+
+        plotter.compute_hist(text)
+
+        # Wait for thread to complete
+        if plotter.compute_hist_thread is not None:
+            plotter.compute_hist_thread.join()
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "failed to determine data range" in error_msg
+        assert "See error above for details" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_set_xscale_exception_handling(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test exception handling when set_xscale fails in histogram."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = HistogramPlotter()
+        plotter.x_min = 1.0
+        plotter.x_max = 100.0
+        plotter.hist = np.array([1, 2, 3, 4, 5])
+        plotter.xs = np.array([1, 2, 3, 4, 5])
+        plotter.widths = np.array([1, 1, 1, 1, 1])
+        # Mock thread with join method
+        mock_thread = Mock()
+        mock_thread.join = Mock()
+        plotter.compute_hist_thread = mock_thread
+
+        # Setup mock figure with ax that raises exception on set_xscale
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_ax.set_xscale.side_effect = ValueError("Invalid scale")
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       5\n"
+            "x-label:     Data\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Error setting x-scale" in error_msg
+        assert "Invalid scale" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_set_yscale_exception_handling(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test exception handling when set_yscale fails in histogram."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = HistogramPlotter()
+        plotter.x_min = 1.0
+        plotter.x_max = 100.0
+        plotter.hist = np.array([1, 2, 3, 4, 5])
+        plotter.xs = np.array([1, 2, 3, 4, 5])
+        plotter.widths = np.array([1, 1, 1, 1, 1])
+        # Mock thread with join method
+        mock_thread = Mock()
+        mock_thread.join = Mock()
+        plotter.compute_hist_thread = mock_thread
+
+        # Setup mock figure with ax that raises exception on set_yscale
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_ax.set_yscale.side_effect = ValueError("Invalid scale")
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       5\n"
+            "x-label:     Data\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Error setting y-scale" in error_msg
+        assert "Invalid scale" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_with_failed_histogram_computation(
+        self, mock_figure, mock_forest_class
+    ):
+        """Test error handling when histogram computation fails."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = HistogramPlotter()
+        plotter.x_min = 1.0
+        plotter.x_max = 100.0
+        # Explicitly set hist to None to simulate failed computation
+        plotter.hist = None
+        # Mock thread with join method
+        mock_thread = Mock()
+        mock_thread.join = Mock()
+        plotter.compute_hist_thread = mock_thread
+
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       10\n"
+            "x-label:     Data\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "Cannot plot histogram" in error_msg
+        assert "histogram computation failed" in error_msg
 
 
 class TestHistogramPlotter:

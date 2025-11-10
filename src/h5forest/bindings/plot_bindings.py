@@ -44,6 +44,104 @@ def _init_plot_bindings(app):
         app.plot_content.text = app.scatter_plotter.set_y_key(node)
 
     @error_handler
+    def toggle_x_scale(event):
+        """Toggle the x-axis scale between linear and log."""
+        # Wait for x-axis data assignment thread to finish if it's running
+        if app.scatter_plotter.assignx_thread is not None:
+            app.scatter_plotter.assignx_thread.join()
+            app.scatter_plotter.assignx_thread = None
+
+        # Check if x_min/x_max are available
+        if (
+            app.scatter_plotter.x_min is None
+            or app.scatter_plotter.x_max is None
+        ):
+            app.print(
+                "Cannot toggle x-scale: x-axis data range not yet computed. "
+                "Please select x-axis dataset first (x)"
+            )
+            return
+
+        # Get the current text
+        split_text = app.plot_content.text.split("\n")
+
+        # Get the current x-scale (it's on line 4)
+        current_scale = split_text[4].split(": ")[1].strip()
+
+        # Toggle the scale
+        new_scale = "log" if current_scale == "linear" else "linear"
+
+        # If toggling to log, validate data is compatible
+        if new_scale == "log":
+            if app.scatter_plotter.x_min <= 0:
+                value_type = (
+                    "zero" if app.scatter_plotter.x_min == 0 else "negative"
+                )
+                app.print(
+                    f"Cannot use log scale on x-axis: data contains "
+                    f"{value_type} values "
+                    f"(min = {app.scatter_plotter.x_min})"
+                )
+                return
+
+        split_text[4] = f"x-scale:     {new_scale}"
+
+        # Update the text
+        app.plot_content.text = "\n".join(split_text)
+        app.scatter_plotter.plot_text = app.plot_content.text
+
+        app.app.invalidate()
+
+    @error_handler
+    def toggle_y_scale(event):
+        """Toggle the y-axis scale between linear and log."""
+        # Wait for y-axis data assignment thread to finish if it's running
+        if app.scatter_plotter.assigny_thread is not None:
+            app.scatter_plotter.assigny_thread.join()
+            app.scatter_plotter.assigny_thread = None
+
+        # Check if y_min/y_max are available
+        if (
+            app.scatter_plotter.y_min is None
+            or app.scatter_plotter.y_max is None
+        ):
+            app.print(
+                "Cannot toggle y-scale: y-axis data range not yet computed. "
+                "Please select y-axis dataset first (y)"
+            )
+            return
+
+        # Get the current text
+        split_text = app.plot_content.text.split("\n")
+
+        # Get the current y-scale (it's on line 5)
+        current_scale = split_text[5].split(": ")[1].strip()
+
+        # Toggle the scale
+        new_scale = "log" if current_scale == "linear" else "linear"
+
+        # If toggling to log, validate data is compatible
+        if new_scale == "log":
+            if app.scatter_plotter.y_min <= 0:
+                value_type = (
+                    "zero" if app.scatter_plotter.y_min == 0 else "negative"
+                )
+                app.print(
+                    f"Cannot use log scale on y-axis: data contains "
+                    f"{value_type} values "
+                    f"(min = {app.scatter_plotter.y_min})"
+                )
+                return
+
+        split_text[5] = f"y-scale:     {new_scale}"
+
+        # Update the text
+        app.plot_content.text = "\n".join(split_text)
+        app.scatter_plotter.plot_text = app.plot_content.text
+
+        app.app.invalidate()
+
+    @error_handler
     def edit_plot_entry(event):
         """Edit plot param under cursor."""
         # Get the current position and row in the plot content
@@ -123,6 +221,7 @@ def _init_plot_bindings(app):
     @error_handler
     def reset(event):
         """Reset the plot content."""
+        app.scatter_plotter.close()
         app.plot_content.text = app.scatter_plotter.reset()
 
         app.app.invalidate()
@@ -134,6 +233,16 @@ def _init_plot_bindings(app):
         """Edit the plot."""
         app.shift_focus(app.plot_content)
 
+    @error_handler
+    def jump_to_config(event):
+        """Toggle between configuration window and tree view."""
+        if app.app.layout.has_focus(app.plot_content):
+            # Already in config, jump back to tree
+            app.shift_focus(app.tree_content)
+        else:
+            # In tree, jump to config
+            app.shift_focus(app.plot_content)
+
     def exit_edit_plot(event):
         """Exit edit plot mode."""
         app.shift_focus(app.tree_content)
@@ -141,6 +250,12 @@ def _init_plot_bindings(app):
     # Bind the functions
     app.kb.add("x", filter=Condition(lambda: app.flag_plotting_mode))(select_x)
     app.kb.add("y", filter=Condition(lambda: app.flag_plotting_mode))(select_y)
+    app.kb.add("X", filter=Condition(lambda: app.flag_plotting_mode))(
+        toggle_x_scale
+    )
+    app.kb.add("Y", filter=Condition(lambda: app.flag_plotting_mode))(
+        toggle_y_scale
+    )
     app.kb.add(
         "enter",
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
@@ -152,13 +267,12 @@ def _init_plot_bindings(app):
         save_scatter
     )
     app.kb.add("r", filter=Condition(lambda: app.flag_plotting_mode))(reset)
-    app.kb.add(
-        "e",
-        filter=Condition(
-            lambda: app.flag_plotting_mode
-            and len(app.scatter_plotter.plot_params) > 0
-        ),
-    )(edit_plot)
+    app.kb.add("e", filter=Condition(lambda: app.flag_plotting_mode))(
+        edit_plot
+    )
+    app.kb.add("J", filter=Condition(lambda: app.flag_plotting_mode))(
+        jump_to_config
+    )
     app.kb.add(
         "q",
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
@@ -168,9 +282,13 @@ def _init_plot_bindings(app):
     # The app will use property methods to filter based on state
     hot_keys = {
         "edit_config": Label("e → Edit Config"),
+        "jump_config": Label("J → Jump to Config"),
+        "jump_tree": Label("J → Jump to tree"),
         "edit_entry": Label("Enter → Edit entry"),
         "select_x": Label("x → Select x-axis"),
         "select_y": Label("y → Select y-axis"),
+        "toggle_x_scale": Label("X → Toggle x-scale"),
+        "toggle_y_scale": Label("Y → Toggle y-scale"),
         "plot": Label("p → Plot"),
         "save_plot": Label("P → Save Plot"),
         "reset": Label("r → Reset"),

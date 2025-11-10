@@ -12,26 +12,36 @@ Histogram Mode is designed for:
 
 ## Keyboard Reference
 
-### Histogram Generation
+### Data Selection and Histogram Generation
 
 | Key | Action | Description |
 |-----|--------|-------------|
-| **`h`** | Generate Histogram | Create histogram from dataset under cursor |
-| **`H`** | Generate and Save | Create histogram and save to file |
+| **`Enter`** | Select Dataset | Select the dataset under cursor for histogram (when in tree view) |
+| **`h`** | Show Histogram | Compute and display histogram of selected dataset |
+| **`H`** | Save Histogram | Compute histogram and save to file |
 
-### Configuration
+### Direct Configuration
 
 | Key | Action | Description |
 |-----|--------|-------------|
-| **`e`** | Edit Configuration | Open histogram configuration editor (when parameters available) |
-| **`Enter`** | Edit Parameter | Edit the parameter under cursor (when in config mode) |
+| **`b`** | Edit Bins | Edit the number of histogram bins |
+| **`x`** | Toggle X-Scale | Toggle x-axis between linear and logarithmic scale |
+| **`y`** | Toggle Y-Scale | Toggle y-axis between linear and logarithmic scale |
+| **`J`** | Jump to Config | Jump to configuration window for advanced editing |
 | **`r`** | Reset Configuration | Reset histogram configuration to defaults |
+
+### Advanced Configuration (When in Config Window)
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| **`Enter`** | Edit Parameter | Edit the parameter under cursor |
+| **`q`** | Exit Config | Return to tree view |
 
 ### Mode Control
 
 | Key | Action | Description |
 |-----|--------|-------------|
-| **`q`** | Exit Histogram Mode | Return to Normal Mode or exit configuration |
+| **`q`** | Exit Histogram Mode | Return to Normal Mode (when in tree view) |
 
 ## Entering Histogram Mode
 
@@ -43,73 +53,91 @@ From Normal Mode, press **`h`** to enter Histogram Mode. You can also access it 
 
 1. **Navigate to dataset** of interest
 2. **Enter Histogram Mode** (**`h`**)
-3. **Generate histogram** (**`h`**) - automatically uses current dataset
-4. **Examine distribution** in histogram panel
-5. **Optionally configure** and regenerate
+3. **Select dataset** (**`Enter`**) - configures histogram parameters
+4. **Generate histogram** (**`h`**) - computes and displays the histogram
+5. **Examine distribution** in histogram panel
+6. **Optionally adjust settings** using direct key bindings
 
-### Automatic Dataset Selection
+### Dataset Selection
 
-When you press **`h`** to generate a histogram:
-- Uses the dataset currently under the cursor
-- No need for explicit selection (unlike Plotting Mode)
-- Immediate histogram generation for quick analysis
-- Works with any numeric dataset
+**Select Dataset** (**`Enter`**)
+- When focused on a dataset in the tree view, press **`Enter`** to select it
+- Automatically configures histogram parameters for the selected dataset
+- Sets default binning, labels, and scales
+- Displays configuration in the histogram panel
 
 ### Histogram Generation
 
-**Generate Histogram** (**`h`**)
-- Creates histogram of the currently selected dataset
+**Show Histogram** (**`h`**)
+- Computes histogram using current configuration
+- Displays histogram in an external window
 - Uses automatic binning based on data characteristics
-- Displays histogram in the histogram panel
-- Shows basic statistics alongside the histogram
+- Shows the histogram visualization alongside the TUI
 
-**Generate and Save** (**`H`**)
-- Creates histogram as above
+**Save Histogram** (**`H`**)
+- Computes histogram as above
 - Prompts for filename
 - Saves histogram to file (PNG, PDF, etc.)
-- Includes statistical summary in saved output
+- Allows you to preserve the analysis for later use
 
 ## Histogram Configuration
 
-### Configuration Editor
+### Direct Configuration Bindings
 
-**Edit Configuration** (**`e`**)
-- Opens interactive configuration editor
-- Shows adjustable histogram parameters
-- Allows customization of appearance and analysis
-- Updates histogram in real-time when possible
+Histogram Mode now provides direct key bindings for common configuration tasks, eliminating the need to enter a separate configuration mode for basic adjustments:
+
+**Edit Number of Bins** (**`b`**)
+- Directly edit the number of histogram bins
+- Validates data range is computed before allowing edit
+- Prompts for new bin count
+- Updates configuration immediately
+- No need to navigate to configuration window
+
+**Toggle X-Scale** (**`x`**)
+- Instantly toggle x-axis between linear and logarithmic scale
+- Particularly useful for data spanning multiple orders of magnitude
+- Validates data range is computed before allowing toggle
+- Checks data compatibility when switching to log scale (must be strictly positive)
+- Shows clear error if log scale is incompatible with data (negative/zero values)
+- Updates configuration display immediately
+
+**Toggle Y-Scale** (**`y`**)
+- Toggle y-axis (frequency) between linear and logarithmic scale
+- Validates data range is computed before allowing toggle
+- Useful when histogram bins have very different counts
+- Reveals structure in low-frequency bins
+- Validation for log scale occurs when histogram is plotted (checks for zero counts)
+
+### Advanced Configuration Window
+
+**Jump to Config** (**`J`**)
+- Opens the full configuration window for advanced editing
+- Allows editing of all parameters including labels and custom settings
+- Navigate parameters with arrow keys
+- Press **`Enter`** to edit parameter under cursor
+- Press **`q`** to return to tree view
 
 ### Configurable Parameters
 
 Key histogram parameters include:
 
 **Binning Options**
-- **Number of bins**: Control histogram resolution
-- **Bin edges**: Manual bin boundary specification
-- **Binning method**: Automatic, fixed-width, or percentile-based
+- **Number of bins**: Control histogram resolution (editable with **`b`**)
+- **Bin edges**: Automatically calculated based on scale and data range
+- **Scale**: Linear or logarithmic binning (controlled by x-scale setting)
 
-**Scale and Range**
-- **Y-axis scale**: Linear or logarithmic frequency scale
-- **X-axis range**: Focus on specific data ranges
-- **Normalization**: Raw counts, density, or probability
+**Scale Settings**
+- **X-axis scale**: Linear or logarithmic (toggle with **`x`**)
+- **Y-axis scale**: Linear or logarithmic frequency scale (toggle with **`y`**)
+- **Labels**: Dataset path used as default x-label (editable in config window)
 
-**Visual Appearance**
-- **Bar style**: Filled bars, outlines, or step plots
-- **Color scheme**: Color coding options
-- **Transparency**: Alpha channel for overlapping histograms
-
-### Parameter Editing
-
-**Edit Parameter** (**`Enter`**)
-- Edits the parameter currently under cursor
-- Toggle options (like linear/log scale) with simple selection
-- Numeric parameters (bin count, ranges) accept typed input
-- Real-time preview when computationally feasible
+### Configuration Reset
 
 **Reset Configuration** (**`r`**)
 - Restores all parameters to intelligent defaults
-- Preserves dataset selection
-- Useful when configuration becomes too complex
+- Clears dataset selection
+- Closes any open histogram windows
+- Returns to clean state for new analysis
 
 ## Statistical Information
 
@@ -205,37 +233,52 @@ Histograms reveal important data properties:
 ```
 1. Navigate to dataset of interest
 2. Press 'h' to enter Histogram Mode
-3. Press 'h' to generate histogram
-4. Examine shape and statistics
-5. Look for outliers or unexpected patterns
+3. Press 'Enter' to select the dataset
+4. Press 'h' to generate and show histogram
+5. Examine shape and statistics
+6. Look for outliers or unexpected patterns
 ```
 
 ### Detailed Distribution Analysis
 ```
-1. Generate basic histogram as above
-2. Press 'e' to edit configuration
-3. Adjust bin count for better resolution
-4. Set logarithmic y-axis if needed
-5. Focus on specific data range
-6. Press 'H' to save analysis
+1. Navigate to dataset and enter Histogram Mode ('h')
+2. Select dataset ('Enter')
+3. Adjust bin count for better resolution ('b')
+4. Toggle to logarithmic y-axis if needed ('y')
+5. Toggle to logarithmic x-axis for wide ranges ('x')
+6. Press 'h' to view updated histogram
+7. Press 'H' to save analysis
+```
+
+### Advanced Configuration Workflow
+```
+1. Select dataset and generate basic histogram
+2. Press 'J' to jump to configuration window
+3. Navigate to parameter you want to edit
+4. Press 'Enter' to modify the parameter
+5. Press 'q' to return to tree view
+6. Press 'h' to regenerate with new settings
 ```
 
 ### Quality Assessment Workflow
 ```
-1. Check histogram for overall shape
-2. Look for unexpected gaps or spikes
-3. Examine min/max values for outliers
-4. Check mean/median relationship
-5. Assess data completeness and quality
+1. Select dataset and generate histogram
+2. Check histogram for overall shape
+3. Look for unexpected gaps or spikes
+4. Try logarithmic scales ('x' or 'y') to reveal hidden structure
+5. Adjust bin count ('b') for better resolution
+6. Assess data completeness and quality
 ```
 
 ### Comparative Analysis
 ```
-1. Generate histogram for first dataset
-2. Note key statistics and shape
-3. Navigate to related dataset
-4. Generate second histogram
-5. Compare distributions visually and statistically
+1. Navigate to first dataset
+2. Enter Histogram Mode and select dataset ('h', 'Enter')
+3. Generate histogram ('h') and note key characteristics
+4. Navigate to related dataset (within Histogram Mode)
+5. Select second dataset ('Enter')
+6. Generate second histogram ('h')
+7. Compare distributions visually and statistically
 ```
 
 ## Interpreting Histograms
@@ -288,6 +331,17 @@ Histograms reveal important data properties:
 - Appropriate error messages
 - Suggestions for data validation
 
+**Data Range Validation**
+- **Data range not yet computed**: Operations like toggling scales or editing bins require the data range to be computed first. If you see "data range not yet computed", ensure you've selected a dataset with **`Enter`** and wait for the background computation to complete.
+- **Thread synchronization**: The system automatically waits for data range computation to finish before allowing scale toggles or bin edits, preventing race conditions.
+
+**Logarithmic Scale Errors**
+- **Negative values with log x-scale**: Error message indicates data contains negative values incompatible with logarithmic x-axis. Shows exact minimum value for diagnosis.
+- **Zero values with log x-scale**: Error message indicates data contains zero values incompatible with logarithmic x-axis. Shows exact minimum value for diagnosis.
+- **Zero histogram counts with log y-scale**: Error message indicates some bins have zero counts, incompatible with logarithmic y-axis. Shows exact minimum count for diagnosis.
+- **Immediate validation**: Scale compatibility is checked immediately when toggling to log scale, providing instant feedback.
+- **Solution**: Switch back to linear scale or filter/transform data appropriately. For detailed error information, see the specific error message above the generic failure notice.
+
 **Extreme Values**
 - Automatic handling of infinite values
 - NaN value detection and reporting
@@ -298,6 +352,8 @@ Histograms reveal important data properties:
 - Check dataset metadata for expected properties
 - Use configuration reset (**`r`**) to start fresh
 - Try different binning strategies for problematic data
+- For log scale issues, verify data is strictly positive before using logarithmic scales
+- Consider transforming data (e.g., adding offset) if log scale is needed for non-positive data
 
 ## Integration with Other Modes
 
@@ -338,16 +394,22 @@ Plotting Mode → Explore relationships
 ## Tips for Effective Analysis
 
 !!! tip "Start Simple"
-    Begin with default histogram settings, then refine configuration based on initial results.
+    Begin with default histogram settings, then refine configuration based on initial results. Use direct key bindings (**`b`**, **`x`**, **`y`**) for quick adjustments.
 
 !!! tip "Bin Count Guidelines"
-    For most datasets, automatic binning works well. Increase bins for more detail, decrease for smoother curves.
+    For most datasets, automatic binning (50 bins) works well. Press **`b`** to adjust: increase bins for more detail, decrease for smoother curves.
 
 !!! tip "Scale Selection"
-    Use logarithmic y-axis when frequency counts span several orders of magnitude.
+    Use logarithmic y-axis (**`y`**) when frequency counts span several orders of magnitude. Use logarithmic x-axis (**`x`**) for data spanning wide ranges (e.g., 0.01 to 10000).
+
+!!! tip "Direct Configuration"
+    The new direct key bindings eliminate the need to open the configuration window for common adjustments. Use **`b`** for bins, **`x`** and **`y`** for scales, and only press **`J`** when you need to edit labels or other advanced parameters.
 
 !!! warning "Outlier Impact"
     Extreme outliers can compress the main distribution. Consider focusing on specific ranges for better resolution.
+
+!!! warning "Log Scale Constraints"
+    Logarithmic scales require strictly positive values. The system will prevent you from using log scales with negative or zero data and display a clear error message.
 
 ## Statistical Best Practices
 
