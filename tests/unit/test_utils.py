@@ -703,6 +703,81 @@ class TestDynamicLabelLayout:
                         "All labels should be padded to same width"
                     )
 
+    @patch("shutil.get_terminal_size")
+    @patch("h5forest.utils.get_app")
+    def test_pt_container_shutil_exception(
+        self, mock_get_app, mock_get_terminal_size
+    ):
+        """Test __pt_container__ fallback when shutil.get_terminal_size fails."""
+        labels = [Label("Test")]
+        layout = DynamicLabelLayout(labels)
+
+        # Make shutil.get_terminal_size raise an exception
+        mock_get_terminal_size.side_effect = Exception("No terminal")
+
+        # Mock get_app to provide fallback
+        mock_app = Mock()
+        mock_output = Mock()
+        mock_size = Mock()
+        mock_size.columns = 80
+        mock_output.get_size.return_value = mock_size
+        mock_app.output = mock_output
+        mock_get_app.return_value = mock_app
+
+        # Should fallback to get_app and still work
+        container = layout.__pt_container__()
+        assert isinstance(container, HSplit)
+
+    @patch("shutil.get_terminal_size")
+    @patch("h5forest.utils.get_app")
+    def test_pt_container_both_exceptions(
+        self, mock_get_app, mock_get_terminal_size
+    ):
+        """Test __pt_container__ final fallback when both methods fail."""
+        labels = [Label("Test")]
+        layout = DynamicLabelLayout(labels)
+
+        # Make both terminal size methods fail
+        mock_get_terminal_size.side_effect = Exception("No terminal")
+        mock_get_app.side_effect = Exception("No app")
+
+        # Should use final fallback width of 80
+        container = layout.__pt_container__()
+        assert isinstance(container, HSplit)
+
+    def test_estimate_label_width_conditional_without_text(self):
+        """Test width estimation for ConditionalContainer without text attr."""
+        layout = DynamicLabelLayout([])
+
+        # Create a ConditionalContainer with content that has no text attribute
+        mock_content = Mock(spec=[])  # No text attribute
+        container = Mock(spec=ConditionalContainer)
+        container.content = mock_content
+
+        # Should return fallback value of 20
+        width = layout._estimate_label_width(container)
+        assert width == 20
+
+    def test_get_label_text_label_without_text(self):
+        """Test getting text from label without text attribute."""
+        layout = DynamicLabelLayout([])
+        mock_label = Mock(spec=[])  # No text attribute
+
+        text = layout._get_label_text(mock_label)
+        assert text == ""
+
+    def test_get_label_text_conditional_without_text(self):
+        """Test getting text from ConditionalContainer without text attribute."""
+        layout = DynamicLabelLayout([])
+
+        # Create ConditionalContainer with content that has no text
+        mock_content = Mock(spec=[])
+        container = Mock(spec=ConditionalContainer)
+        container.content = mock_content
+
+        text = layout._get_label_text(container)
+        assert text == ""
+
 
 class TestWaitIndicator:
     """Test cases for WaitIndicator class."""
