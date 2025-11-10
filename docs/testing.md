@@ -1,6 +1,6 @@
 # Testing Guide
 
-h5forest includes a comprehensive test suite to ensure code quality and prevent regressions. This guide covers how to run tests, understand the test structure, and contribute new tests.
+`h5forest` includes a comprehensive test suite to ensure code quality and prevent regressions. This guide covers how to run tests, understand the test structure, and contribute new tests.
 
 ## Quick Start
 

@@ -1,6 +1,6 @@
 # Basic Usage
 
-This page covers the fundamental concepts and usage patterns of h5forest.
+This page covers the fundamental concepts and usage patterns of `h5forest`.
 
 ## Interface Overview
 

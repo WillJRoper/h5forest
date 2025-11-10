@@ -1,12 +1,12 @@
 # Frequently Asked Questions
 
-Common questions and solutions for h5forest users.
+Common questions and solutions for `h5forest` users.
 
 ## Installation and Setup
 
-### Q: h5forest won't start - "command not found"
+### Q: `h5forest` won't start - "command not found"
 
-**A:** Ensure h5forest is properly installed:
+**A:** Ensure `h5forest` is properly installed:
 
 ```bash
 # Check if installed
@@ -20,7 +20,7 @@ pip install --user h5forest
 export PATH=$PATH:~/.local/bin
 ```
 
-### Q: Import errors when starting h5forest
+### Q: Import errors when starting `h5forest`
 
 **A:** Check that all dependencies are installed:
 
@@ -32,9 +32,9 @@ python -c "import h5py, numpy, prompt_toolkit, matplotlib"
 pip install --upgrade h5forest
 ```
 
-### Q: h5forest displays incorrectly in my terminal
+### Q: `h5forest` displays incorrectly in my terminal
 
-**A:** h5forest requires a modern terminal with Unicode support:
+**A:** `h5forest` requires a modern terminal with Unicode support:
 
 - **Recommended terminals:** iTerm2 (macOS), Windows Terminal, modern Linux terminals
 - **Check Unicode support:** Ensure your terminal displays Unicode characters correctly
@@ -58,7 +58,7 @@ chmod 644 /path/to/your/file.h5
 h5dump -H /path/to/your/file.h5
 ```
 
-### Q: h5forest won't open my HDF5 file
+### Q: `h5forest` won't open my HDF5 file
 
 **A:** Verify file format and integrity:
 
@@ -85,6 +85,8 @@ h5dump -H /path/to/your/file.h5
 
 **A:** For now, if you have a large number of Groups at the root level this is expected behavior. We do plan to introduce asynchronous tree construction in a future release to address this.
 
+
+
 ## Navigation and Interface
 
 ### Q: I'm lost in a deep hierarchy - how do I get back to the root?
@@ -93,17 +95,17 @@ h5dump -H /path/to/your/file.h5
 
 ### Q: The interface looks cramped, help!
 
-**A:** While h5forest does its best to adapt to your terminal size, its not totally dynamic yet. You can try resizing your terminal window which will retrigger a redraw of the interface. If that doesn't help, you should exit, adjust your font size and re-open h5forest.
+**A:** While `h5forest` does its best to adapt to your terminal size, its not totally dynamic yet. You can try resizing your terminal window which will retrigger a redraw of the interface. If that doesn't help, you should exit, adjust your font size and re-open `h5forest`.
 
 ### Q: Keyboard shortcuts aren't working
 
-**A:** If the key is displayed in the hotkey panel but doesn't work, please raise an issue with details of the issue (including your OS, terminal, and h5forest version). If the key isn't displayed, you may be in the wrong mode - check the mode indicator at the bottom of the screen and use `q` to exit to Normal Mode.
+**A:** If the key is displayed in the hotkey panel but doesn't work, please raise an issue with details of the issue (including your OS, terminal, and `h5forest` version). If the key isn't displayed, you may be in the wrong mode - check the mode indicator at the bottom of the screen and use `q` to exit to Normal Mode.
 
 ## Data Analysis
 
 ### Q: Statistical calculations are very slow
 
-**A:** Is your dataset very large but not chunked? Statistics on large unchunked datasets can be slow due to the need to read all data at once. When chunked data is found, h5forest can read in manageable pieces. I'm afraid there's not much that can be done for unchunked datasets other than being patient or pre-processing the data into a chunked format. Note that exploring the file will still be fast even if statistics are slow.
+**A:** Is your dataset very large but not chunked? Statistics on large unchunked datasets can be slow due to the need to read all data at once. When chunked data is found, `h5forest` can read in manageable pieces. I'm afraid there's not much that can be done for unchunked datasets other than being patient or pre-processing the data into a chunked format. Note that exploring the file will still be fast even if statistics are slow.
 
 ### Q: "Unable to compute statistics" errors
 
@@ -152,26 +154,26 @@ h5dump -H /path/to/your/file.h5
 
 ### Q: Operations freeze or become unresponsive
 
-**A:** Do you have lots of groups at a single level? This can cause delays as h5forest builds the tree structure. In most cases, h5forest should remain responsive and display progress indicators.
+**A:** Do you have lots of groups at a single level? This can cause delays as `h5forest` builds the tree structure. In most cases, `h5forest` should remain responsive and display progress indicators.
 
 Recovery options:
 
 1. **Wait for completion:** Check for progress bars indicating ongoing operations
 2. **Terminal reset:** If display is corrupted, exit and `clear` terminal, then restart h5forest.
 
-Should you encounter a freeze with no progress and unresponsive UI/exit keys, please report a bug with details of your system and file. In normal circumstances h5forest should remain responsive and abort any long-running operations.
+Should you encounter a freeze with no progress and unresponsive UI/exit keys, please report a bug with details of your system and file. In normal circumstances `h5forest` should remain responsive and abort any long-running operations.
 
 ### Q: Can h5forest handle compressed datasets?
 
-**A:** Yes, h5forest handles HDF5 compression transparently:
+**A:** Yes, `h5forest` handles HDF5 compression transparently:
 
-- **Automatic decompression:** All compression types supported by h5py
+- **Automatic decompression:** All compression types supported by `h5py`
 - **Performance:** Compressed data **may** be slower to access
 - **Memory usage:** Decompression happens in chunks to manage memory
 
 ## Troubleshooting
 
-### Q: h5forest crashed - how do I report bugs?
+### Q: `h5forest` crashed - how do I report bugs?
 
 **A:** Gather useful information:
 
@@ -213,11 +215,11 @@ h5forest /path/to/file.h5
 3. **Provide context:** Scientific domain, data types, workflow needs
 4. **Create GitHub issue:** Use feature request template
 
-### Q: Can I contribute to h5forest development?
+### Q: Can I contribute to `h5forest` development?
 
 **A:** Contributions welcome:
 
 - **Bug reports:** Always helpful
 - **Documentation:** Improvements and examples
 - **Code contributions:** Follow project contribution guidelines
-- **Testing:** Try h5forest with different file types and report issues
+- **Testing:** Try `h5forest` with different file types and report issues

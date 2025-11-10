@@ -2,17 +2,17 @@
 
 ## Requirements
 
-h5forest requires Python 3.8 or higher and works on Linux, macOS, and Windows.
+`h5forest` requires Python 3.8 or higher and works on Linux, macOS, and Windows.
 
 ## Install from PyPI
 
-The easiest way to install h5forest is via pip:
+The easiest way to install `h5forest` is via pip:
 
 ```bash
 pip install h5forest
 ```
 
-This will install h5forest and all required dependencies:
+This will install `h5forest` and all required dependencies:
 
 - `h5py` - HDF5 file reading
 - `numpy` - Numerical operations

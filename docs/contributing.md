@@ -1,6 +1,6 @@
-# Contributing to h5forest
+# Contributing to `h5forest`
 
-We welcome contributions to h5forest! This guide will help you get started with contributing to the project.
+We welcome contributions to `h5forest`! This guide will help you get started with contributing to the project.
 
 ## Development Setup
 
@@ -8,7 +8,7 @@ We welcome contributions to h5forest! This guide will help you get started with 
 
 - Python 3.8 or higher
 - Git
-- HDF5 libraries (for h5py)
+- HDF5 libraries (for `h5py`)
 - pre-commit hook installation (see below)
 
 ### Installation
@@ -26,7 +26,7 @@ We welcome contributions to h5forest! This guide will help you get started with 
    pip install -e ".[dev,test]"
    ```
 
-   This installs h5forest along with development dependencies:
+   This installs `h5forest` along with development dependencies:
    - `ruff` - Code linting and formatting
    - `pytest` - Testing framework
    - Additional testing utilities
@@ -197,7 +197,7 @@ from h5forest.tree import Tree
 class ExampleClass:
     """A well-documented example class.
 
-    This class demonstrates the coding standards used in h5forest.
+    This class demonstrates the coding standards used in `h5forest`.
 
     Attributes:
         name (str): The name of the example.
@@ -314,7 +314,7 @@ When reporting bugs, please include:
 
 - **Description:** What you expected vs. what happened
 - **Reproduction steps:** How to reproduce the issue
-- **Environment:** Python version, OS, h5forest version
+- **Environment:** Python version, OS, `h5forest` version
 - **Sample file:** If possible, a minimal HDF5 file that triggers the bug
 
 ### Feature Requests
@@ -395,4 +395,4 @@ All PRs automatically run through CI which checks:
 - **GitHub Discussions:** For general questions and community chat
 - **Documentation:** Check the docs first for answers
 
-Thank you for contributing to h5forest! Your efforts help make HDF5 data exploration better for everyone.
+Thank you for contributing to `h5forest`! Your efforts help make HDF5 data exploration better for everyone.

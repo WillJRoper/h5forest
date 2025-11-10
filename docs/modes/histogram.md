@@ -70,7 +70,7 @@ From Normal Mode, press **`H`** to enter Histogram Mode.
 **Show Histogram** (**`h`**)
 
 - Computes histogram using current configuration
-- Displays histogram in an external window (using matplotlib)
+- Displays histogram in an external window (using `matplotlib`)
 
 **Save Histogram** (**`H`**)
 

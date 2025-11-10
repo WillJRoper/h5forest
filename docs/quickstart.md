@@ -4,7 +4,7 @@ Get started with `h5forest` in minutes. This guide covers everything you need to
 
 ## Installation
 
-Install h5forest using pip:
+Install `h5forest` using pip:
 
 ```bash
 pip install h5forest
@@ -12,7 +12,7 @@ pip install h5forest
 
 For detailed installation instructions including troubleshooting, see the [Installation Guide](installation.md).
 
-## Launch h5forest
+## Launch `h5forest`
 
 Open any HDF5 file:
 
