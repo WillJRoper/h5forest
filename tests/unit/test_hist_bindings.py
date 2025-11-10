@@ -264,7 +264,7 @@ class TestHistBindings:
         bindings = [
             b
             for b in mock_app.kb.bindings
-            if b.keys == ("J",) and b.filter is not None
+            if b.keys == ("e",) and b.filter is not None
         ]
         handler = bindings[0].handler
         handler(mock_event)
@@ -280,7 +280,7 @@ class TestHistBindings:
         bindings = [
             b
             for b in mock_app.kb.bindings
-            if b.keys == ("J",) and b.filter is not None
+            if b.keys == ("e",) and b.filter is not None
         ]
         handler = bindings[0].handler
         handler(mock_event)
@@ -628,6 +628,6 @@ class TestHistBindings:
     def test_all_keys_bound(self, mock_app):
         """Test that all expected keys are bound."""
         _init_hist_bindings(mock_app)
-        for key in ["c-m", "b", "x", "y", "h", "H", "r", "J", "q"]:
+        for key in ["c-m", "b", "x", "y", "h", "H", "r", "e", "q"]:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
             assert len(bindings) > 0, f"Key '{key}' not bound"
