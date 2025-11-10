@@ -18,8 +18,7 @@ class TestDatasetPrompts:
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
         app = MagicMock()
-        app.user_input = ""
-        app.input = MagicMock()
+        app.prompt_yn = MagicMock()
         app.print = MagicMock()
         app.default_focus = MagicMock()
         app.return_to_normal_mode = MagicMock()
@@ -65,7 +64,7 @@ class TestDatasetPrompts:
 
         # Should call callback immediately without prompting
         callback.assert_called_once_with(use_chunks=False, load_all=True)
-        mock_app.input.assert_not_called()
+        mock_app.prompt_yn.assert_not_called()
 
     def test_prompt_for_chunked_dataset_yes_to_chunks(
         self, mock_app, mock_chunked_node
@@ -76,12 +75,11 @@ class TestDatasetPrompts:
         prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
 
         # Should prompt for chunk-by-chunk processing
-        mock_app.input.assert_called_once()
-        prompt_callback = mock_app.input.call_args[0][1]
+        mock_app.prompt_yn.assert_called_once()
+        on_yes = mock_app.prompt_yn.call_args[0][1]
 
-        # Simulate user saying yes
-        mock_app.user_input = "y"
-        prompt_callback()
+        # Simulate user pressing 'y'
+        on_yes()
 
         # Should call callback with use_chunks=True
         callback.assert_called_once_with(use_chunks=True, load_all=False)
@@ -96,20 +94,18 @@ class TestDatasetPrompts:
 
         prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
 
-        # Get first prompt callback
-        first_prompt_callback = mock_app.input.call_args[0][1]
+        # Get first prompt callbacks
+        on_no = mock_app.prompt_yn.call_args[0][2]
 
-        # Simulate user saying no to chunk-by-chunk
-        mock_app.user_input = "n"
-        first_prompt_callback()
+        # Simulate user pressing 'n' to chunk-by-chunk
+        on_no()
 
         # Should prompt again for loading all
-        assert mock_app.input.call_count == 2
-        second_prompt_callback = mock_app.input.call_args[0][1]
+        assert mock_app.prompt_yn.call_count == 2
+        second_on_yes = mock_app.prompt_yn.call_args[0][1]
 
-        # Simulate user saying yes to load all
-        mock_app.user_input = "yes"
-        second_prompt_callback()
+        # Simulate user pressing 'y' to load all
+        second_on_yes()
 
         # Should call callback with load_all=True
         callback.assert_called_once_with(use_chunks=False, load_all=True)
@@ -123,72 +119,22 @@ class TestDatasetPrompts:
 
         prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
 
-        # Get first prompt callback
-        first_prompt_callback = mock_app.input.call_args[0][1]
+        # Get first prompt callbacks
+        first_on_no = mock_app.prompt_yn.call_args[0][2]
 
-        # Simulate user saying no to chunk-by-chunk
-        mock_app.user_input = "no"
-        first_prompt_callback()
+        # Simulate user pressing 'n' to chunk-by-chunk
+        first_on_no()
 
-        # Get second prompt callback
-        second_prompt_callback = mock_app.input.call_args[0][1]
+        # Get second prompt callbacks
+        second_on_no = mock_app.prompt_yn.call_args[0][2]
 
-        # Simulate user saying no to load all
-        mock_app.user_input = "n"
-        second_prompt_callback()
+        # Simulate user pressing 'n' to load all
+        second_on_no()
 
         # Should not call the operation callback
         callback.assert_not_called()
         mock_app.print.assert_called_with("Operation aborted.")
         mock_app.return_to_normal_mode.assert_called()
-
-    def test_prompt_for_chunked_dataset_invalid_input_first_prompt(
-        self, mock_app, mock_chunked_node
-    ):
-        """Test prompt with invalid input on first prompt."""
-        callback = MagicMock()
-
-        prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
-
-        # Get prompt callback
-        prompt_callback = mock_app.input.call_args[0][1]
-
-        # Simulate invalid input
-        mock_app.user_input = "maybe"
-        prompt_callback()
-
-        # Should print error and not call callback
-        callback.assert_not_called()
-        mock_app.print.assert_called()
-        assert "Invalid input" in mock_app.print.call_args[0][0]
-        mock_app.return_to_normal_mode.assert_called()
-
-    def test_prompt_for_chunked_dataset_invalid_input_second_prompt(
-        self, mock_app, mock_chunked_node
-    ):
-        """Test prompt with invalid input on second prompt."""
-        callback = MagicMock()
-
-        prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
-
-        # Get first prompt callback
-        first_prompt_callback = mock_app.input.call_args[0][1]
-
-        # Simulate user saying no to chunk-by-chunk
-        mock_app.user_input = "n"
-        first_prompt_callback()
-
-        # Get second prompt callback
-        second_prompt_callback = mock_app.input.call_args[0][1]
-
-        # Simulate invalid input
-        mock_app.user_input = "maybe"
-        second_prompt_callback()
-
-        # Should print error and not call callback
-        callback.assert_not_called()
-        mock_app.print.assert_called()
-        assert "Invalid input" in mock_app.print.call_args[0][0]
 
     def test_prompt_for_large_dataset_file_error(self, mock_app, mock_node):
         """Test prompt with file access error falls back to nbytes."""
@@ -201,7 +147,7 @@ class TestDatasetPrompts:
         prompt_for_large_dataset(mock_app, mock_node, callback)
 
         # Should still prompt because nbytes > 1GB
-        mock_app.input.assert_called_once()
+        mock_app.prompt_yn.assert_called_once()
 
     def test_prompt_for_dataset_operation_chunked_load_all(
         self, mock_app, mock_chunked_node
@@ -213,19 +159,17 @@ class TestDatasetPrompts:
             mock_app, mock_chunked_node, callback
         )
 
-        # Get first prompt callback
-        first_prompt_callback = mock_app.input.call_args[0][1]
+        # Get first prompt callbacks
+        first_on_no = mock_app.prompt_yn.call_args[0][2]
 
-        # Simulate user saying no to chunk-by-chunk
-        mock_app.user_input = "no"
-        first_prompt_callback()
+        # Simulate user pressing 'n' to chunk-by-chunk
+        first_on_no()
 
-        # Get second prompt callback
-        second_prompt_callback = mock_app.input.call_args[0][1]
+        # Get second prompt callbacks
+        second_on_yes = mock_app.prompt_yn.call_args[0][1]
 
-        # Simulate user saying yes to load all
-        mock_app.user_input = "y"
-        second_prompt_callback()
+        # Simulate user pressing 'y' to load all
+        second_on_yes()
 
         # Should call callback with use_chunks=False
         callback.assert_called_once_with(use_chunks=False)
@@ -238,7 +182,7 @@ class TestDatasetPrompts:
 
         # Should call callback immediately without prompting
         callback.assert_called_once()
-        mock_app.input.assert_not_called()
+        mock_app.prompt_yn.assert_not_called()
 
     def test_prompt_for_large_dataset_large_yes(
         self, mock_app, mock_large_node
@@ -249,12 +193,11 @@ class TestDatasetPrompts:
         prompt_for_large_dataset(mock_app, mock_large_node, callback)
 
         # Should prompt for confirmation
-        mock_app.input.assert_called_once()
-        prompt_callback = mock_app.input.call_args[0][1]
+        mock_app.prompt_yn.assert_called_once()
+        on_yes = mock_app.prompt_yn.call_args[0][1]
 
-        # Simulate user confirming
-        mock_app.user_input = "yes"
-        prompt_callback()
+        # Simulate user pressing 'y'
+        on_yes()
 
         # Should call callback
         callback.assert_called_once()
@@ -269,37 +212,16 @@ class TestDatasetPrompts:
 
         prompt_for_large_dataset(mock_app, mock_large_node, callback)
 
-        # Get prompt callback
-        prompt_callback = mock_app.input.call_args[0][1]
+        # Get prompt callbacks
+        on_no = mock_app.prompt_yn.call_args[0][2]
 
-        # Simulate user declining
-        mock_app.user_input = "n"
-        prompt_callback()
+        # Simulate user pressing 'n'
+        on_no()
 
         # Should not call callback
         callback.assert_not_called()
         mock_app.print.assert_called_with("Operation aborted.")
         mock_app.return_to_normal_mode.assert_called()
-
-    def test_prompt_for_large_dataset_invalid_input(
-        self, mock_app, mock_large_node
-    ):
-        """Test large dataset prompt with invalid input."""
-        callback = MagicMock()
-
-        prompt_for_large_dataset(mock_app, mock_large_node, callback)
-
-        # Get prompt callback
-        prompt_callback = mock_app.input.call_args[0][1]
-
-        # Simulate invalid input
-        mock_app.user_input = "sure"
-        prompt_callback()
-
-        # Should print error and not call callback
-        callback.assert_not_called()
-        mock_app.print.assert_called()
-        assert "Invalid input" in mock_app.print.call_args[0][0]
 
     def test_prompt_for_dataset_operation_not_chunked_small(
         self, mock_app, mock_node
@@ -311,7 +233,7 @@ class TestDatasetPrompts:
 
         # Should call callback immediately
         callback.assert_called_once_with(use_chunks=False)
-        mock_app.input.assert_not_called()
+        mock_app.prompt_yn.assert_not_called()
 
     def test_prompt_for_dataset_operation_chunked_yes(
         self, mock_app, mock_chunked_node
@@ -324,12 +246,11 @@ class TestDatasetPrompts:
         )
 
         # Should prompt for chunked processing
-        mock_app.input.assert_called_once()
-        prompt_callback = mock_app.input.call_args[0][1]
+        mock_app.prompt_yn.assert_called_once()
+        on_yes = mock_app.prompt_yn.call_args[0][1]
 
-        # Simulate user saying yes to chunk-by-chunk
-        mock_app.user_input = "y"
-        prompt_callback()
+        # Simulate user pressing 'y' to chunk-by-chunk
+        on_yes()
 
         # Should call callback with use_chunks=True
         callback.assert_called_once_with(use_chunks=True)
@@ -344,19 +265,17 @@ class TestDatasetPrompts:
             mock_app, mock_chunked_node, callback
         )
 
-        # Get first prompt callback
-        first_prompt_callback = mock_app.input.call_args[0][1]
+        # Get first prompt callbacks
+        first_on_no = mock_app.prompt_yn.call_args[0][2]
 
-        # Simulate user saying no to chunk-by-chunk
-        mock_app.user_input = "no"
-        first_prompt_callback()
+        # Simulate user pressing 'n' to chunk-by-chunk
+        first_on_no()
 
-        # Get second prompt callback
-        second_prompt_callback = mock_app.input.call_args[0][1]
+        # Get second prompt callbacks
+        second_on_no = mock_app.prompt_yn.call_args[0][2]
 
-        # Simulate user saying no to load all
-        mock_app.user_input = "n"
-        second_prompt_callback()
+        # Simulate user pressing 'n' to load all
+        second_on_no()
 
         # Should not call the operation callback
         callback.assert_not_called()

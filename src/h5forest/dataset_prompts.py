@@ -30,49 +30,74 @@ def prompt_for_chunked_dataset(app, node, operation_callback):
         operation_callback(use_chunks=False, load_all=True)
         return
 
-    def chunk_by_chunk_callback():
-        """Handle the first prompt response."""
-        response = app.user_input.strip().lower()
+    # Calculate memory footprint and chunk information
+    import h5py
+    import numpy as np
 
-        # Return focus to the tree
+    try:
+        with h5py.File(node.filepath, "r") as hdf:
+            dataset = hdf[node.path]
+            uncompressed_bytes = dataset.size * dataset.dtype.itemsize
+            uncompressed_gb = uncompressed_bytes / (10**9)
+
+            # Calculate number of chunks
+            if dataset.chunks:
+                # Total number of chunks = product of (shape[i] / chunks[i]) for each dimension
+                num_chunks = int(np.prod([
+                    np.ceil(s / c) for s, c in zip(dataset.shape, dataset.chunks)
+                ]))
+            else:
+                num_chunks = 1
+    except (OSError, FileNotFoundError, KeyError):
+        # If file access fails, use node's nbytes as estimate
+        uncompressed_gb = node.nbytes / (10**9)
+        num_chunks = "unknown"
+
+    def on_yes_chunk_by_chunk():
+        """User wants chunk-by-chunk processing."""
         app.default_focus()
-
-        if response in ["y", "yes"]:
-            # User wants chunk-by-chunk processing
-            operation_callback(use_chunks=True, load_all=False)
-            app.return_to_normal_mode()
-        elif response in ["n", "no"]:
-            # User doesn't want chunk-by-chunk, ask about loading all
-            app.input(
-                "Should we load all at once? (If not, we will abort) [y/n]:",
-                load_all_callback,
-            )
-        else:
-            app.print(f"Invalid input: {app.user_input}. Operation aborted.")
-            app.return_to_normal_mode()
-
-    def load_all_callback():
-        """Handle the second prompt response."""
-        response = app.user_input.strip().lower()
-
-        # Return focus to the tree
-        app.default_focus()
-
-        if response in ["y", "yes"]:
-            # User wants to load all at once
-            operation_callback(use_chunks=False, load_all=True)
-        elif response in ["n", "no"]:
-            # User wants to abort
-            app.print("Operation aborted.")
-        else:
-            app.print(f"Invalid input: {app.user_input}. Operation aborted.")
-
+        operation_callback(use_chunks=True, load_all=False)
         app.return_to_normal_mode()
 
-    # Start the prompt workflow
-    app.input(
-        "Chunked Dataset found. Should we process chunk by chunk? [y/n]:",
-        chunk_by_chunk_callback,
+    def on_no_chunk_by_chunk():
+        """User doesn't want chunk-by-chunk, ask about loading all."""
+        app.default_focus()
+
+        def on_yes_load_all():
+            """User wants to load all at once."""
+            app.default_focus()
+            operation_callback(use_chunks=False, load_all=True)
+            app.return_to_normal_mode()
+
+        def on_no_load_all():
+            """User wants to abort."""
+            app.default_focus()
+            app.print("Operation aborted.")
+            app.return_to_normal_mode()
+
+        # Ask second question
+        app.prompt_yn(
+            "Should we load all at once? (If not, we will abort) [y/n]:",
+            on_yes_load_all,
+            on_no_load_all,
+        )
+
+    # Start the prompt workflow with enhanced message
+    if isinstance(num_chunks, int):
+        prompt_msg = (
+            f"Chunked Dataset found ({uncompressed_gb:.2f} GB, {num_chunks} chunks). "
+            f"Should we process chunk by chunk? [y/n]:"
+        )
+    else:
+        prompt_msg = (
+            f"Chunked Dataset found ({uncompressed_gb:.2f} GB). "
+            f"Should we process chunk by chunk? [y/n]:"
+        )
+
+    app.prompt_yn(
+        prompt_msg,
+        on_yes_chunk_by_chunk,
+        on_no_chunk_by_chunk,
     )
 
 
@@ -113,29 +138,24 @@ def prompt_for_large_dataset(app, node, operation_callback):
         operation_callback()
         return
 
-    def size_confirmation_callback():
-        """Handle the size confirmation response."""
-        response = app.user_input.strip().lower()
-
-        # Return focus to the tree
+    def on_yes():
+        """User confirms, proceed with operation."""
         app.default_focus()
+        operation_callback()
+        app.return_to_normal_mode()
 
-        if response in ["y", "yes"]:
-            # User confirms, proceed with operation
-            operation_callback()
-        elif response in ["n", "no"]:
-            # User wants to abort
-            app.print("Operation aborted.")
-        else:
-            app.print(f"Invalid input: {app.user_input}. Operation aborted.")
-
+    def on_no():
+        """User wants to abort."""
+        app.default_focus()
+        app.print("Operation aborted.")
         app.return_to_normal_mode()
 
     # Prompt the user
-    app.input(
+    app.prompt_yn(
         f"This dataset is {uncompressed_gb:.2f} GB uncompressed. "
         f"Proceed with load? [y/n]:",
-        size_confirmation_callback,
+        on_yes,
+        on_no,
     )
 
 
