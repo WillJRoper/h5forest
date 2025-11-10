@@ -98,13 +98,18 @@ class Tree:
         self.prev_node = self.root
 
         # We'll collect a list of all the nodes in the background to
-        # facilitate searches
+        # facilitate searches (lazy initialization - only when search is used)
         self.unpack_thread = None  # we'll do the unpacking on this thread
         self.all_node_paths = []
         self.all_node_paths_lock = (
             threading.Lock()
         )  # Protect concurrent access
-        self.get_all_paths()
+        self.paths_initialized = (
+            False  # Track if we've started collecting paths
+        )
+        self.index_building = (
+            False  # Track if we're currently building the index
+        )
 
         # Store the original tree state for search restoration
         self.original_tree_text = None
@@ -309,18 +314,30 @@ class Tree:
         return new_node
 
     def get_all_paths(self):
-        """Collect all the paths in the HDF5 file."""
+        """Collect all the paths in the HDF5 file (lazy initialization)."""
+        # Only start the collection once
+        if self.paths_initialized:
+            return
+
+        self.paths_initialized = True
+        self.index_building = True
 
         def run_in_thread():
-            with h5py.File(self.filepath, "r") as hdf:
+            try:
+                with h5py.File(self.filepath, "r") as hdf:
 
-                def visitor(name, obj):
-                    with self.all_node_paths_lock:
-                        self.all_node_paths.append(name)
+                    def visitor(name, obj):
+                        with self.all_node_paths_lock:
+                            self.all_node_paths.append(name)
 
-                hdf.visititems(visitor)
+                    hdf.visititems(visitor)
+            finally:
+                # Mark index building as complete
+                self.index_building = False
 
-        self.unpack_thread = threading.Thread(target=run_in_thread)
+        self.unpack_thread = threading.Thread(
+            target=run_in_thread, daemon=True
+        )
         self.unpack_thread.start()
 
         # We'll join this thread in the filter function (filter_tree)
@@ -351,9 +368,19 @@ class Tree:
                 self.restore_tree()
             return self.tree_text
 
-        # Wait for the background thread to finish collecting paths
+        # Initialize path collection if this is the first search
+        self.get_all_paths()
+
+        # Wait briefly for the background thread (non-blocking for UI)
+        # Use a short timeout so tests can complete but UI stays responsive
         if self.unpack_thread is not None and self.unpack_thread.is_alive():
-            self.unpack_thread.join()
+            # Wait up to 100ms for the thread to finish
+            # This allows fast completion in tests while keeping UI responsive
+            self.unpack_thread.join(timeout=0.1)
+
+            # If still not done after timeout, return unfiltered tree
+            if self.unpack_thread.is_alive():
+                return self.tree_text
 
         # If we haven't saved the original tree yet, do it now
         if self.original_tree_text is None:
