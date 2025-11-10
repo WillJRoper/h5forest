@@ -485,15 +485,12 @@ class H5Forest:
 
         return DynamicLabelLayout(labels)
 
-    @property
-    def plot_keys(self):
+    def _get_plot_keys(self):
         """
-        Return the hot keys for plotting mode, filtered based on current state.
-
-        Filters based on plot_params and focus.
+        Get the hot keys for plotting mode, filtered based on current state.
 
         Returns:
-            DynamicLabelLayout: Layout with filtered labels.
+            list: List of Label widgets for current state.
         """
         labels = []
 
@@ -505,7 +502,7 @@ class H5Forest:
             labels.append(self._plot_keys_dict["edit_entry"])
             labels.append(self._plot_keys_dict["jump_tree"])
             labels.append(self._plot_keys_dict["exit_config"])
-            return DynamicLabelLayout(labels)
+            return labels
 
         # Otherwise show full tree view keys
         labels.append(self._plot_keys_dict["edit_config"])
@@ -530,17 +527,26 @@ class H5Forest:
         labels.append(self._plot_keys_dict["reset"])
         labels.append(self._plot_keys_dict["exit_mode"])
 
-        return DynamicLabelLayout(labels)
+        return labels
 
     @property
-    def hist_keys(self):
+    def plot_keys(self):
         """
-        Return the hot keys for histogram mode, filtered on current state.
+        Return the hot keys for plotting mode, filtered based on current state.
 
         Filters based on plot_params and focus.
 
         Returns:
             DynamicLabelLayout: Layout with filtered labels.
+        """
+        return DynamicLabelLayout(lambda: self._get_plot_keys())
+
+    def _get_hist_keys(self):
+        """
+        Get the hot keys for histogram mode, filtered on current state.
+
+        Returns:
+            list: List of Label widgets for current state.
         """
         labels = []
 
@@ -552,7 +558,7 @@ class H5Forest:
             labels.append(self._hist_keys_dict["edit_entry"])
             labels.append(self._hist_keys_dict["jump_tree"])
             labels.append(self._hist_keys_dict["exit_config"])
-            return DynamicLabelLayout(labels)
+            return labels
 
         # Otherwise show full tree view keys
         labels.append(self._hist_keys_dict["select_data"])
@@ -565,7 +571,19 @@ class H5Forest:
         labels.append(self._hist_keys_dict["reset"])
         labels.append(self._hist_keys_dict["exit_mode"])
 
-        return DynamicLabelLayout(labels)
+        return labels
+
+    @property
+    def hist_keys(self):
+        """
+        Return the hot keys for histogram mode, filtered on current state.
+
+        Filters based on plot_params and focus.
+
+        Returns:
+            DynamicLabelLayout: Layout with filtered labels.
+        """
+        return DynamicLabelLayout(lambda: self._get_hist_keys())
 
     @property
     def search_keys(self):
