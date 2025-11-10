@@ -274,7 +274,6 @@ def _init_hist_bindings(app):
         else:
             # In tree, jump to config
             app.shift_focus(app.hist_content)
-        app.app.invalidate()
 
     @error_handler
     def exit_hist_mode(event):
@@ -287,7 +286,6 @@ def _init_hist_bindings(app):
     def exit_edit_hist(event):
         """Exit the edit mode."""
         app.shift_focus(app.tree_content)
-        app.app.invalidate()
 
     # Bind the functions
     app.kb.add(

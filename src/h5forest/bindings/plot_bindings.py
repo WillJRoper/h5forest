@@ -220,7 +220,6 @@ def _init_plot_bindings(app):
     def edit_plot(event):
         """Edit the plot."""
         app.shift_focus(app.plot_content)
-        app.app.invalidate()
 
     @error_handler
     def jump_to_config(event):
@@ -231,12 +230,10 @@ def _init_plot_bindings(app):
         else:
             # In tree, jump to config
             app.shift_focus(app.plot_content)
-        app.app.invalidate()
 
     def exit_edit_plot(event):
         """Exit edit plot mode."""
         app.shift_focus(app.tree_content)
-        app.app.invalidate()
 
     # Bind the functions
     app.kb.add("x", filter=Condition(lambda: app.flag_plotting_mode))(select_x)
