@@ -3,7 +3,12 @@
 from unittest.mock import MagicMock, Mock, patch
 
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
+from prompt_toolkit.layout import (
+    ConditionalContainer,
+    HSplit,
+    VSplit,
+    Window,
+)
 from prompt_toolkit.widgets import Label
 
 from h5forest.utils import (
@@ -84,7 +89,6 @@ class TestGetWindowSizeSimple:
 
     def test_get_window_size_import_exists(self):
         """Test that get_window_size function can be imported."""
-        from h5forest.utils import get_window_size
 
         assert callable(get_window_size)
 
@@ -464,7 +468,6 @@ class TestDynamicLabelLayout:
         assert len(children) == 3
 
         # Verify children are Windows (line 301 coverage)
-        from prompt_toolkit.layout import Window
         for child in children:
             assert isinstance(child, (Window, VSplit))
 
