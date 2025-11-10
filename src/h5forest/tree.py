@@ -105,6 +105,7 @@ class Tree:
             threading.Lock()
         )  # Protect concurrent access
         self.paths_initialized = False  # Track if we've started collecting paths
+        self.index_building = False  # Track if we're currently building the index
 
         # Store the original tree state for search restoration
         self.original_tree_text = None
@@ -315,17 +316,22 @@ class Tree:
             return
 
         self.paths_initialized = True
+        self.index_building = True
 
         def run_in_thread():
-            with h5py.File(self.filepath, "r") as hdf:
+            try:
+                with h5py.File(self.filepath, "r") as hdf:
 
-                def visitor(name, obj):
-                    with self.all_node_paths_lock:
-                        self.all_node_paths.append(name)
+                    def visitor(name, obj):
+                        with self.all_node_paths_lock:
+                            self.all_node_paths.append(name)
 
-                hdf.visititems(visitor)
+                    hdf.visititems(visitor)
+            finally:
+                # Mark index building as complete
+                self.index_building = False
 
-        self.unpack_thread = threading.Thread(target=run_in_thread)
+        self.unpack_thread = threading.Thread(target=run_in_thread, daemon=True)
         self.unpack_thread.start()
 
         # We'll join this thread in the filter function (filter_tree)
