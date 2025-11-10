@@ -169,6 +169,20 @@ class TestDynamicLabelLayout:
         width = layout._estimate_label_width(container)
         assert width == 20  # Fallback value
 
+    def test_estimate_label_width_conditional_with_text(self):
+        """Test width estimation for ConditionalContainer with text attribute."""
+        layout = DynamicLabelLayout([])
+
+        # Create a mock ConditionalContainer with content that has text
+        mock_content = Mock()
+        mock_content.text = "Test"
+        container = Mock(spec=ConditionalContainer)
+        container.content = mock_content
+
+        # Should extract text and calculate width
+        width = layout._estimate_label_width(container)
+        assert width == 9  # len("Test") + padding(5)
+
     def test_estimate_label_width_custom_padding(self):
         """Test width estimation with custom padding."""
         layout = DynamicLabelLayout([], padding=10)
@@ -448,6 +462,11 @@ class TestDynamicLabelLayout:
         children = container.get_children()
         # Should have min_rows of empty rows
         assert len(children) == 3
+
+        # Verify children are Windows (line 301 coverage)
+        from prompt_toolkit.layout import Window
+        for child in children:
+            assert isinstance(child, (Window, VSplit))
 
     def test_label_distribution_realistic_scenario(self):
         """Test label distribution in a realistic scenario."""
@@ -777,6 +796,19 @@ class TestDynamicLabelLayout:
 
         text = layout._get_label_text(container)
         assert text == ""
+
+    def test_get_label_text_conditional_with_text(self):
+        """Test getting text from ConditionalContainer with text attribute."""
+        layout = DynamicLabelLayout([])
+
+        # Create ConditionalContainer with content that has text
+        mock_content = Mock()
+        mock_content.text = "Hello World"
+        container = Mock(spec=ConditionalContainer)
+        container.content = mock_content
+
+        text = layout._get_label_text(container)
+        assert text == "Hello World"
 
 
 class TestWaitIndicator:
