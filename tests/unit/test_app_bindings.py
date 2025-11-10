@@ -351,6 +351,7 @@ class TestAppBindings:
 
                 # Capture the thread target function
                 thread_target = None
+
                 def capture_thread(*args, **kwargs):
                     nonlocal thread_target
                     thread_target = kwargs.get("target")

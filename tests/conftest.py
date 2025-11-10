@@ -22,8 +22,10 @@ def ensure_test_fixtures():
     if not os.path.exists(simple_path):
         # Import the creation script
         import sys
+
         sys.path.insert(0, fixtures_dir)
         from create_fixtures import create_all_fixtures
+
         create_all_fixtures()
         sys.path.pop(0)
 
