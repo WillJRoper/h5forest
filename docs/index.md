@@ -36,6 +36,7 @@ h5forest /path/to/your/file.hdf5
 h5forest uses a modal interface with different modes for different tasks:
 
 - **Normal Mode**: Default navigation and tree exploration
+- **Search Mode**: Fuzzy search to quickly find datasets and groups
 - **Jump Mode**: Quick navigation commands
 - **Dataset Mode**: Data analysis and statistics
 - **Window Mode**: Panel and focus management
@@ -47,8 +48,10 @@ Use keyboard shortcuts to switch between modes and perform actions. Press `q` to
 ## Documentation Sections
 
 - **[Getting Started](installation.md)**: Installation and basic setup
+- **[Quick Start](quickstart.md)**: Get up and running in minutes
 - **[Mode Reference](modes/overview.md)**: Detailed guide to all interaction modes
 - **[Examples](examples/navigation.md)**: Practical usage examples
+- **[Contributing](contributing.md)**: Development setup and contribution guidelines
 - **[FAQ](faq.md)**: Common questions and troubleshooting
 
 ## Why h5forest?
@@ -63,7 +66,13 @@ Traditional HDF5 tools work well for quick inspections, but h5forest excels when
 
 ## Community
 
-h5forest is developed by [Will Roper](https://github.com/WillJRoper). Contributions, bug reports, and feature requests are welcome on [GitHub](https://github.com/WillJRoper/h5forest).
+h5forest is developed by [Will Roper](https://github.com/WillJRoper).
+
+**Get Involved:**
+- **Contribute:** See our [Contributing Guide](contributing.md) for development setup and guidelines
+- **Report Issues:** Submit bug reports and feature requests on [GitHub Issues](https://github.com/WillJRoper/h5forest/issues)
+- **Discussions:** Join conversations on [GitHub Discussions](https://github.com/WillJRoper/h5forest/discussions)
+- **Source Code:** Fork and star the project on [GitHub](https://github.com/WillJRoper/h5forest)
 
 ## License
 

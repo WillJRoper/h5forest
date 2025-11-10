@@ -1,6 +1,6 @@
 # Mode Overview
 
-h5forest uses a modal interface system inspired by Vim (yes, we know, everyone either loves it or thinks it's an elaborate prank from the 1970s). Different keyboard shortcuts are active depending on the current mode, because apparently regular menus weren't cool enough.
+h5forest uses a modal interface system inspired by Vim, where different keyboard shortcuts become active depending on the current mode. This design enables efficient keyboard-driven navigation and powerful context-specific commands without cluttering the interface.
 
 ## Available Modes
 

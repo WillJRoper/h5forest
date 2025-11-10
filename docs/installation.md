@@ -29,30 +29,7 @@ cd h5forest
 pip install -e .
 ```
 
-### Development Installation
-
-If you want to contribute to h5forest:
-
-```bash
-git clone https://github.com/WillJRoper/h5forest.git
-cd h5forest
-pip install -e ".[dev]"
-```
-
-This installs additional development tools:
-
-- `ruff` - Code linting and formatting
-
-### Documentation Building
-
-To build the documentation locally:
-
-```bash
-pip install -e ".[docs]"
-mkdocs serve
-```
-
-Then visit `http://localhost:8000` to view the documentation.
+For development installation with testing tools and documentation building, see the [Contributing Guide](contributing.md).
 
 ## Verify Installation
 
