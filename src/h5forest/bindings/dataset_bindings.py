@@ -13,6 +13,10 @@ import threading
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.dataset_prompts import (
+    prompt_for_dataset_operation,
+    prompt_for_large_dataset,
+)
 from h5forest.errors import error_handler
 
 
@@ -35,64 +39,10 @@ def _init_dataset_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        # Get the value string
-        text = node.get_value_text()
-
-        # Ensure there's something to draw
-        if len(text) == 0:
-            return
-
-        app.value_title.update_title(f"Values: {node.path}")
-
-        # Update the text
-        app.values_content.text = text
-
-        # Flag that there are values to show
-        app.flag_values_visible = True
-
-        # Exit values mode
-        app.return_to_normal_mode()
-
-    @error_handler
-    def show_values_in_range(event):
-        """Show the values of a dataset in an index range."""
-        # Get the node under the cursor
-        node = app.tree.get_current_node(app.current_row)
-
-        # Exit if the node is not a Dataset
-        if node.is_group:
-            app.print(f"{node.path} is not a Dataset")
-            return
-
-        def values_in_range_callback():
-            """Get the start and end indices from the user input."""
-            # Parse the range
-            string_values = tuple(
-                [s.strip() for s in app.user_input.split("-")]
-            )
-
-            # Attempt to convert to an int
-            try:
-                start_index = int(string_values[0])
-                end_index = int(string_values[1])
-            except ValueError:
-                app.print(
-                    "Invalid input! Input must be a integers "
-                    f"separated by -, not ({app.user_input})"
-                )
-
-                # Exit this attempt gracefully
-                app.default_focus()
-                app.return_to_normal_mode()
-                return
-
-            # Return focus to the tree
-            app.default_focus()
-
+        def run_show_values():
+            """Show values after user confirmation."""
             # Get the value string
-            text = node.get_value_text(
-                start_index=start_index, end_index=end_index
-            )
+            text = node.get_value_text()
 
             # Ensure there's something to draw
             if len(text) == 0:
@@ -109,11 +59,76 @@ def _init_dataset_bindings(app):
             # Exit values mode
             app.return_to_normal_mode()
 
-        # Get the indices from the user
-        app.input(
-            "Enter the index range (seperated by -):",
-            values_in_range_callback,
-        )
+        # Prompt for large datasets before showing values
+        prompt_for_large_dataset(app, node, run_show_values)
+
+    @error_handler
+    def show_values_in_range(event):
+        """Show the values of a dataset in an index range."""
+        # Get the node under the cursor
+        node = app.tree.get_current_node(app.current_row)
+
+        # Exit if the node is not a Dataset
+        if node.is_group:
+            app.print(f"{node.path} is not a Dataset")
+            return
+
+        def proceed_with_range_input():
+            """Proceed to get range input after size check."""
+
+            def values_in_range_callback():
+                """Get the start and end indices from the user input."""
+                # Parse the range
+                string_values = tuple(
+                    [s.strip() for s in app.user_input.split("-")]
+                )
+
+                # Attempt to convert to an int
+                try:
+                    start_index = int(string_values[0])
+                    end_index = int(string_values[1])
+                except ValueError:
+                    app.print(
+                        "Invalid input! Input must be a integers "
+                        f"separated by -, not ({app.user_input})"
+                    )
+
+                    # Exit this attempt gracefully
+                    app.default_focus()
+                    app.return_to_normal_mode()
+                    return
+
+                # Return focus to the tree
+                app.default_focus()
+
+                # Get the value string
+                text = node.get_value_text(
+                    start_index=start_index, end_index=end_index
+                )
+
+                # Ensure there's something to draw
+                if len(text) == 0:
+                    return
+
+                app.value_title.update_title(f"Values: {node.path}")
+
+                # Update the text
+                app.values_content.text = text
+
+                # Flag that there are values to show
+                app.flag_values_visible = True
+
+                # Exit values mode
+                app.return_to_normal_mode()
+
+            # Get the indices from the user
+            app.input(
+                "Enter the index range (seperated by -):",
+                values_in_range_callback,
+            )
+
+        # Prompt for large datasets before requesting range
+        prompt_for_large_dataset(app, node, proceed_with_range_input)
 
     @error_handler
     def close_values(event):
@@ -135,21 +150,27 @@ def _init_dataset_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_in_thread():
-            # Get the value string
-            vmin, vmax = node.get_min_max()
+        def run_operation(use_chunks):
+            """Run the min/max operation after user confirmation."""
 
-            # Print the result on the main thread
-            app.app.loop.call_soon_threadsafe(
-                app.print,
-                f"{node.path}: Minimum = {vmin},  Maximum = {vmax}",
-            )
+            def run_in_thread():
+                # Get the value string
+                vmin, vmax = node.get_min_max()
 
-            # Exit values mode
-            app.return_to_normal_mode()
+                # Print the result on the main thread
+                app.app.loop.call_soon_threadsafe(
+                    app.print,
+                    f"{node.path}: Minimum = {vmin},  Maximum = {vmax}",
+                )
 
-        # Start the operation in a new thread
-        threading.Thread(target=run_in_thread, daemon=True).start()
+                # Exit values mode
+                app.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     @error_handler
     def mean(event):
@@ -162,21 +183,27 @@ def _init_dataset_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_in_thread():
-            # Get the value string
-            vmean = node.get_mean()
+        def run_operation(use_chunks):
+            """Run the mean operation after user confirmation."""
 
-            # Print the result on the main thread
-            app.app.loop.call_soon_threadsafe(
-                app.print,
-                f"{node.path}: Mean = {vmean}",
-            )
+            def run_in_thread():
+                # Get the value string
+                vmean = node.get_mean()
 
-            # Exit values mode
-            app.return_to_normal_mode()
+                # Print the result on the main thread
+                app.app.loop.call_soon_threadsafe(
+                    app.print,
+                    f"{node.path}: Mean = {vmean}",
+                )
 
-        # Start the operation in a new thread
-        threading.Thread(target=run_in_thread, daemon=True).start()
+                # Exit values mode
+                app.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     @error_handler
     def std(event):
@@ -189,21 +216,27 @@ def _init_dataset_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_in_thread():
-            # Get the value string
-            vstd = node.get_std()
+        def run_operation(use_chunks):
+            """Run the std operation after user confirmation."""
 
-            # Print the result on the main thread
-            app.app.loop.call_soon_threadsafe(
-                app.print,
-                f"{node.path}: Standard Deviation = {vstd}",
-            )
+            def run_in_thread():
+                # Get the value string
+                vstd = node.get_std()
 
-            # Exit values mode
-            app.return_to_normal_mode()
+                # Print the result on the main thread
+                app.app.loop.call_soon_threadsafe(
+                    app.print,
+                    f"{node.path}: Standard Deviation = {vstd}",
+                )
 
-        # Start the operation in a new thread
-        threading.Thread(target=run_in_thread, daemon=True).start()
+                # Exit values mode
+                app.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     # Bind the functions
     app.kb.add("v", filter=Condition(lambda: app.flag_dataset_mode))(
