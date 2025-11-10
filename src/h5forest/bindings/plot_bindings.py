@@ -46,6 +46,19 @@ def _init_plot_bindings(app):
     @error_handler
     def toggle_x_scale(event):
         """Toggle the x-axis scale between linear and log."""
+        # Wait for x-axis data assignment thread to finish if it's running
+        if app.scatter_plotter.assignx_thread is not None:
+            app.scatter_plotter.assignx_thread.join()
+            app.scatter_plotter.assignx_thread = None
+
+        # Check if x_min/x_max are available
+        if app.scatter_plotter.x_min is None or app.scatter_plotter.x_max is None:
+            app.print(
+                "Cannot toggle x-scale: x-axis data range not yet computed. "
+                "Please select x-axis dataset first (x)"
+            )
+            return
+
         # Get the current text
         split_text = app.plot_content.text.split("\n")
 
@@ -54,6 +67,17 @@ def _init_plot_bindings(app):
 
         # Toggle the scale
         new_scale = "log" if current_scale == "linear" else "linear"
+
+        # If toggling to log, validate data is compatible
+        if new_scale == "log":
+            if app.scatter_plotter.x_min <= 0:
+                app.print(
+                    f"Cannot use log scale on x-axis: data contains "
+                    f"{'zero' if app.scatter_plotter.x_min == 0 else 'negative'} values "
+                    f"(min = {app.scatter_plotter.x_min})"
+                )
+                return
+
         split_text[4] = f"x-scale:     {new_scale}"
 
         # Update the text
@@ -65,6 +89,19 @@ def _init_plot_bindings(app):
     @error_handler
     def toggle_y_scale(event):
         """Toggle the y-axis scale between linear and log."""
+        # Wait for y-axis data assignment thread to finish if it's running
+        if app.scatter_plotter.assigny_thread is not None:
+            app.scatter_plotter.assigny_thread.join()
+            app.scatter_plotter.assigny_thread = None
+
+        # Check if y_min/y_max are available
+        if app.scatter_plotter.y_min is None or app.scatter_plotter.y_max is None:
+            app.print(
+                "Cannot toggle y-scale: y-axis data range not yet computed. "
+                "Please select y-axis dataset first (y)"
+            )
+            return
+
         # Get the current text
         split_text = app.plot_content.text.split("\n")
 
@@ -73,6 +110,17 @@ def _init_plot_bindings(app):
 
         # Toggle the scale
         new_scale = "log" if current_scale == "linear" else "linear"
+
+        # If toggling to log, validate data is compatible
+        if new_scale == "log":
+            if app.scatter_plotter.y_min <= 0:
+                app.print(
+                    f"Cannot use log scale on y-axis: data contains "
+                    f"{'zero' if app.scatter_plotter.y_min == 0 else 'negative'} values "
+                    f"(min = {app.scatter_plotter.y_min})"
+                )
+                return
+
         split_text[5] = f"y-scale:     {new_scale}"
 
         # Update the text
