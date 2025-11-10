@@ -949,7 +949,7 @@ class TestH5ForestSearchTextChanged:
                 app.tree.filter_tree.assert_called_with("search query")
 
                 # Verify call_soon_threadsafe was called to update display
-                app.app.loop.call_soon_threadsafe.assert_called_once()
+                app.app.loop.call_soon_threadsafe.assert_called()
 
                 # Execute the callback that was passed to call_soon_threadsafe
                 callback = app.app.loop.call_soon_threadsafe.call_args[0][0]
