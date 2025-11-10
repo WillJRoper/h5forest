@@ -28,6 +28,7 @@ From Normal Mode, press **`p`** to enter Plotting Mode.
 | Key | Action | Description |
 |-----|--------|-------------|
 | **`e`** | Edit Configuration | Open plot configuration editor (when parameters available) |
+| **`J`** | Jump to Config | Jump to configuration window (when parameters available) |
 | **`Enter`** | Edit Parameter | Edit the parameter under cursor (when in config mode) |
 | **`r`** | Reset Configuration | Reset plot configuration to defaults |
 
@@ -56,7 +57,7 @@ From Normal Mode, press **`p`** to enter Plotting Mode.
 ## Configuration
 
 **Plot Configuration:**
-- `e` - Edit plot configuration (when both axes selected)
+- `e` or `J` - Edit/jump to plot configuration (when both axes selected)
 - `r` - Reset configuration to defaults
 - `Enter` - Edit selected parameter (when in config mode)
 - `P` - Generate plot and save to file
