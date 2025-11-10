@@ -659,6 +659,14 @@ class HistogramPlotter(Plotter):
         x_scale = split_text[3].split(": ")[1].strip()
         y_scale = split_text[4].split(": ")[1].strip()
 
+        # Check that histogram was computed successfully
+        if self.hist is None:
+            H5Forest().print(
+                "Cannot plot histogram: histogram computation failed. "
+                "Please try again."
+            )
+            return
+
         # Validate y-axis for log scale (check histogram values)
         if y_scale == "log":
             hist_min = np.min(self.hist)
