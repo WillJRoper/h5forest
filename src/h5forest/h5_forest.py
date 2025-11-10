@@ -1042,6 +1042,19 @@ class H5Forest:
                 The text area to focus on.
         """
         self.app.layout.focus(focused_area)
+        self.update_hotkeys_panel()
+
+    def update_hotkeys_panel(self):
+        """
+        Update the hotkeys panel to reflect current focus and state.
+
+        This method reconstructs the hotkeys panel content based on the current
+        mode and focus state. It should be called whenever focus changes or when
+        the displayed hotkeys need to be refreshed.
+        """
+        # Force a redraw of the interface to reflect updated hotkeys
+        if hasattr(self, 'app') and self.app is not None:
+            self.app.invalidate()
 
     def _create_mouse_handler(self, content_area):
         def mouse_handler(mouse_event):
