@@ -13,6 +13,7 @@ import threading
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.dataset_prompts import prompt_for_dataset_operation
 from h5forest.errors import error_handler
 
 
@@ -135,21 +136,27 @@ def _init_dataset_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_in_thread():
-            # Get the value string
-            vmin, vmax = node.get_min_max()
+        def run_operation(use_chunks):
+            """Run the min/max operation after user confirmation."""
 
-            # Print the result on the main thread
-            app.app.loop.call_soon_threadsafe(
-                app.print,
-                f"{node.path}: Minimum = {vmin},  Maximum = {vmax}",
-            )
+            def run_in_thread():
+                # Get the value string
+                vmin, vmax = node.get_min_max()
 
-            # Exit values mode
-            app.return_to_normal_mode()
+                # Print the result on the main thread
+                app.app.loop.call_soon_threadsafe(
+                    app.print,
+                    f"{node.path}: Minimum = {vmin},  Maximum = {vmax}",
+                )
 
-        # Start the operation in a new thread
-        threading.Thread(target=run_in_thread, daemon=True).start()
+                # Exit values mode
+                app.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     @error_handler
     def mean(event):
@@ -162,21 +169,27 @@ def _init_dataset_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_in_thread():
-            # Get the value string
-            vmean = node.get_mean()
+        def run_operation(use_chunks):
+            """Run the mean operation after user confirmation."""
 
-            # Print the result on the main thread
-            app.app.loop.call_soon_threadsafe(
-                app.print,
-                f"{node.path}: Mean = {vmean}",
-            )
+            def run_in_thread():
+                # Get the value string
+                vmean = node.get_mean()
 
-            # Exit values mode
-            app.return_to_normal_mode()
+                # Print the result on the main thread
+                app.app.loop.call_soon_threadsafe(
+                    app.print,
+                    f"{node.path}: Mean = {vmean}",
+                )
 
-        # Start the operation in a new thread
-        threading.Thread(target=run_in_thread, daemon=True).start()
+                # Exit values mode
+                app.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     @error_handler
     def std(event):
@@ -189,21 +202,27 @@ def _init_dataset_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_in_thread():
-            # Get the value string
-            vstd = node.get_std()
+        def run_operation(use_chunks):
+            """Run the std operation after user confirmation."""
 
-            # Print the result on the main thread
-            app.app.loop.call_soon_threadsafe(
-                app.print,
-                f"{node.path}: Standard Deviation = {vstd}",
-            )
+            def run_in_thread():
+                # Get the value string
+                vstd = node.get_std()
 
-            # Exit values mode
-            app.return_to_normal_mode()
+                # Print the result on the main thread
+                app.app.loop.call_soon_threadsafe(
+                    app.print,
+                    f"{node.path}: Standard Deviation = {vstd}",
+                )
 
-        # Start the operation in a new thread
-        threading.Thread(target=run_in_thread, daemon=True).start()
+                # Exit values mode
+                app.return_to_normal_mode()
+
+            # Start the operation in a new thread
+            threading.Thread(target=run_in_thread, daemon=True).start()
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     # Bind the functions
     app.kb.add("v", filter=Condition(lambda: app.flag_dataset_mode))(

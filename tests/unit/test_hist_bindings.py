@@ -1,6 +1,6 @@
 """Tests for histogram mode keybindings."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
@@ -139,8 +139,16 @@ class TestHistBindings:
             assert "New Title" in mock_app.hist_content.text
             mock_app.shift_focus.assert_called_with(mock_app.hist_content)
 
-    def test_plot_hist_with_empty_params(self, mock_app, mock_event):
+    @patch("h5forest.bindings.hist_bindings.prompt_for_dataset_operation")
+    def test_plot_hist_with_empty_params(
+        self, mock_prompt, mock_app, mock_event
+    ):
         """Test plotting histogram when params are empty."""
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, node, callback: callback(
+            use_chunks=False
+        )
+
         _init_hist_bindings(mock_app)
         mock_app.histogram_plotter.plot_params = {}
         node = MagicMock()
@@ -218,8 +226,16 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    def test_save_hist_with_empty_params(self, mock_app, mock_event):
+    @patch("h5forest.bindings.hist_bindings.prompt_for_dataset_operation")
+    def test_save_hist_with_empty_params(
+        self, mock_prompt, mock_app, mock_event
+    ):
         """Test saving histogram with empty params and dataset."""
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, node, callback: callback(
+            use_chunks=False
+        )
+
         _init_hist_bindings(mock_app)
         mock_app.histogram_plotter.plot_params = {}
         node = MagicMock()
@@ -296,8 +312,14 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.shift_focus.assert_called_with(mock_app.tree_content)
 
-    def test_select_data(self, mock_app, mock_event):
+    @patch("h5forest.bindings.hist_bindings.prompt_for_dataset_operation")
+    def test_select_data(self, mock_prompt, mock_app, mock_event):
         """Test selecting data for histogram."""
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, node, callback: callback(
+            use_chunks=False
+        )
+
         _init_hist_bindings(mock_app)
         node = MagicMock()
         node.is_group = False

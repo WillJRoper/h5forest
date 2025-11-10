@@ -8,7 +8,7 @@ Example Usage:
 
 """
 
-import sys
+import argparse
 import threading
 
 from prompt_toolkit import Application
@@ -411,6 +411,7 @@ class H5Forest:
         else:
             labels.append(self._app_keys_dict["shrink_attrs"])
 
+        labels.append(self._app_keys_dict["copy_key"])
         labels.append(self._app_keys_dict["restore_tree"])
         labels.append(self._app_keys_dict["exit"])
 
@@ -1057,6 +1058,62 @@ class H5Forest:
         # Update the app
         get_app().invalidate()
 
+    def prompt_yn(self, prompt, on_yes, on_no):
+        """
+        Prompt user for yes/no with single keypress (no Enter needed).
+
+        Args:
+            prompt (str):
+                The prompt message to display.
+            on_yes (callable):
+                Callback to execute when user presses 'y'.
+            on_no (callable):
+                Callback to execute when user presses 'n'.
+        """
+        # Set the prompt message
+        self.input_buffer_content.text = prompt
+        self.mini_buffer_content.text = ""
+        self.app.invalidate()
+
+        # Keep track of handlers to remove them later
+        handlers_to_remove = []
+
+        def cleanup():
+            """Remove temporary keybindings and clear prompt."""
+            for handler in handlers_to_remove:
+                try:
+                    self.kb.bindings.remove(handler)
+                except (ValueError, AttributeError):
+                    pass
+            self.input_buffer_content.text = ""
+            self.app.invalidate()
+
+        def handle_yes(event):
+            """Handle 'y' keypress."""
+            cleanup()
+            on_yes()
+
+        def handle_no(event):
+            """Handle 'n' keypress."""
+            cleanup()
+            on_no()
+
+        def handle_escape(event):
+            """Handle escape key - treat as 'no'."""
+            cleanup()
+            on_no()
+
+        # Add temporary keybindings for y/n/escape
+        # These bindings should always be active during the prompt
+        y_handler = self.kb.add("y")(handle_yes)
+        n_handler = self.kb.add("n")(handle_no)
+        esc_handler = self.kb.add("escape")(handle_escape)
+
+        handlers_to_remove.extend([y_handler, n_handler, esc_handler])
+
+        # Update the app
+        get_app().invalidate()
+
     def default_focus(self):
         """Shift the focus to the tree."""
         self.app.layout.focus(self.tree_content)
@@ -1170,16 +1227,27 @@ class H5Forest:
 
 def main():
     """Initialise and run the application."""
-    # First port of call, check we have been given a valid input
-    if len(sys.argv) != 2:
-        print("Usage: h5forest /path/to/file.hdf5")
-        sys.exit(1)
-
-    # Extract the filepath
-    filepath = sys.argv[1]
+    parser = argparse.ArgumentParser(
+        prog="h5forest",
+        description="A Text-based User Interface (TUI) for exploring "
+        "HDF5 files.",
+        epilog="Press 'q' to exit.",
+    )
+    parser.add_argument(
+        "filepath",
+        type=str,
+        help="Path to the HDF5 file to explore",
+    )
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version=f"h5forest {__version__}",
+    )
+    args = parser.parse_args()
 
     # Set up the app
-    app = H5Forest(filepath)
+    app = H5Forest(args.filepath)
 
     # Lets get going!
     app.run()

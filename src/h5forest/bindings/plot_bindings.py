@@ -9,6 +9,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.dataset_prompts import prompt_for_dataset_operation
 from h5forest.errors import error_handler
 from h5forest.utils import WaitIndicator
 
@@ -27,8 +28,13 @@ def _init_plot_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        # Set the text in the plotting area
-        app.plot_content.text = app.scatter_plotter.set_x_key(node)
+        def run_operation(use_chunks):
+            """Set x-axis after user confirmation."""
+            # Set the text in the plotting area
+            app.plot_content.text = app.scatter_plotter.set_x_key(node)
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     @error_handler
     def select_y(event):
@@ -41,8 +47,13 @@ def _init_plot_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        # Set the text in the plotting area
-        app.plot_content.text = app.scatter_plotter.set_y_key(node)
+        def run_operation(use_chunks):
+            """Set y-axis after user confirmation."""
+            # Set the text in the plotting area
+            app.plot_content.text = app.scatter_plotter.set_y_key(node)
+
+        # Prompt user if needed, then run operation
+        prompt_for_dataset_operation(app, node, run_operation)
 
     @error_handler
     def toggle_x_scale(event):
