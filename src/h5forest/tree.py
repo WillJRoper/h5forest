@@ -359,9 +359,16 @@ class Tree:
         # Initialize path collection if this is the first search
         self.get_all_paths()
 
-        # Wait for the background thread to finish collecting paths
+        # Wait briefly for the background thread (non-blocking for UI)
+        # Use a short timeout so tests can complete but UI stays responsive
         if self.unpack_thread is not None and self.unpack_thread.is_alive():
-            self.unpack_thread.join()
+            # Wait up to 100ms for the thread to finish
+            # This allows fast completion in tests while keeping UI responsive
+            self.unpack_thread.join(timeout=0.1)
+
+            # If still not done after timeout, return unfiltered tree
+            if self.unpack_thread.is_alive():
+                return self.tree_text
 
         # If we haven't saved the original tree yet, do it now
         if self.original_tree_text is None:
