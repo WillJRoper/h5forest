@@ -319,9 +319,11 @@ class TestAppBindings:
 
             mock_event.app.invalidate.assert_called_once()
 
-    def test_search_leader_mode_with_index_building(self, mock_app, mock_event):
-        """Test search mode when index is building and triggers auto-update."""
-        from unittest.mock import patch, MagicMock
+    def test_search_leader_mode_with_index_building(
+        self, mock_app, mock_event
+    ):
+        """Test search mode when index building triggers auto-update."""
+        from unittest.mock import MagicMock, patch
 
         _init_app_bindings(mock_app)
 
@@ -345,7 +347,8 @@ class TestAppBindings:
         handler = bindings[0].handler
 
         # Mock threading but capture and execute the thread target
-        with patch("h5forest.bindings.bindings.threading.Thread") as mock_thread:
+        thread_path = "h5forest.bindings.bindings.threading.Thread"
+        with patch(thread_path) as mock_thread:
             with patch("h5forest.utils.WaitIndicator") as mock_wait_cls:
                 mock_wait_cls.return_value = mock_indicator
 
@@ -384,18 +387,20 @@ class TestAppBindings:
                     # Verify auto-update was triggered
                     mock_app.app.loop.call_soon_threadsafe.assert_called_once()
 
-                    # Execute the update_search callback to cover lines 112-124
-                    update_callback = mock_app.app.loop.call_soon_threadsafe.call_args[0][0]
+                    # Execute the update_search callback (lines 112-124)
+                    call_args = mock_app.app.loop.call_soon_threadsafe
+                    update_callback = call_args.call_args[0][0]
                     update_callback()
 
                     # Verify the update happened
-                    mock_app.tree.filter_tree.assert_called_once_with("test query")
+                    query = "test query"
+                    mock_app.tree.filter_tree.assert_called_once_with(query)
                     mock_app.tree_buffer.set_document.assert_called_once()
                     mock_app.app.invalidate.assert_called()
 
     def test_search_leader_mode_no_query(self, mock_app, mock_event):
-        """Test search mode when index building completes but no query entered."""
-        from unittest.mock import patch, MagicMock
+        """Test search when index completes but no query entered."""
+        from unittest.mock import MagicMock, patch
 
         _init_app_bindings(mock_app)
 
@@ -418,12 +423,14 @@ class TestAppBindings:
         ]
         handler = bindings[0].handler
 
-        with patch("h5forest.bindings.bindings.threading.Thread") as mock_thread:
+        thread_path = "h5forest.bindings.bindings.threading.Thread"
+        with patch(thread_path) as mock_thread:
             with patch("h5forest.utils.WaitIndicator") as mock_wait_cls:
                 mock_wait_cls.return_value = mock_indicator
 
                 # Capture the thread target function
                 thread_target = None
+
                 def capture_thread(*args, **kwargs):
                     nonlocal thread_target
                     thread_target = kwargs.get("target")
@@ -440,12 +447,13 @@ class TestAppBindings:
                     thread_target()
 
                     # Execute the update_search callback
-                    update_callback = mock_app.app.loop.call_soon_threadsafe.call_args[0][0]
+                    call_args = mock_app.app.loop.call_soon_threadsafe
+                    update_callback = call_args.call_args[0][0]
                     update_callback()
 
                     # With empty query, filter_tree should NOT be called
                     mock_app.tree.filter_tree.assert_not_called()
-                    # But set_document and invalidate should not be called either
+                    # set_document should not be called either
                     mock_app.tree_buffer.set_document.assert_not_called()
 
     def test_restore_tree_to_initial(self, mock_app, mock_event):
