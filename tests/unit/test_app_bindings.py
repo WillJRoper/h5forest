@@ -1,5 +1,6 @@
 """Tests for application-level keybindings."""
 
+import subprocess
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -65,6 +66,15 @@ class TestAppBindings:
         app.app.layout = MagicMock()
         app.app.layout.has_focus = MagicMock(return_value=True)
 
+        # Set up print method for feedback
+        app.print = MagicMock()
+
+        # Set up current node
+        app.current_row = 0
+        mock_node = MagicMock()
+        mock_node.path = "/test/hdf5/path"
+        app.tree.get_current_node = MagicMock(return_value=mock_node)
+
         return app
 
     @pytest.fixture
@@ -80,7 +90,7 @@ class TestAppBindings:
         """Test that _init_app_bindings returns a dict of hotkeys."""
         hot_keys = _init_app_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        assert len(hot_keys) == 10
+        assert len(hot_keys) == 11
 
     def test_exit_app_handler(self, mock_app, mock_event):
         """Test the exit_app handler."""
@@ -507,6 +517,120 @@ class TestAppBindings:
         # Verify invalidate was called
         mock_event.app.invalidate.assert_called_once()
 
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_linux(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copying HDF5 key to clipboard on Linux."""
+        # Set up platform as Linux
+        mock_platform.return_value = "Linux"
+
+        # Set up subprocess mock
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.communicate = MagicMock(return_value=(b"", b""))
+        mock_popen.return_value = mock_process
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        assert len(bindings) > 0
+
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify current node was retrieved
+        mock_app.tree.get_current_node.assert_called_once_with(
+            mock_app.current_row
+        )
+
+        # Verify xclip was called with correct arguments
+        mock_popen.assert_called_once_with(
+            ["xclip", "-selection", "clipboard"],
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # Verify communicate was called with the path
+        mock_process.communicate.assert_called_once_with(
+            input=b"/test/hdf5/path"
+        )
+
+        # Verify feedback was shown
+        mock_app.print.assert_called_once_with(
+            "Copied /test/hdf5/path into the clipboard"
+        )
+
+        # Verify invalidate was called
+        mock_event.app.invalidate.assert_called_once()
+
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_macos(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copying HDF5 key to clipboard on macOS."""
+        # Set up platform as macOS
+        mock_platform.return_value = "Darwin"
+
+        # Set up subprocess mock
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.communicate = MagicMock(return_value=(b"", b""))
+        mock_popen.return_value = mock_process
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify pbcopy was called
+        mock_popen.assert_called_once_with(
+            ["pbcopy"],
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_clipboard_error(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copy key when clipboard tool is not available."""
+        # Set up platform as Linux
+        mock_platform.return_value = "Linux"
+
+        # Simulate xclip not being found
+        mock_popen.side_effect = FileNotFoundError()
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify error message was shown
+        mock_app.print.assert_called_once_with(
+            "Error: xclip not found. Install with: apt install xclip"
+        )
+
     def test_all_expected_keys_bound(self, mock_app):
         """Test that all expected keys are bound."""
         _init_app_bindings(mock_app)
@@ -523,6 +647,7 @@ class TestAppBindings:
             "A",  # expand/collapse attributes
             "s",  # search mode
             "r",  # restore tree
+            "c",  # copy key
         ]
 
         for key in expected_keys:
@@ -541,7 +666,7 @@ class TestAppBindings:
         hot_keys = _init_app_bindings(mock_app)
 
         # Should be a dict with Label values
-        assert len(hot_keys) == 10
+        assert len(hot_keys) == 11
 
         # All values should be Labels
         for key, value in hot_keys.items():

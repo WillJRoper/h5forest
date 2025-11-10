@@ -6,6 +6,8 @@ module should not be called directly, but are intended to be used by the main
 application.
 """
 
+import platform
+import subprocess
 import threading
 
 from prompt_toolkit.document import Document
@@ -165,6 +167,56 @@ def _init_app_bindings(app):
         # Invalidate to refresh display
         event.app.invalidate()
 
+    @error_handler
+    def copy_key(event):
+        """Copy the HDF5 key of the current node to the clipboard."""
+        # Get the current node
+        node = app.tree.get_current_node(app.current_row)
+
+        # Get the HDF5 key path (without filename)
+        hdf5_key = node.path
+
+        # Copy to clipboard using platform-specific command
+        try:
+            system = platform.system()
+            if system == "Darwin":  # macOS
+                process = subprocess.Popen(
+                    ["pbcopy"],
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+            elif system == "Windows":
+                process = subprocess.Popen(
+                    ["clip"],
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+            else:  # Linux and others
+                process = subprocess.Popen(
+                    ["xclip", "-selection", "clipboard"],
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+
+            # Write the path to clipboard
+            process.communicate(input=hdf5_key.encode("utf-8"))
+
+            if process.returncode == 0:
+                app.print(f"Copied {hdf5_key} into the clipboard")
+            else:
+                app.print("Error: Failed to copy to clipboard")
+
+        except FileNotFoundError:
+            # Clipboard tool not found
+            if system == "Linux":
+                app.print("Error: xclip not found. Install with: apt install xclip")
+            else:
+                app.print("Error: Clipboard tool not available")
+        except Exception as e:
+            app.print(f"Error copying to clipboard: {e}")
+
+        event.app.invalidate()
+
     # Bind the functions
     app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
     app.kb.add("c-q")(exit_app)
@@ -214,6 +266,12 @@ def _init_app_bindings(app):
         filter=Condition(lambda: app.flag_normal_mode),
     )(restore_tree_to_initial)
 
+    # Bind 'c' to copy the HDF5 key to clipboard
+    app.kb.add(
+        "c",
+        filter=Condition(lambda: app.flag_normal_mode),
+    )(copy_key)
+
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
@@ -226,6 +284,7 @@ def _init_app_bindings(app):
         "window_mode": Label("w → Window Mode"),
         "search": Label("s → Search"),
         "restore_tree": Label("r → Restore Tree"),
+        "copy_key": Label("c → Copy Key"),
         "exit": Label("q → Exit"),
     }
 
