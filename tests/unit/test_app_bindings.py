@@ -276,6 +276,8 @@ class TestAppBindings:
 
     def test_search_leader_mode(self, mock_app, mock_event):
         """Test entering search mode."""
+        from unittest.mock import patch
+
         _init_app_bindings(mock_app)
 
         # Find the 's' binding
@@ -287,17 +289,35 @@ class TestAppBindings:
         assert len(bindings) > 0
 
         handler = bindings[0].handler
-        handler(mock_event)
 
-        # Verify mode flags changed
-        assert mock_app._flag_normal_mode is False
-        assert mock_app._flag_search_mode is True
+        # Mock threading to capture the thread target
+        mock_path = "h5forest.bindings.bindings.threading.Thread"
+        with patch(mock_path) as mock_thread:
+            mock_thread_instance = MagicMock()
+            mock_thread.return_value = mock_thread_instance
 
-        # Verify search content was cleared and focused
-        assert mock_app.search_content.text == ""
-        assert mock_app.search_content.buffer.cursor_position == 0
-        mock_app.shift_focus.assert_called_once_with(mock_app.search_content)
-        mock_event.app.invalidate.assert_called_once()
+            handler(mock_event)
+
+            # Verify mode flags changed
+            assert mock_app._flag_normal_mode is False
+            assert mock_app._flag_search_mode is True
+
+            # Verify search content was cleared and focused
+            assert mock_app.search_content.text == ""
+            assert mock_app.search_content.buffer.cursor_position == 0
+            mock_app.shift_focus.assert_called_once_with(
+                mock_app.search_content
+            )
+
+            # Verify get_all_paths was called
+            mock_app.tree.get_all_paths.assert_called_once()
+
+            # Verify thread started if index is building
+            if mock_app.tree.index_building:
+                mock_thread.assert_called_once()
+                mock_thread_instance.start.assert_called_once()
+
+            mock_event.app.invalidate.assert_called_once()
 
     def test_restore_tree_to_initial(self, mock_app, mock_event):
         """Test restoring tree to initial state."""

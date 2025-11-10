@@ -9,6 +9,7 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
+from h5forest.utils import WaitIndicator
 
 
 def _init_hist_bindings(app):
@@ -33,7 +34,8 @@ def _init_hist_bindings(app):
         """Edit the number of bins."""
         # Wait for data assignment thread to finish if it's running
         if app.histogram_plotter.assign_data_thread is not None:
-            app.histogram_plotter.assign_data_thread.join()
+            with WaitIndicator(app, "Computing data range..."):
+                app.histogram_plotter.assign_data_thread.join()
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available (needed to compute histogram)
@@ -76,7 +78,8 @@ def _init_hist_bindings(app):
         """Toggle the x-axis scale between linear and log."""
         # Wait for data assignment thread to finish if it's running
         if app.histogram_plotter.assign_data_thread is not None:
-            app.histogram_plotter.assign_data_thread.join()
+            with WaitIndicator(app, "Computing data range..."):
+                app.histogram_plotter.assign_data_thread.join()
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available
@@ -125,7 +128,8 @@ def _init_hist_bindings(app):
         """Toggle the y-axis scale between linear and log."""
         # Wait for data assignment thread to finish if it's running
         if app.histogram_plotter.assign_data_thread is not None:
-            app.histogram_plotter.assign_data_thread.join()
+            with WaitIndicator(app, "Computing data range..."):
+                app.histogram_plotter.assign_data_thread.join()
             app.histogram_plotter.assign_data_thread = None
 
         # Check if x_min/x_max are available (needed to compute histogram)
@@ -239,13 +243,15 @@ def _init_hist_bindings(app):
             # Set the text in the plotting area
             app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
-        # Compute the histogram
-        app.hist_content.text = app.histogram_plotter.compute_hist(
-            app.hist_content.text
-        )
+        # Compute and plot the histogram with wait indicator
+        with WaitIndicator(app, "Generating histogram..."):
+            # Compute the histogram
+            app.hist_content.text = app.histogram_plotter.compute_hist(
+                app.hist_content.text
+            )
 
-        # Get the plot
-        app.histogram_plotter.plot_and_show(app.hist_content.text)
+            # Get the plot
+            app.histogram_plotter.plot_and_show(app.hist_content.text)
 
     @error_handler
     def save_hist(event):

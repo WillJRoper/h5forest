@@ -10,6 +10,7 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
+from h5forest.utils import WaitIndicator
 
 
 def _init_plot_bindings(app):
@@ -48,7 +49,8 @@ def _init_plot_bindings(app):
         """Toggle the x-axis scale between linear and log."""
         # Wait for x-axis data assignment thread to finish if it's running
         if app.scatter_plotter.assignx_thread is not None:
-            app.scatter_plotter.assignx_thread.join()
+            with WaitIndicator(app, "Computing x-axis data range..."):
+                app.scatter_plotter.assignx_thread.join()
             app.scatter_plotter.assignx_thread = None
 
         # Check if x_min/x_max are available
@@ -97,7 +99,8 @@ def _init_plot_bindings(app):
         """Toggle the y-axis scale between linear and log."""
         # Wait for y-axis data assignment thread to finish if it's running
         if app.scatter_plotter.assigny_thread is not None:
-            app.scatter_plotter.assigny_thread.join()
+            with WaitIndicator(app, "Computing y-axis data range..."):
+                app.scatter_plotter.assigny_thread.join()
             app.scatter_plotter.assigny_thread = None
 
         # Check if y_min/y_max are available
@@ -207,8 +210,9 @@ def _init_plot_bindings(app):
     @error_handler
     def plot_scatter(event):
         """Plot and show pcolormesh with mean in bins."""
-        # Make the plot
-        app.scatter_plotter.plot_and_show(app.plot_content.text)
+        # Make the plot with wait indicator
+        with WaitIndicator(app, "Generating scatter plot..."):
+            app.scatter_plotter.plot_and_show(app.plot_content.text)
 
         app.return_to_normal_mode()
         app.default_focus()
