@@ -7,7 +7,6 @@ application.
 """
 
 import threading
-import time
 
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
@@ -72,6 +71,8 @@ def _init_app_bindings(app):
 
     def search_leader_mode(event):
         """Enter search mode."""
+        from h5forest.utils import WaitIndicator
+
         app._flag_normal_mode = False
         app._flag_search_mode = True
         app.search_content.text = ""
@@ -81,24 +82,22 @@ def _init_app_bindings(app):
         # Start building the search index in the background
         app.tree.get_all_paths()
 
-        # Start a pulsing animation while the index is building
-        def pulse_message():
-            pulse_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-            idx = 0
+        # Show wait indicator while index is building
+        def monitor_index_building():
+            """Monitor index building and trigger auto-update when done."""
+            # Create and start the wait indicator
+            indicator = WaitIndicator(app, "Constructing search database...")
 
-            while app.tree.index_building:
-                # Show pulsing message
-                char = pulse_chars[idx % len(pulse_chars)]
-                app.app.loop.call_soon_threadsafe(
-                    lambda c=char: app.print(
-                        f"{c} Constructing search database..."
-                    )
-                )
-                idx += 1
-                time.sleep(0.1)  # Update every 100ms
+            # Only show indicator if index is actually building
+            if app.tree.index_building:
+                indicator.start()
 
-            # Clear the message when done
-            app.app.loop.call_soon_threadsafe(lambda: app.print(""))
+            # Wait for index building to complete
+            if app.tree.unpack_thread:
+                app.tree.unpack_thread.join()
+
+            # Stop the indicator
+            indicator.stop()
 
             # If user has already typed a query, trigger search update
             def update_search():
@@ -118,9 +117,12 @@ def _init_app_bindings(app):
 
             app.app.loop.call_soon_threadsafe(update_search)
 
-        # Only start pulse if index is actually building
+        # Start monitoring in background thread
         if app.tree.index_building:
-            threading.Thread(target=pulse_message, daemon=True).start()
+            thread = threading.Thread(
+                target=monitor_index_building, daemon=True
+            )
+            thread.start()
 
         event.app.invalidate()
 
