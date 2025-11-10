@@ -1,5 +1,5 @@
 # h5forest
-[![PyPI version](https://badge.fury.io/py/h5forest.svg)](https://badge.fury.io/py/h5forest)
+[![PyPI - Version](https://img.shields.io/pypi/v/h5forest.svg?logo=pypi)](https://pypi.org/project/h5forest/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/h5forest.svg)](https://pypi.org/project/h5forest/)
 [![Python versions](https://img.shields.io/pypi/pyversions/h5forest.svg)](https://pypi.org/project/h5forest/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
