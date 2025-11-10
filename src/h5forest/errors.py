@@ -2,6 +2,7 @@
 
 import inspect
 import traceback
+from pathlib import Path
 
 
 def error_handler(func):
@@ -36,7 +37,7 @@ def error_handler(func):
             # Find the frame where the error actually occurred (last frame)
             if tb:
                 last_frame = tb[-1]
-                filename = last_frame.filename.split('/')[-1]  # Just the file name
+                filename = Path(last_frame.filename).name
                 lineno = last_frame.lineno
                 location = f"{filename}:{lineno}"
             else:
