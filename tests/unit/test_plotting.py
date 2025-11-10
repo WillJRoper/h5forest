@@ -376,6 +376,12 @@ class TestScatterPlotter:
 
         plotter.plot_params = {"x": x_node, "y": y_node}
 
+        # Set min/max values (normally computed in set_x_key/set_y_key)
+        plotter.x_min = 1.0
+        plotter.x_max = 5.0
+        plotter.y_min = 2.0
+        plotter.y_max = 10.0
+
         # Setup mock HDF5 file
         mock_hdf = Mock()
         x_data = np.array([1, 2, 3, 4, 5])
@@ -454,6 +460,12 @@ class TestScatterPlotter:
         y_node.size = 10
 
         plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Set min/max values (normally computed in set_x_key/set_y_key)
+        plotter.x_min = 1.0
+        plotter.x_max = 10.0
+        plotter.y_min = 10.0
+        plotter.y_max = 100.0
 
         # Setup mock HDF5 file with chunked data
         mock_hdf = Mock()
@@ -543,6 +555,12 @@ class TestScatterPlotter:
 
         plotter.plot_params = {"x": x_node, "y": y_node}
 
+        # Set min/max values (normally computed in set_x_key/set_y_key)
+        plotter.x_min = 1.0
+        plotter.x_max = 1000.0
+        plotter.y_min = 1.0
+        plotter.y_max = 1000000.0
+
         # Setup mock HDF5 file
         mock_hdf = Mock()
         x_data = np.array([1, 10, 100, 1000])
@@ -598,6 +616,12 @@ class TestScatterPlotter:
         y_node.path = "/y_data"
 
         plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Set min/max values (normally computed in set_x_key/set_y_key)
+        plotter.x_min = 1.0
+        plotter.x_max = 3.0
+        plotter.y_min = 4.0
+        plotter.y_max = 6.0
 
         # Setup mock HDF5 file
         mock_hdf = Mock()
@@ -796,6 +820,100 @@ class TestScatterPlotterErrorHandling:
         # Verify scale was NOT set (function returned early)
         mock_ax.set_yscale.assert_not_called()
 
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_with_none_x_values(self, mock_figure, mock_forest_class):
+        """Test that None x_min/x_max shows appropriate error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+
+        # Set min/max to None (not yet computed)
+        plotter.x_min = None
+        plotter.x_max = None
+        plotter.y_min = 1.0
+        plotter.y_max = 100.0
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        # Create plot text
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "data range not available" in error_msg
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_with_none_y_values(self, mock_figure, mock_forest_class):
+        """Test that None y_min/y_max shows appropriate error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+
+        plotter = ScatterPlotter()
+
+        # Set min/max to None (not yet computed)
+        plotter.x_min = 1.0
+        plotter.x_max = 100.0
+        plotter.y_min = None
+        plotter.y_max = None
+
+        # Create mock nodes
+        x_node = Mock()
+        x_node.chunks = (1,)
+        y_node = Mock()
+        y_node.chunks = (1,)
+
+        plotter.plot_params = {"x": x_node, "y": y_node}
+
+        # Setup mock figure
+        mock_fig = Mock()
+        mock_ax = Mock()
+        mock_fig.add_subplot.return_value = mock_ax
+        mock_figure.return_value = mock_fig
+
+        # Create plot text
+        text = (
+            "x-axis:      /x_data\n"
+            "y-axis:      /y_data\n"
+            "x-label:     X Values\n"
+            "y-label:     Y Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+            "marker:      .\n"
+        )
+
+        plotter._plot(text)
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "data range not available" in error_msg
+
 
 class TestHistogramPlotterErrorHandling:
     """Test error handling in HistogramPlotter."""
@@ -937,6 +1055,51 @@ class TestHistogramPlotterErrorHandling:
 
         # Verify scale was NOT set (function returned early)
         mock_ax.set_yscale.assert_not_called()
+
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.plotting.get_app")
+    @patch("h5forest.plotting.h5py.File")
+    def test_compute_hist_with_none_values(
+        self, mock_h5py_file, mock_get_app, mock_forest_class
+    ):
+        """Test that None x_min/x_max shows appropriate error."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+        mock_app = Mock()
+        mock_get_app.return_value = mock_app
+
+        plotter = HistogramPlotter()
+
+        # Create mock node
+        node = Mock()
+        node.filepath = "/tmp/test.h5"
+        node.path = "/hist_data"
+        node.chunks = 1
+        node.is_chunked = False
+
+        plotter.plot_params = {"data": node}
+        plotter.x_min = None  # Not yet computed
+        plotter.x_max = None
+
+        # Create compute text
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       10\n"
+            "x-label:     Data\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
+
+        plotter.compute_hist(text)
+
+        # Wait for thread to complete
+        if plotter.compute_hist_thread is not None:
+            plotter.compute_hist_thread.join()
+
+        # Verify error was printed
+        mock_forest.print.assert_called_once()
+        error_msg = mock_forest.print.call_args[0][0]
+        assert "data range not available" in error_msg
 
 
 class TestHistogramPlotter:
