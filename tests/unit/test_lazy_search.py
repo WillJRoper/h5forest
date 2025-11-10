@@ -157,6 +157,7 @@ def test_filter_tree_multiple_searches(temp_h5_file):
 
     tree = Tree(temp_h5_file)
     tree.get_tree_text()
+    original_text = tree.tree_text
 
     # Build index
     tree.get_all_paths()
@@ -172,4 +173,4 @@ def test_filter_tree_multiple_searches(temp_h5_file):
 
     # Clear search
     result3 = tree.filter_tree("")
-    assert result3 == tree.original_tree_text, "Should restore original"
+    assert result3 == original_text, "Should restore original"
