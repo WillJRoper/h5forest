@@ -1,11 +1,18 @@
 """A module containing functions for graceful error handling."""
 
+import inspect
+import traceback
+
 
 def error_handler(func):
     """
     Wrap a function in a try/except block to catch errors.
 
-    Errors are printed to the mini buffer.
+    Errors are printed to the mini buffer with detailed context including:
+    - Class name (if method)
+    - Module and file location
+    - Line number where error occurred
+    - Full exception message
 
     Args:
         func (function):
@@ -23,6 +30,32 @@ def error_handler(func):
             # Nested import to avoid circular dependencies
             from h5forest.h5_forest import H5Forest
 
-            H5Forest().print(f"ERROR@{func.__name__}: {e}")
+            # Get detailed error context
+            tb = traceback.extract_tb(e.__traceback__)
+
+            # Find the frame where the error actually occurred (last frame)
+            if tb:
+                last_frame = tb[-1]
+                filename = last_frame.filename.split('/')[-1]  # Just the file name
+                lineno = last_frame.lineno
+                location = f"{filename}:{lineno}"
+            else:
+                location = "unknown"
+
+            # Try to get class name if this is a method
+            qualname = func.__qualname__
+            if '.' in qualname:
+                # It's a method, extract class name
+                class_name = qualname.rsplit('.', 1)[0]
+                method_name = qualname.rsplit('.', 1)[1]
+                context = f"{class_name}.{method_name}"
+            else:
+                # It's a function
+                context = func.__name__
+
+            # Build error message with context
+            error_msg = f"ERROR@{context} ({location}): {e}"
+
+            H5Forest().print(error_msg)
 
     return wrapper
