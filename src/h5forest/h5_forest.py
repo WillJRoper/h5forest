@@ -161,6 +161,7 @@ class H5Forest:
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
         self._flag_search_mode = False
+        self._flag_help_mode = False
 
         # Timer for debouncing search input
         self.search_timer = None
@@ -655,6 +656,7 @@ class H5Forest:
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
         self._flag_search_mode = False
+        self._flag_help_mode = False
         self.mode_title.update_title("Normal Mode")
 
     def _generate_help_text(self):
@@ -1074,7 +1076,7 @@ Press 'q' to close this help and return to Normal Mode.
                 ),
                 ConditionalContainer(
                     content=self.help_keys,
-                    filter=Condition(lambda: self.flag_help_visible),
+                    filter=Condition(lambda: self._flag_help_mode),
                 ),
             ]
         )
@@ -1088,7 +1090,7 @@ Press 'q' to close this help and return to Normal Mode.
                 or self.flag_plotting_mode
                 or self.flag_hist_mode
                 or self.flag_search_mode
-                or self.flag_help_visible
+                or self._flag_help_mode
             ),
         )
 
@@ -1303,6 +1305,10 @@ Press 'q' to close this help and return to Normal Mode.
             ConditionalContainer(
                 content=DynamicLabelLayout(self._get_search_keys),
                 filter=Condition(lambda: self.flag_search_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_help_keys),
+                filter=Condition(lambda: self._flag_help_mode),
             ),
         ]
 

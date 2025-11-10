@@ -83,6 +83,7 @@ class TestH5ForestInitialization:
         assert app._flag_plotting_mode is False
         assert app._flag_hist_mode is False
         assert app._flag_search_mode is False
+        assert app._flag_help_mode is False
 
     def test_init_creates_keybindings(self, temp_h5_file):
         """Test that initialization creates KeyBindings."""

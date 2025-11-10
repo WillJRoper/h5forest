@@ -169,9 +169,13 @@ def _init_app_bindings(app):
         """Toggle the help screen visibility."""
         app.flag_help_visible = not app.flag_help_visible
         if app.flag_help_visible:
+            app._flag_normal_mode = False
+            app._flag_help_mode = True
             app.mode_title.update_title("Help Mode")
             app.shift_focus(app.help_content)
         else:
+            app._flag_normal_mode = True
+            app._flag_help_mode = False
             app.mode_title.update_title("Normal Mode")
             app.default_focus()
         app.update_hotkeys_panel()
@@ -180,6 +184,8 @@ def _init_app_bindings(app):
     def close_help(event):
         """Close the help screen."""
         app.flag_help_visible = False
+        app._flag_normal_mode = True
+        app._flag_help_mode = False
         app.mode_title.update_title("Normal Mode")
         app.default_focus()
         app.update_hotkeys_panel()
@@ -257,16 +263,16 @@ def _init_app_bindings(app):
         event.app.key_processor.feed(KeyPress(Keys.Down))
 
     # Bind navigation keys for help mode
-    app.kb.add("j", filter=Condition(lambda: app.flag_help_visible))(
+    app.kb.add("j", filter=Condition(lambda: app._flag_help_mode))(
         help_move_down
     )
-    app.kb.add("k", filter=Condition(lambda: app.flag_help_visible))(
+    app.kb.add("k", filter=Condition(lambda: app._flag_help_mode))(
         help_move_up
     )
-    app.kb.add("down", filter=Condition(lambda: app.flag_help_visible))(
+    app.kb.add("down", filter=Condition(lambda: app._flag_help_mode))(
         help_move_down
     )
-    app.kb.add("up", filter=Condition(lambda: app.flag_help_visible))(
+    app.kb.add("up", filter=Condition(lambda: app._flag_help_mode))(
         help_move_up
     )
 
