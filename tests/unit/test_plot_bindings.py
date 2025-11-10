@@ -35,6 +35,12 @@ class TestPlotBindings:
         app.scatter_plotter.plot_params = {"x": "data1", "y": "data2"}
         app.scatter_plotter.plot_text = ""
         app.scatter_plotter.__len__ = MagicMock(return_value=2)
+        app.scatter_plotter.x_min = 1.0
+        app.scatter_plotter.x_max = 100.0
+        app.scatter_plotter.y_min = 1.0
+        app.scatter_plotter.y_max = 100.0
+        app.scatter_plotter.assignx_thread = None
+        app.scatter_plotter.assigny_thread = None
 
         # Set up plot content
         app.plot_content = MagicMock()
