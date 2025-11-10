@@ -286,8 +286,8 @@ def _init_hist_bindings(app):
         app.default_focus()
 
     @error_handler
-    def jump_to_config(event):
-        """Toggle between configuration window and tree view."""
+    def edit_hist(event):
+        """Edit the histogram configuration."""
         if app.app.layout.has_focus(app.hist_content):
             # Already in config, jump back to tree
             app.shift_focus(app.tree_content)
@@ -329,9 +329,7 @@ def _init_hist_bindings(app):
     app.kb.add("h", filter=Condition(lambda: app.flag_hist_mode))(plot_hist)
     app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
     app.kb.add("r", filter=Condition(lambda: app.flag_hist_mode))(reset_hist)
-    app.kb.add("J", filter=Condition(lambda: app.flag_hist_mode))(
-        jump_to_config
-    )
+    app.kb.add("e", filter=Condition(lambda: app.flag_hist_mode))(edit_hist)
     app.kb.add(
         "q",
         filter=Condition(
@@ -354,8 +352,8 @@ def _init_hist_bindings(app):
         "toggle_y_scale": Label("y → Toggle y-scale"),
         "show_hist": Label("h → Show Histogram"),
         "save_hist": Label("H → Save Histogram"),
-        "jump_config": Label("J → Jump to Config"),
-        "jump_tree": Label("J → Jump to tree"),
+        "edit_config": Label("e → Edit Config"),
+        "edit_tree": Label("e → Back To Tree"),
         "reset": Label("r → Reset"),
         "exit_mode": Label("q → Exit Hist Mode"),
         "exit_config": Label("q → Exit Hist Config"),
