@@ -1,6 +1,6 @@
 """Tests for dataset prompt workflows."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -272,3 +272,148 @@ class TestDatasetPrompts:
         # Should not call the operation callback
         callback.assert_not_called()
         mock_app.print.assert_called_with("Operation aborted.")
+
+    @patch("h5py.File")
+    def test_prompt_for_chunked_dataset_with_file_access(
+        self, mock_h5py_file, mock_app, mock_chunked_node
+    ):
+        """Test prompt_for_chunked_dataset with successful file access."""
+        callback = MagicMock()
+
+        # Mock the h5py dataset
+        mock_dataset = Mock()
+        mock_dataset.size = 1000000
+        mock_dataset.dtype.itemsize = 8
+        mock_dataset.shape = (1000, 1000)
+        mock_dataset.chunks = (100, 100)
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(return_value=mock_dataset)
+        mock_h5py_file.return_value = mock_file
+
+        prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
+
+        # Should prompt with chunk count
+        mock_app.prompt_yn.assert_called_once()
+        prompt_msg = mock_app.prompt_yn.call_args[0][0]
+        # The message should contain chunk count (100 chunks: 10x10)
+        assert "100 chunks" in prompt_msg
+
+    @patch("h5py.File")
+    def test_prompt_for_chunked_dataset_without_chunks(
+        self, mock_h5py_file, mock_app, mock_chunked_node
+    ):
+        """Test prompt for chunked node when dataset.chunks is None."""
+        callback = MagicMock()
+
+        # Mock the h5py dataset without chunks
+        mock_dataset = Mock()
+        mock_dataset.size = 1000000
+        mock_dataset.dtype.itemsize = 8
+        mock_dataset.shape = (1000, 1000)
+        mock_dataset.chunks = None  # No chunks
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(return_value=mock_dataset)
+        mock_h5py_file.return_value = mock_file
+
+        prompt_for_chunked_dataset(mock_app, mock_chunked_node, callback)
+
+        # Should prompt with "1 chunks" since chunks is None
+        mock_app.prompt_yn.assert_called_once()
+        prompt_msg = mock_app.prompt_yn.call_args[0][0]
+        # Message should contain "1 chunks" when chunks is None
+        assert "1 chunks" in prompt_msg
+
+    @patch("h5py.File")
+    def test_prompt_for_large_dataset_with_file_access(
+        self, mock_h5py_file, mock_app, mock_large_node
+    ):
+        """Test prompt_for_large_dataset with successful file access."""
+        callback = MagicMock()
+
+        # Mock the h5py dataset
+        mock_dataset = Mock()
+        mock_dataset.size = 250000000  # 250M elements
+        mock_dataset.dtype.itemsize = 8  # 8 bytes each = 2GB total
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(return_value=mock_dataset)
+        mock_h5py_file.return_value = mock_file
+
+        prompt_for_large_dataset(mock_app, mock_large_node, callback)
+
+        # Should prompt because size > 1GB
+        mock_app.prompt_yn.assert_called_once()
+        prompt_msg = mock_app.prompt_yn.call_args[0][0]
+        assert "2.00 GB" in prompt_msg
+
+    def test_prompt_for_dataset_operation_abort_path(
+        self, mock_app, mock_chunked_node
+    ):
+        """Test the abort path in prompt_for_dataset_operation."""
+        callback = MagicMock()
+
+        prompt_for_dataset_operation(mock_app, mock_chunked_node, callback)
+
+        # Get first prompt callbacks
+        first_on_no = mock_app.prompt_yn.call_args[0][2]
+
+        # Simulate user pressing 'n' to chunk-by-chunk
+        first_on_no()
+
+        # Get second prompt callbacks
+        second_on_no = mock_app.prompt_yn.call_args[0][2]
+
+        # Simulate user pressing 'n' to load all (abort)
+        second_on_no()
+
+        # Should print abort message and return to normal mode
+        assert mock_app.print.call_count >= 1
+        abort_calls = [
+            call
+            for call in mock_app.print.call_args_list
+            if "Operation aborted" in str(call)
+        ]
+        assert len(abort_calls) >= 1
+        mock_app.return_to_normal_mode.assert_called()
+
+    def test_after_chunk_prompt_callback_abort(self, mock_app):
+        """Test after_chunk_prompt callback with load_all=False."""
+        from h5forest.dataset_prompts import prompt_for_dataset_operation
+
+        callback = MagicMock()
+        mock_node = MagicMock()
+        mock_node.is_chunked = False
+
+        # Create a reference to after_chunk_prompt by capturing it
+        captured_callback = None
+
+        def capture_callback(app, node, operation_callback):
+            nonlocal captured_callback
+            captured_callback = operation_callback
+            # Don't call the original, just capture the callback
+
+        # Patch to capture the callback
+        with patch(
+            "h5forest.dataset_prompts.prompt_for_chunked_dataset",
+            side_effect=capture_callback,
+        ):
+            prompt_for_dataset_operation(mock_app, mock_node, callback)
+
+        # Now call the captured callback with use_chunks=False, load_all=False
+        if captured_callback:
+            captured_callback(use_chunks=False, load_all=False)
+
+            # Should print abort message
+            mock_app.print.assert_called_with("Operation aborted.")
+            mock_app.return_to_normal_mode.assert_called()
