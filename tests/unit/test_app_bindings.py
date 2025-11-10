@@ -672,7 +672,7 @@ class TestAppBindings:
     def test_copy_key_clipboard_error(
         self, mock_platform, mock_popen, mock_app, mock_event
     ):
-        """Test copy key when clipboard tool is not available."""
+        """Test copy key when clipboard tool is not available on Linux."""
         # Set up platform as Linux
         mock_platform.return_value = "Linux"
 
@@ -693,6 +693,34 @@ class TestAppBindings:
         # Verify error message was shown
         mock_app.print.assert_called_once_with(
             "Error: xclip not found. Install with: apt install xclip"
+        )
+
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_clipboard_error_non_linux(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copy key when clipboard tool is not available on non-Linux."""
+        # Set up platform as macOS
+        mock_platform.return_value = "Darwin"
+
+        # Simulate pbcopy not being found
+        mock_popen.side_effect = FileNotFoundError()
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify error message was shown
+        mock_app.print.assert_called_once_with(
+            "Error: Clipboard tool not available"
         )
 
     @patch("h5forest.bindings.bindings.subprocess.Popen")
