@@ -199,9 +199,17 @@ class TestDatasetBindings:
         assert mock_app.values_content.text == ""
         mock_app.return_to_normal_mode.assert_called_once()
 
+    @patch("h5forest.bindings.dataset_bindings.prompt_for_dataset_operation")
     @patch("threading.Thread")
-    def test_minimum_maximum(self, mock_thread, mock_app, mock_event):
+    def test_minimum_maximum(
+        self, mock_thread, mock_prompt, mock_app, mock_event
+    ):
         """Test getting minimum and maximum values."""
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, node, callback: callback(
+            use_chunks=False
+        )
+
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -238,9 +246,15 @@ class TestDatasetBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
+    @patch("h5forest.bindings.dataset_bindings.prompt_for_dataset_operation")
     @patch("threading.Thread")
-    def test_mean(self, mock_thread, mock_app, mock_event):
+    def test_mean(self, mock_thread, mock_prompt, mock_app, mock_event):
         """Test getting mean value."""
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, node, callback: callback(
+            use_chunks=False
+        )
+
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -276,9 +290,15 @@ class TestDatasetBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
+    @patch("h5forest.bindings.dataset_bindings.prompt_for_dataset_operation")
     @patch("threading.Thread")
-    def test_std(self, mock_thread, mock_app, mock_event):
+    def test_std(self, mock_thread, mock_prompt, mock_app, mock_event):
         """Test getting standard deviation."""
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, node, callback: callback(
+            use_chunks=False
+        )
+
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False

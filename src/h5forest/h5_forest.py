@@ -1057,6 +1057,65 @@ class H5Forest:
         # Update the app
         get_app().invalidate()
 
+    def prompt_yn(self, prompt, on_yes, on_no):
+        """
+        Prompt user for yes/no with single keypress (no Enter needed).
+
+        Args:
+            prompt (str):
+                The prompt message to display.
+            on_yes (callable):
+                Callback to execute when user presses 'y'.
+            on_no (callable):
+                Callback to execute when user presses 'n'.
+        """
+        # Store the current focus
+        current_focus = self.app.layout.current_window
+
+        # Set the prompt message
+        self.input_buffer_content.text = prompt
+        self.mini_buffer_content.text = ""
+        self.app.invalidate()
+
+        # Keep track of handlers to remove them later
+        handlers_to_remove = []
+
+        def cleanup():
+            """Remove temporary keybindings and clear prompt."""
+            for handler in handlers_to_remove:
+                try:
+                    self.kb.bindings.remove(handler)
+                except (ValueError, AttributeError):
+                    pass
+            self.input_buffer_content.text = ""
+            self.app.invalidate()
+
+        def handle_yes(event):
+            """Handle 'y' keypress."""
+            cleanup()
+            on_yes()
+
+        def handle_no(event):
+            """Handle 'n' keypress."""
+            cleanup()
+            on_no()
+
+        def handle_escape(event):
+            """Handle escape key - treat as 'no'."""
+            cleanup()
+            on_no()
+
+        # Add temporary keybindings for y/n/escape
+        # These bindings should always be active during the prompt
+        y_handler = self.kb.add("y")(handle_yes)
+        n_handler = self.kb.add("n")(handle_no)
+        esc_handler = self.kb.add("escape")(handle_escape)
+
+        handlers_to_remove.extend([y_handler, n_handler, esc_handler])
+
+        # Update the app
+        get_app().invalidate()
+
     def default_focus(self):
         """Shift the focus to the tree."""
         self.app.layout.focus(self.tree_content)
