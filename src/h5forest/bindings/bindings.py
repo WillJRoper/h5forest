@@ -263,16 +263,16 @@ def _init_app_bindings(app):
         event.app.key_processor.feed(KeyPress(Keys.Down))
 
     # Bind navigation keys for help mode
-    app.kb.add("j", filter=Condition(lambda: app._flag_help_mode))(
+    app.kb.add("j", filter=Condition(lambda: app.flag_help_mode))(
         help_move_down
     )
-    app.kb.add("k", filter=Condition(lambda: app._flag_help_mode))(
+    app.kb.add("k", filter=Condition(lambda: app.flag_help_mode))(
         help_move_up
     )
-    app.kb.add("down", filter=Condition(lambda: app._flag_help_mode))(
+    app.kb.add("down", filter=Condition(lambda: app.flag_help_mode))(
         help_move_down
     )
-    app.kb.add("up", filter=Condition(lambda: app._flag_help_mode))(
+    app.kb.add("up", filter=Condition(lambda: app.flag_help_mode))(
         help_move_up
     )
 

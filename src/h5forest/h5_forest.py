@@ -386,6 +386,22 @@ class H5Forest:
             self.search_content
         )
 
+    @property
+    def flag_help_mode(self):
+        """
+        Return the help mode flag.
+
+        This accounts for whether we are awaiting user input in the mini
+        buffer.
+
+        Returns:
+            bool:
+                The flag for help mode.
+        """
+        return self._flag_help_mode and not self.app.layout.has_focus(
+            self.mini_buffer_content
+        )
+
     def _get_hot_keys(self):
         """
         Get the hot keys for normal mode based on current state.
@@ -1076,7 +1092,7 @@ Press 'q' to close this help and return to Normal Mode.
                 ),
                 ConditionalContainer(
                     content=self.help_keys,
-                    filter=Condition(lambda: self._flag_help_mode),
+                    filter=Condition(lambda: self.flag_help_mode),
                 ),
             ]
         )
@@ -1090,7 +1106,7 @@ Press 'q' to close this help and return to Normal Mode.
                 or self.flag_plotting_mode
                 or self.flag_hist_mode
                 or self.flag_search_mode
-                or self._flag_help_mode
+                or self.flag_help_mode
             ),
         )
 
@@ -1308,7 +1324,7 @@ Press 'q' to close this help and return to Normal Mode.
             ),
             ConditionalContainer(
                 content=DynamicLabelLayout(self._get_help_keys),
-                filter=Condition(lambda: self._flag_help_mode),
+                filter=Condition(lambda: self.flag_help_mode),
             ),
         ]
 
