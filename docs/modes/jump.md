@@ -1,6 +1,6 @@
 # Goto Mode
 
-Goto Mode is for when you're lost in a labyrinthine HDF5 file and need to teleport around like some kind of data wizard. Because walking through every level like a peasant is so last century.
+Goto Mode enables rapid navigation through complex HDF5 file hierarchies with keyboard-driven jump commands. This mode provides efficient shortcuts for moving between different levels and locations in the tree structure.
 
 ## Purpose
 
