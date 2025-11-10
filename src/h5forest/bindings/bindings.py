@@ -62,11 +62,13 @@ def _init_app_bindings(app):
     def expand_attributes(event):
         """Expand the attributes."""
         app.flag_expanded_attrs = True
+        app.update_hotkeys_panel()
         event.app.invalidate()
 
     def collapse_attributes(event):
         """Collapse the attributes."""
         app.flag_expanded_attrs = False
+        app.update_hotkeys_panel()
         event.app.invalidate()
 
     def search_leader_mode(event):
