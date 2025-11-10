@@ -159,16 +159,21 @@ def prompt_for_dataset_operation(app, node, operation_callback):
 
     def after_chunk_prompt(use_chunks, load_all):
         """Called after chunked dataset prompt is resolved."""
+        # If user chose chunk-by-chunk processing, proceed immediately
+        if use_chunks:
+            operation_callback(use_chunks=True)
+            return
+
+        # If user declined both chunk-by-chunk and load-all, abort
         if not load_all:
-            # User aborted
             app.print("Operation aborted.")
             app.return_to_normal_mode()
             return
 
-        # Now check for large dataset
+        # User wants to load all at once, check for large dataset
         def after_size_prompt():
             """Called after large dataset prompt is resolved."""
-            operation_callback(use_chunks=use_chunks)
+            operation_callback(use_chunks=False)
 
         prompt_for_large_dataset(app, node, after_size_prompt)
 
