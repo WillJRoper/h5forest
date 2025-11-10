@@ -6,8 +6,9 @@ import pytest
 from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
+from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.tree_bindings import _init_tree_bindings
+from h5forest.bindings.tree_bindings import _init_tree_bindings, error_handler
 
 
 class TestTreeBindings:
@@ -321,7 +322,6 @@ class TestTreeBindings:
         self, mock_error_handler, mock_app
     ):
         """Test that handlers are wrapped with error_handler decorator."""
-        from h5forest.bindings.tree_bindings import error_handler
 
         assert callable(error_handler)
 
@@ -330,7 +330,6 @@ class TestTreeBindings:
         hot_keys = _init_tree_bindings(mock_app)
 
         # Should be a dict with Label values
-        from prompt_toolkit.widgets import Label
 
         assert len(hot_keys) == 2
         for key, value in hot_keys.items():

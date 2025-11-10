@@ -4,8 +4,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.window_bindings import _init_window_bindings
+from h5forest.bindings.window_bindings import (
+    _init_window_bindings,
+    error_handler,
+)
 
 
 class TestWindowBindings:
@@ -54,7 +58,6 @@ class TestWindowBindings:
 
     def test_init_window_bindings_returns_hotkeys(self, mock_app):
         """Test that _init_window_bindings returns a dict of Labels."""
-        from prompt_toolkit.widgets import Label
 
         hot_keys = _init_window_bindings(mock_app)
         assert isinstance(hot_keys, dict)
@@ -229,7 +232,6 @@ class TestWindowBindings:
         self, mock_error_handler, mock_app
     ):
         """Test that handlers are wrapped with error_handler decorator."""
-        from h5forest.bindings.window_bindings import error_handler
 
         assert callable(error_handler)
 

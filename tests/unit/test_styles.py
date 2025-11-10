@@ -1,6 +1,7 @@
 """Tests for h5forest.styles module."""
 
 import pytest
+from prompt_toolkit.styles import Style
 
 from h5forest.styles import style
 
@@ -14,14 +15,12 @@ class TestStyles:
 
     def test_style_is_prompt_toolkit_style(self):
         """Test that style is a prompt_toolkit Style object."""
-        from prompt_toolkit.styles import Style
 
         assert isinstance(style, Style)
 
     def test_style_has_expected_classes(self):
         """Test that style contains expected style classes."""
         # Style is created from a dictionary, check expected structure
-        from prompt_toolkit.styles import Style
 
         assert isinstance(style, Style)
         # The style should be created successfully from the dictionary
@@ -40,7 +39,6 @@ class TestStyles:
         # The style is created from a dict with specific keys
         # We can't easily access the internal dict, but we can verify
         # it was created successfully from the expected structure
-        from prompt_toolkit.styles import Style
 
         assert isinstance(style, Style)
 

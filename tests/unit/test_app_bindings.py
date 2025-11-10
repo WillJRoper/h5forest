@@ -5,8 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.bindings import _init_app_bindings
+from h5forest.bindings.bindings import _init_app_bindings, error_handler
 
 
 class TestAppBindings:
@@ -276,8 +277,6 @@ class TestAppBindings:
 
     def test_search_leader_mode(self, mock_app, mock_event):
         """Test entering search mode."""
-        from unittest.mock import patch
-
         _init_app_bindings(mock_app)
 
         # Find the 's' binding
@@ -323,8 +322,6 @@ class TestAppBindings:
         self, mock_app, mock_event
     ):
         """Test search mode when index building triggers auto-update."""
-        from unittest.mock import MagicMock, patch
-
         _init_app_bindings(mock_app)
 
         # Set up index building scenario
@@ -400,8 +397,6 @@ class TestAppBindings:
 
     def test_search_leader_mode_no_query(self, mock_app, mock_event):
         """Test search when index completes but no query entered."""
-        from unittest.mock import MagicMock, patch
-
         _init_app_bindings(mock_app)
 
         # Set up index building scenario with empty query
@@ -538,8 +533,6 @@ class TestAppBindings:
         self, mock_error_handler, mock_app
     ):
         """Test that some handlers are wrapped with error_handler."""
-        from h5forest.bindings.bindings import error_handler
-
         assert callable(error_handler)
 
     def test_hotkeys_structure(self, mock_app):
@@ -547,8 +540,6 @@ class TestAppBindings:
         hot_keys = _init_app_bindings(mock_app)
 
         # Should be a dict with Label values
-        from prompt_toolkit.widgets import Label
-
         assert len(hot_keys) == 10
 
         # All values should be Labels
