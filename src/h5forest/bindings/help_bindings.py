@@ -19,34 +19,6 @@ def _init_help_bindings(app):
     """Set up the keybindings for the help mode."""
 
     @error_handler
-    def toggle_help(event):
-        """Toggle the help screen visibility."""
-        app.flag_help_visible = not app.flag_help_visible
-        if app.flag_help_visible:
-            app._flag_normal_mode = False
-            app._flag_help_mode = True
-            app.mode_title.update_title("Help Mode")
-            app.shift_focus(app.help_content)
-        else:
-            app._flag_normal_mode = True
-            app._flag_help_mode = False
-            app.mode_title.update_title("Normal Mode")
-            app.default_focus()
-        app.update_hotkeys_panel()
-        event.app.invalidate()
-
-    @error_handler
-    def close_help(event):
-        """Close the help screen."""
-        app.flag_help_visible = False
-        app._flag_normal_mode = True
-        app._flag_help_mode = False
-        app.mode_title.update_title("Normal Mode")
-        app.default_focus()
-        app.update_hotkeys_panel()
-        event.app.invalidate()
-
-    @error_handler
     def help_move_up(event):
         """Move up in help screen (vim k)."""
         event.app.key_processor.feed(KeyPress(Keys.Up))
@@ -55,15 +27,6 @@ def _init_help_bindings(app):
     def help_move_down(event):
         """Move down in help screen (vim j)."""
         event.app.key_processor.feed(KeyPress(Keys.Down))
-
-    # Bind '?' to toggle help screen
-    app.kb.add(
-        "?",
-        filter=Condition(lambda: app.flag_normal_mode or app.flag_help_visible),
-    )(toggle_help)
-
-    # Bind 'q' to close help when help is visible
-    app.kb.add("q", filter=Condition(lambda: app.flag_help_visible))(close_help)
 
     # Bind navigation keys for help mode
     app.kb.add("j", filter=Condition(lambda: app.flag_help_mode))(
