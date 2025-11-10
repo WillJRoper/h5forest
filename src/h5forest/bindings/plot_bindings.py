@@ -253,20 +253,10 @@ def _init_plot_bindings(app):
         save_scatter
     )
     app.kb.add("r", filter=Condition(lambda: app.flag_plotting_mode))(reset)
-    app.kb.add(
-        "e",
-        filter=Condition(
-            lambda: app.flag_plotting_mode
-            and len(app.scatter_plotter.plot_params) > 0
-        ),
-    )(edit_plot)
-    app.kb.add(
-        "J",
-        filter=Condition(
-            lambda: app.flag_plotting_mode
-            and len(app.scatter_plotter.plot_params) > 0
-        ),
-    )(jump_to_config)
+    app.kb.add("e", filter=Condition(lambda: app.flag_plotting_mode))(edit_plot)
+    app.kb.add("J", filter=Condition(lambda: app.flag_plotting_mode))(
+        jump_to_config
+    )
     app.kb.add(
         "q",
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
