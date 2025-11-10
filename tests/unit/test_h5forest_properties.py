@@ -266,10 +266,44 @@ class TestH5ForestLabelProperties:
         result = mock_h5forest.plot_keys
         assert isinstance(result, DynamicLabelLayout)
 
+    def test_plot_keys_with_config_focused(self, mock_h5forest):
+        """Test plot_keys when config panel is focused."""
+
+        def has_focus_side_effect(content):
+            return content == mock_h5forest.plot_content
+
+        mock_h5forest.app.layout.has_focus.side_effect = has_focus_side_effect
+
+        result = mock_h5forest.plot_keys
+        labels = result.labels() if callable(result.labels) else result.labels
+
+        # Should only have 3 config-specific keys
+        assert len(labels) == 3
+        assert mock_h5forest._plot_keys_dict["edit_entry"] in labels
+        assert mock_h5forest._plot_keys_dict["jump_tree"] in labels
+        assert mock_h5forest._plot_keys_dict["exit_config"] in labels
+
     def test_hist_keys_returns_dynamic_layout(self, mock_h5forest):
         """Test that hist_keys returns a DynamicLabelLayout."""
         result = mock_h5forest.hist_keys
         assert isinstance(result, DynamicLabelLayout)
+
+    def test_hist_keys_with_config_focused(self, mock_h5forest):
+        """Test hist_keys when config panel is focused."""
+
+        def has_focus_side_effect(content):
+            return content == mock_h5forest.hist_content
+
+        mock_h5forest.app.layout.has_focus.side_effect = has_focus_side_effect
+
+        result = mock_h5forest.hist_keys
+        labels = result.labels() if callable(result.labels) else result.labels
+
+        # Should only have 3 config-specific keys
+        assert len(labels) == 3
+        assert mock_h5forest._hist_keys_dict["edit_entry"] in labels
+        assert mock_h5forest._hist_keys_dict["jump_tree"] in labels
+        assert mock_h5forest._hist_keys_dict["exit_config"] in labels
 
     def test_search_keys_returns_dynamic_layout(self, mock_h5forest):
         """Test that search_keys returns a DynamicLabelLayout."""
