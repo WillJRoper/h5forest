@@ -605,6 +605,70 @@ class TestAppBindings:
 
     @patch("h5forest.bindings.bindings.subprocess.Popen")
     @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_windows(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copying HDF5 key to clipboard on Windows."""
+        # Set up platform as Windows
+        mock_platform.return_value = "Windows"
+
+        # Set up subprocess mock
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.communicate = MagicMock(return_value=(b"", b""))
+        mock_popen.return_value = mock_process
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify clip was called
+        mock_popen.assert_called_once_with(
+            ["clip"],
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_failed_returncode(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copy key when clipboard operation fails."""
+        # Set up platform as Linux
+        mock_platform.return_value = "Linux"
+
+        # Set up subprocess mock with failed returncode
+        mock_process = MagicMock()
+        mock_process.returncode = 1
+        mock_process.communicate = MagicMock(return_value=(b"", b"error"))
+        mock_popen.return_value = mock_process
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify error message was shown
+        mock_app.print.assert_called_once_with(
+            "Error: Failed to copy to clipboard"
+        )
+
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
     def test_copy_key_clipboard_error(
         self, mock_platform, mock_popen, mock_app, mock_event
     ):
@@ -629,6 +693,114 @@ class TestAppBindings:
         # Verify error message was shown
         mock_app.print.assert_called_once_with(
             "Error: xclip not found. Install with: apt install xclip"
+        )
+
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_general_exception(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copy key when a general exception occurs."""
+        # Set up platform as Linux
+        mock_platform.return_value = "Linux"
+
+        # Simulate a general exception
+        mock_popen.side_effect = RuntimeError("Unexpected error")
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify error message was shown
+        mock_app.print.assert_called_once_with(
+            "Error copying to clipboard: Unexpected error"
+        )
+
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_root_path(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copying root path (edge case)."""
+        # Set up platform as Linux
+        mock_platform.return_value = "Linux"
+
+        # Set up subprocess mock
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.communicate = MagicMock(return_value=(b"", b""))
+        mock_popen.return_value = mock_process
+
+        # Set up node with root path
+        mock_node = MagicMock()
+        mock_node.path = "/"
+        mock_app.tree.get_current_node.return_value = mock_node
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify empty string is copied for root path
+        mock_process.communicate.assert_called_once_with(input=b"")
+
+        # Verify feedback was shown
+        mock_app.print.assert_called_once_with(
+            "Copied  into the clipboard"
+        )
+
+    @patch("h5forest.bindings.bindings.subprocess.Popen")
+    @patch("h5forest.bindings.bindings.platform.system")
+    def test_copy_key_multiple_leading_slashes(
+        self, mock_platform, mock_popen, mock_app, mock_event
+    ):
+        """Test copying path with multiple leading slashes."""
+        # Set up platform as Linux
+        mock_platform.return_value = "Linux"
+
+        # Set up subprocess mock
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.communicate = MagicMock(return_value=(b"", b""))
+        mock_popen.return_value = mock_process
+
+        # Set up node with multiple leading slashes
+        mock_node = MagicMock()
+        mock_node.path = "//01/000_z015p000/Galaxy/M200"
+        mock_app.tree.get_current_node.return_value = mock_node
+
+        _init_app_bindings(mock_app)
+
+        # Find the 'c' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("c",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify all leading slashes are removed
+        mock_process.communicate.assert_called_once_with(
+            input=b"01/000_z015p000/Galaxy/M200"
+        )
+
+        # Verify feedback was shown
+        mock_app.print.assert_called_once_with(
+            "Copied 01/000_z015p000/Galaxy/M200 into the clipboard"
         )
 
     def test_all_expected_keys_bound(self, mock_app):
