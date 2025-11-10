@@ -91,7 +91,7 @@ class TestPlotBindings:
 
         hot_keys = _init_plot_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        assert len(hot_keys) == 11
+        assert len(hot_keys) == 12
         for key, value in hot_keys.items():
             assert isinstance(key, str)
             assert isinstance(value, Label)
@@ -639,7 +639,7 @@ class TestPlotBindings:
         """Test that all expected keys are bound."""
         _init_plot_bindings(mock_app)
 
-        expected_keys = ["x", "y", "X", "Y", "c-m", "p", "P", "r", "e", "q"]
+        expected_keys = ["x", "y", "X", "Y", "c-m", "p", "P", "r", "e", "J", "q"]
 
         for key in expected_keys:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
@@ -661,7 +661,7 @@ class TestPlotBindings:
         # Should be a dict with Label values
         from prompt_toolkit.widgets import Label
 
-        assert len(hot_keys) == 11
+        assert len(hot_keys) == 12
 
         # All values should be Labels
         for key, value in hot_keys.items():

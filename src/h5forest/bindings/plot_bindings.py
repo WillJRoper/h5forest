@@ -221,6 +221,11 @@ def _init_plot_bindings(app):
         """Edit the plot."""
         app.shift_focus(app.plot_content)
 
+    @error_handler
+    def jump_to_config(event):
+        """Jump to the configuration window."""
+        app.shift_focus(app.plot_content)
+
     def exit_edit_plot(event):
         """Exit edit plot mode."""
         app.shift_focus(app.tree_content)
@@ -253,6 +258,13 @@ def _init_plot_bindings(app):
         ),
     )(edit_plot)
     app.kb.add(
+        "J",
+        filter=Condition(
+            lambda: app.flag_plotting_mode
+            and len(app.scatter_plotter.plot_params) > 0
+        ),
+    )(jump_to_config)
+    app.kb.add(
         "q",
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
     )(exit_edit_plot)
@@ -261,6 +273,7 @@ def _init_plot_bindings(app):
     # The app will use property methods to filter based on state
     hot_keys = {
         "edit_config": Label("e → Edit Config"),
+        "jump_config": Label("J → Jump to Config"),
         "edit_entry": Label("Enter → Edit entry"),
         "select_x": Label("x → Select x-axis"),
         "select_y": Label("y → Select y-axis"),
