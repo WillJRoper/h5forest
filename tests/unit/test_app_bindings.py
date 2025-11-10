@@ -319,6 +319,68 @@ class TestAppBindings:
 
             mock_event.app.invalidate.assert_called_once()
 
+    def test_search_leader_mode_with_index_building(self, mock_app, mock_event):
+        """Test search mode when index is building and triggers auto-update."""
+        from unittest.mock import patch, MagicMock
+
+        _init_app_bindings(mock_app)
+
+        # Set up index building scenario
+        mock_app.tree.index_building = True
+        mock_app.tree.unpack_thread = MagicMock()
+        mock_app.search_content.text = "test query"
+        mock_app.tree.filter_tree = MagicMock(return_value="filtered text")
+        mock_app.app.loop = MagicMock()
+        mock_app.app.loop.call_soon_threadsafe = MagicMock()
+
+        # Mock WaitIndicator
+        mock_indicator = MagicMock()
+
+        # Find the 's' binding
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("s",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+
+        # Mock threading but capture and execute the thread target
+        with patch("h5forest.bindings.bindings.threading.Thread") as mock_thread:
+            with patch("h5forest.utils.WaitIndicator") as mock_wait_cls:
+                mock_wait_cls.return_value = mock_indicator
+
+                # Capture the thread target function
+                thread_target = None
+                def capture_thread(*args, **kwargs):
+                    nonlocal thread_target
+                    thread_target = kwargs.get("target")
+                    mock_inst = MagicMock()
+                    return mock_inst
+
+                mock_thread.side_effect = capture_thread
+
+                # Call the handler
+                handler(mock_event)
+
+                # Now execute the captured thread target
+                if thread_target:
+                    thread_target()
+
+                    # Verify WaitIndicator was created and started
+                    mock_wait_cls.assert_called_once_with(
+                        mock_app, "Constructing search database..."
+                    )
+                    mock_indicator.start.assert_called_once()
+
+                    # Verify thread was joined
+                    mock_app.tree.unpack_thread.join.assert_called_once()
+
+                    # Verify indicator was stopped
+                    mock_indicator.stop.assert_called_once()
+
+                    # Verify auto-update was triggered
+                    mock_app.app.loop.call_soon_threadsafe.assert_called_once()
+
     def test_restore_tree_to_initial(self, mock_app, mock_event):
         """Test restoring tree to initial state."""
         # Set up some saved state
