@@ -1082,6 +1082,41 @@ class H5Forest:
         mode and focus state. It should be called whenever focus changes or when
         the displayed hotkeys need to be refreshed.
         """
+        # Reconstruct the hotkeys panel with fresh label layouts
+        from prompt_toolkit.layout.containers import ConditionalContainer, HSplit
+        from prompt_toolkit.filters import Condition
+
+        self.hotkeys_panel.children = [
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_hot_keys),
+                filter=Condition(lambda: self.flag_normal_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_goto_keys),
+                filter=Condition(lambda: self.flag_jump_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_dataset_keys),
+                filter=Condition(lambda: self.flag_dataset_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_window_keys),
+                filter=Condition(lambda: self.flag_window_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_plot_keys),
+                filter=Condition(lambda: self.flag_plotting_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_hist_keys),
+                filter=Condition(lambda: self.flag_hist_mode),
+            ),
+            ConditionalContainer(
+                content=DynamicLabelLayout(self._get_search_keys),
+                filter=Condition(lambda: self.flag_search_mode),
+            ),
+        ]
+
         # Force a redraw of the interface to reflect updated hotkeys
         if hasattr(self, 'app') and self.app is not None:
             self.app.invalidate()
