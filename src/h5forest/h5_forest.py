@@ -503,7 +503,9 @@ class H5Forest:
         # Show edit/jump config only if there are plot params
         if len(self.scatter_plotter.plot_params) > 0:
             labels.append(self._plot_keys_dict["edit_config"])
-            labels.append(self._plot_keys_dict["jump_config"])
+
+        # Always show jump config (can jump to config anytime)
+        labels.append(self._plot_keys_dict["jump_config"])
 
         # Show edit entry only if plot content has focus
         if has_app and self.app.layout.has_focus(self.plot_content):
@@ -564,9 +566,8 @@ class H5Forest:
         labels.append(self._hist_keys_dict["show_hist"])
         labels.append(self._hist_keys_dict["save_hist"])
 
-        # Show jump to config only if there are plot params
-        if len(self.histogram_plotter.plot_params) > 0:
-            labels.append(self._hist_keys_dict["jump_config"])
+        # Always show jump config (can jump to config anytime)
+        labels.append(self._hist_keys_dict["jump_config"])
 
         labels.append(self._hist_keys_dict["reset"])
 
