@@ -1156,7 +1156,7 @@ class H5Forest:
 
 
 def main():
-    """Intialise and run the application."""
+    """Initialise and run the application."""
     # First port of call, check we have been given a valid input
     if len(sys.argv) != 2:
         print("Usage: h5forest /path/to/file.hdf5")
@@ -1170,7 +1170,3 @@ def main():
 
     # Lets get going!
     app.run()
-
-
-if __name__ == "__main__":
-    main()
