@@ -215,7 +215,6 @@ def _init_plot_bindings(app):
         with WaitIndicator(app, "Generating scatter plot..."):
             app.scatter_plotter.plot_and_show(app.plot_content.text)
 
-        app.return_to_normal_mode()
         app.default_focus()
 
     @error_handler
@@ -230,7 +229,6 @@ def _init_plot_bindings(app):
         app.plot_content.text = app.scatter_plotter.reset()
 
         app.app.invalidate()
-        app.return_to_normal_mode()
         app.default_focus()
 
     @error_handler
