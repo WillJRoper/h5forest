@@ -4,7 +4,6 @@ This module provides a singleton ConfigManager class that loads and manages
 user configuration from ~/.h5forest/config.yaml.
 """
 
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -43,7 +42,7 @@ class ConfigManager:
     DEFAULT_CONFIG: Dict[str, Any] = {
         "version": "1.0",
         "configuration": {
-            "vim_mode": True,
+            "vim_mode": False,
             "theme": "default",
         },
         "keymaps": {
@@ -283,8 +282,8 @@ keymaps:
             self._save_config()
 
             print(
-                f"Config migrated successfully. New options added while "
-                f"preserving your custom settings."
+                "Config migrated successfully. New options added while "
+                "preserving your custom settings."
             )
 
     def _save_config(self) -> None:
@@ -348,9 +347,7 @@ keymaps:
                             .get(mode, {})
                             .get(action)
                         ):
-                            violations.append(
-                                f"{mode}.{action} = '{key}'"
-                            )
+                            violations.append(f"{mode}.{action} = '{key}'")
 
             if violations:
                 print(
