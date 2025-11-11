@@ -630,6 +630,73 @@ class TestH5ForestLayout:
             # Should be full width when no split conditions are met
             assert width >= 20  # At least half width
 
+    def test_tree_width_calculation_with_mocked_layout(self, temp_h5_file):
+        """Test tree_width function branches with properly mocked layout.
+
+        This test ensures all elif branches are covered by mocking the
+        app.layout.has_focus() method so that flag properties work correctly.
+        """
+        from unittest.mock import MagicMock, patch
+
+        from h5forest.h5_forest import H5Forest
+
+        # Mock get_window_size to return known values
+        with patch("h5forest.h5_forest.get_window_size") as mock_size:
+            mock_size.return_value = (100, 40)  # 100 rows, 40 columns
+
+            # Test elif branch for flag_plotting_mode
+            app = H5Forest(temp_h5_file)
+            app._flag_plotting_mode = True
+            # Mock layout.has_focus to return False so property returns True
+            app.app.layout.has_focus = MagicMock(return_value=False)
+            app._init_layout()
+            width_func = app.tree_frame.container.width
+            width = width_func()
+            assert width == 20  # Should be half width
+
+            # Test elif branch for flag_hist_mode
+            app = H5Forest(temp_h5_file)
+            # Ensure all earlier flags are False
+            app.flag_values_visible = False
+            app._flag_plotting_mode = False
+            app.scatter_plotter.plot_params = {}  # Ensure empty
+            app._flag_hist_mode = True
+            app.app.layout.has_focus = MagicMock(return_value=False)
+            app._init_layout()
+            width_func = app.tree_frame.container.width
+            width = width_func()
+            assert width == 20  # Should be half width
+
+            # Test elif branch for flag_expanded_attrs
+            app = H5Forest(temp_h5_file)
+            # Ensure all earlier flags are False
+            app.flag_values_visible = False
+            app._flag_plotting_mode = False
+            app._flag_hist_mode = False
+            app.scatter_plotter.plot_params = {}
+            app.histogram_plotter.plot_params = {}
+            app.flag_expanded_attrs = True
+            app.app.layout.has_focus = MagicMock(return_value=False)
+            app._init_layout()
+            width_func = app.tree_frame.container.width
+            width = width_func()
+            assert width == 20  # Should be half width
+
+            # Test else branch (all flags False)
+            app = H5Forest(temp_h5_file)
+            # Explicitly ensure all flags are False
+            app.flag_values_visible = False
+            app._flag_plotting_mode = False
+            app._flag_hist_mode = False
+            app.flag_expanded_attrs = False
+            app.scatter_plotter.plot_params = {}
+            app.histogram_plotter.plot_params = {}
+            app.app.layout.has_focus = MagicMock(return_value=False)
+            app._init_layout()
+            width_func = app.tree_frame.container.width
+            width = width_func()
+            assert width == 40  # Should be full width
+
 
 class TestH5ForestPrintAndInput:
     """Test H5Forest print and input methods."""
@@ -808,6 +875,136 @@ class TestH5ForestPrintAndInput:
         app.return_to_normal_mode.assert_called_once()
         # shift_focus called once in input(), once in on_esc
         assert app.shift_focus.call_count == 2
+
+    def test_prompt_yes_no_yes_response(self, temp_h5_file):
+        """Test prompt_yn method with 'y' response."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app.app.invalidate = MagicMock()
+
+        # Track callbacks
+        yes_called = []
+        no_called = []
+
+        def on_yes():
+            yes_called.append(True)
+
+        def on_no():
+            no_called.append(True)
+
+        # Store initial binding count
+        initial_bindings = len(app.kb.bindings)
+
+        # Call prompt_yn
+        app.prompt_yn("Continue?", on_yes, on_no)
+
+        # Verify prompt was set
+        assert app.input_buffer_content.text == "Continue?"
+        assert app.mini_buffer_content.text == ""
+
+        # Verify bindings were added (y, n, escape)
+        assert len(app.kb.bindings) >= initial_bindings + 3
+
+        # Find the 'y' binding
+        new_bindings = app.kb.bindings[initial_bindings:]
+        y_binding = None
+        for binding in new_bindings:
+            if "y" in binding.keys:
+                y_binding = binding
+                break
+
+        assert y_binding is not None
+
+        # Simulate pressing 'y'
+        mock_event = Mock()
+        y_binding.handler(mock_event)
+
+        # Verify yes callback was called
+        assert len(yes_called) == 1
+        assert len(no_called) == 0
+        # Verify prompt was cleared
+        assert app.input_buffer_content.text == ""
+
+    def test_prompt_yes_no_no_response(self, temp_h5_file):
+        """Test prompt_yn method with 'n' response."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app.app.invalidate = MagicMock()
+
+        # Track callbacks
+        yes_called = []
+        no_called = []
+
+        def on_yes():
+            yes_called.append(True)
+
+        def on_no():
+            no_called.append(True)
+
+        initial_bindings = len(app.kb.bindings)
+
+        # Call prompt_yn
+        app.prompt_yn("Delete?", on_yes, on_no)
+
+        # Find the 'n' binding
+        new_bindings = app.kb.bindings[initial_bindings:]
+        n_binding = None
+        for binding in new_bindings:
+            if "n" in binding.keys:
+                n_binding = binding
+                break
+
+        assert n_binding is not None
+
+        # Simulate pressing 'n'
+        mock_event = Mock()
+        n_binding.handler(mock_event)
+
+        # Verify no callback was called
+        assert len(yes_called) == 0
+        assert len(no_called) == 1
+
+    def test_prompt_yes_no_escape_response(self, temp_h5_file):
+        """Test prompt_yn method with escape key (treated as 'no')."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app.app.invalidate = MagicMock()
+
+        # Track callbacks
+        yes_called = []
+        no_called = []
+
+        def on_yes():
+            yes_called.append(True)
+
+        def on_no():
+            no_called.append(True)
+
+        initial_bindings = len(app.kb.bindings)
+
+        # Call prompt_yn
+        app.prompt_yn("Continue?", on_yes, on_no)
+
+        # Find the escape binding
+        new_bindings = app.kb.bindings[initial_bindings:]
+        esc_binding = None
+        for binding in new_bindings:
+            if "escape" in binding.keys:
+                esc_binding = binding
+                break
+
+        assert esc_binding is not None
+
+        # Simulate pressing escape
+        mock_event = Mock()
+        esc_binding.handler(mock_event)
+
+        # Verify no callback was called (escape is treated as no)
+        assert len(yes_called) == 0
+        assert len(no_called) == 1
 
 
 class TestH5ForestFocusManagement:

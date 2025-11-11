@@ -296,8 +296,10 @@ class DynamicLabelLayout:
                         for _ in range(max_row_length)
                     ]
                     row_containers.append(VSplit(empty_labels))
-                else:
+                else:  # pragma: no cover
                     # No labels at all - add an empty window
+                    # This branch is unreachable: if any row is non-empty
+                    # (required to pass line 244), max_row_length will be > 0
                     row_containers.append(
                         Window(
                             FormattedTextControl(text=""),
