@@ -10,6 +10,7 @@ Example Usage:
 
 import argparse
 import threading
+import time
 
 from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
@@ -985,10 +986,39 @@ class H5Forest:
             )
         )
 
-    def print(self, *args):
-        """Print a single line to the mini buffer."""
+    def print(self, *args, timeout=None):
+        """
+        Print a single line to the mini buffer.
+
+        Args:
+            *args:
+                Variable arguments to print.
+            timeout (float, optional):
+                If provided, the message will be cleared after this many seconds.
+                Uses threading to clear the message without blocking.
+        """
         args = [str(a) for a in args]
         self.mini_buffer_content.text = " ".join(args)
+        self.app.invalidate()
+
+        # If timeout is provided, clear the message after the specified time
+        if timeout is not None:
+
+            def _clear_message():
+                """Clear the message after timeout."""
+                time.sleep(timeout)
+                # Use call_soon_threadsafe to safely update UI from background thread
+                self.app.loop.call_soon_threadsafe(
+                    lambda: self._clear_mini_buffer()
+                )
+
+            # Start the clearing thread
+            thread = threading.Thread(target=_clear_message, daemon=True)
+            thread.start()
+
+    def _clear_mini_buffer(self):
+        """Clear the mini buffer content."""
+        self.mini_buffer_content.text = ""
         self.app.invalidate()
 
     def input(self, prompt, callback, mini_buffer_text=""):

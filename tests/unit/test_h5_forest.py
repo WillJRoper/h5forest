@@ -1,5 +1,6 @@
 """Unit tests for h5forest.h5_forest module - H5Forest main application."""
 
+import time
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -657,6 +658,57 @@ class TestH5ForestPrintAndInput:
 
         assert app.mini_buffer_content.text == "Hello World 123"
         app.app.invalidate.assert_called_once()
+
+    def test_print_with_timeout(self, temp_h5_file):
+        """Test print with timeout clears message after specified time."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app.app.invalidate = MagicMock()
+        app.app.loop = MagicMock()
+
+        # Print with a short timeout
+        app.print("Temporary message", timeout=0.1)
+
+        # Message should be set immediately
+        assert app.mini_buffer_content.text == "Temporary message"
+        app.app.invalidate.assert_called()
+
+        # Wait for timeout plus a small buffer
+        time.sleep(0.15)
+
+        # The clear function should have been called via call_soon_threadsafe
+        app.app.loop.call_soon_threadsafe.assert_called_once()
+
+        # Execute the lambda that was passed to call_soon_threadsafe
+        clear_func = app.app.loop.call_soon_threadsafe.call_args[0][0]
+        clear_func()
+
+        # Message should now be cleared
+        assert app.mini_buffer_content.text == ""
+
+    def test_print_without_timeout(self, temp_h5_file):
+        """Test print without timeout does not start a thread."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app.app.invalidate = MagicMock()
+        app.app.loop = MagicMock()
+
+        # Print without timeout
+        app.print("Persistent message")
+
+        # Message should be set
+        assert app.mini_buffer_content.text == "Persistent message"
+
+        # Wait a bit to ensure no thread is clearing the message
+        time.sleep(0.15)
+
+        # call_soon_threadsafe should not have been called
+        app.app.loop.call_soon_threadsafe.assert_not_called()
+
+        # Message should still be there
+        assert app.mini_buffer_content.text == "Persistent message"
 
     def test_input_setup(self, temp_h5_file):
         """Test input method sets up correctly."""
