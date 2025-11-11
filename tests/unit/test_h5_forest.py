@@ -636,25 +636,27 @@ class TestH5ForestPrintAndInput:
     """Test H5Forest print and input methods."""
 
     def test_print_single_string(self, temp_h5_file):
-        """Test print with single string argument."""
+        """Test print with single string argument (no timeout)."""
         from h5forest.h5_forest import H5Forest
 
         app = H5Forest(temp_h5_file)
         app.app.invalidate = MagicMock()
 
-        app.print("Hello, World!")
+        # Explicitly set timeout=None to test without timeout
+        app.print("Hello, World!", timeout=None)
 
         assert app.mini_buffer_content.text == "Hello, World!"
         app.app.invalidate.assert_called_once()
 
     def test_print_multiple_args(self, temp_h5_file):
-        """Test print with multiple arguments."""
+        """Test print with multiple arguments (no timeout)."""
         from h5forest.h5_forest import H5Forest
 
         app = H5Forest(temp_h5_file)
         app.app.invalidate = MagicMock()
 
-        app.print("Hello", "World", 123)
+        # Explicitly set timeout=None to test without timeout
+        app.print("Hello", "World", 123, timeout=None)
 
         assert app.mini_buffer_content.text == "Hello World 123"
         app.app.invalidate.assert_called_once()
@@ -687,16 +689,16 @@ class TestH5ForestPrintAndInput:
         # Message should now be cleared
         assert app.mini_buffer_content.text == ""
 
-    def test_print_without_timeout(self, temp_h5_file):
-        """Test print without timeout does not start a thread."""
+    def test_print_with_none_timeout(self, temp_h5_file):
+        """Test print with timeout=None does not start a thread."""
         from h5forest.h5_forest import H5Forest
 
         app = H5Forest(temp_h5_file)
         app.app.invalidate = MagicMock()
         app.app.loop = MagicMock()
 
-        # Print without timeout
-        app.print("Persistent message")
+        # Print with timeout=None for persistent message
+        app.print("Persistent message", timeout=None)
 
         # Message should be set
         assert app.mini_buffer_content.text == "Persistent message"
@@ -709,6 +711,26 @@ class TestH5ForestPrintAndInput:
 
         # Message should still be there
         assert app.mini_buffer_content.text == "Persistent message"
+
+    def test_print_default_timeout(self, temp_h5_file):
+        """Test print with default timeout (5 seconds)."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app.app.invalidate = MagicMock()
+        app.app.loop = MagicMock()
+
+        # Print with default timeout (should be 5 seconds)
+        app.print("Default timeout message")
+
+        # Message should be set immediately
+        assert app.mini_buffer_content.text == "Default timeout message"
+        app.app.invalidate.assert_called()
+
+        # The thread should be started, but not cleared yet since we're not waiting 5 seconds
+        # We'll just verify that the message is still there after a short time
+        time.sleep(0.15)
+        assert app.mini_buffer_content.text == "Default timeout message"
 
     def test_input_setup(self, temp_h5_file):
         """Test input method sets up correctly."""

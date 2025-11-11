@@ -986,7 +986,7 @@ class H5Forest:
             )
         )
 
-    def print(self, *args, timeout=None):
+    def print(self, *args, timeout=5.0):
         """
         Print a single line to the mini buffer.
 
@@ -994,7 +994,8 @@ class H5Forest:
             *args:
                 Variable arguments to print.
             timeout (float, optional):
-                If provided, the message will be cleared after this many seconds.
+                The message will be cleared after this many seconds. Defaults to 5.0 seconds.
+                Set to None to keep the message indefinitely.
                 Uses threading to clear the message without blocking.
         """
         args = [str(a) for a in args]
