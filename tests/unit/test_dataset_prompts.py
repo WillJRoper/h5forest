@@ -17,11 +17,14 @@ class TestDatasetPrompts:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
         app.prompt_yn = MagicMock()
         app.print = MagicMock()
         app.default_focus = MagicMock()
         app.return_to_normal_mode = MagicMock()
+        add_config_mock(app)
         return app
 
     @pytest.fixture

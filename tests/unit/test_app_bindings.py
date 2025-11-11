@@ -17,14 +17,12 @@ class TestAppBindings:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
 
         # Set up config with default keymaps
-        app.config = MagicMock()
-        app.config.get_keymap = MagicMock(
-            return_value=None
-        )  # Return None to use defaults
-        app.config.is_vim_mode_enabled = MagicMock(return_value=True)
+        add_config_mock(app)
 
         # Set up mode flags
         app.flag_normal_mode = True

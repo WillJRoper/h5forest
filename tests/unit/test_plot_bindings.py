@@ -15,6 +15,8 @@ class TestPlotBindings:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
 
         # Set up mode flags
@@ -78,6 +80,7 @@ class TestPlotBindings:
         app.app.layout.has_focus = MagicMock(return_value=False)
         app.app.invalidate = MagicMock()
 
+        add_config_mock(app)
         return app
 
     @pytest.fixture

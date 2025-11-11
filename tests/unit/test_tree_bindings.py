@@ -17,6 +17,8 @@ class TestTreeBindings:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
 
         # Set up tree buffer with cursor movement methods
@@ -46,11 +48,9 @@ class TestTreeBindings:
         app.app.layout.has_focus = MagicMock(return_value=True)
 
         # Add config mock
-        from unittest.mock import MagicMock as MM
-
-        app.config = MM()
-        app.config.get_keymap = MM(return_value=None)
-        app.config.is_vim_mode_enabled = MM(return_value=True)
+        add_config_mock(app)
+        # Enable vim mode for tree navigation tests
+        app.config.is_vim_mode_enabled = MagicMock(return_value=True)
 
         return app
 
@@ -67,8 +67,8 @@ class TestTreeBindings:
         """Test that _init_tree_bindings returns a dict of hotkeys."""
         hot_keys = _init_tree_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        # 3 keys when vim mode is enabled: open_group, move_ten, vim_nav
-        assert len(hot_keys) == 3
+        # 2 keys: open_group, move_ten
+        assert len(hot_keys) == 2
 
     def test_move_up_ten_handler(self, mock_app, mock_event):
         """Test the move_up_ten handler."""
@@ -338,8 +338,8 @@ class TestTreeBindings:
         hot_keys = _init_tree_bindings(mock_app)
 
         # Should be a dict with Label values
-        # 3 keys when vim mode is enabled: open_group, move_ten, vim_nav
-        assert len(hot_keys) == 3
+        # 2 keys: open_group, move_ten
+        assert len(hot_keys) == 2
         for key, value in hot_keys.items():
             assert isinstance(key, str)
             assert isinstance(value, Label)
