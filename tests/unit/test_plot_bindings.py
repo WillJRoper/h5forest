@@ -278,8 +278,14 @@ class TestPlotBindings:
         assert "New Title" in mock_app.plot_content.text
         mock_app.shift_focus.assert_called_once_with(mock_app.plot_content)
 
-    def test_plot_scatter(self, mock_app, mock_event):
+    @patch("h5forest.bindings.plot_bindings.prompt_for_chunking_preference")
+    def test_plot_scatter(self, mock_prompt, mock_app, mock_event):
         """Test plotting and showing scatter plot."""
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
+            use_chunks=False
+        )
+
         _init_plot_bindings(mock_app)
 
         bindings = [
@@ -292,13 +298,19 @@ class TestPlotBindings:
         handler = bindings[0].handler
         handler(mock_event)
 
-        # Verify plot_and_show was called
+        # Verify plot_and_show was called with use_chunks parameter
         mock_app.scatter_plotter.plot_and_show.assert_called_once_with(
-            mock_app.plot_content.text
+            mock_app.plot_content.text, use_chunks=False
         )
 
-    def test_save_scatter(self, mock_app, mock_event):
+    @patch("h5forest.bindings.plot_bindings.prompt_for_chunking_preference")
+    def test_save_scatter(self, mock_prompt, mock_app, mock_event):
         """Test saving scatter plot."""
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
+            use_chunks=False
+        )
+
         _init_plot_bindings(mock_app)
 
         bindings = [
@@ -311,9 +323,9 @@ class TestPlotBindings:
         handler = bindings[0].handler
         handler(mock_event)
 
-        # Verify plot_and_save was called
+        # Verify plot_and_save was called with use_chunks parameter
         mock_app.scatter_plotter.plot_and_save.assert_called_once_with(
-            mock_app.plot_content.text
+            mock_app.plot_content.text, use_chunks=False
         )
 
     def test_reset(self, mock_app, mock_event):
