@@ -9,7 +9,7 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
 from h5forest.config import translate_key_label
-from h5forest.dataset_prompts import prompt_for_dataset_operation
+from h5forest.dataset_prompts import prompt_for_chunking_preference
 from h5forest.errors import error_handler
 from h5forest.utils import WaitIndicator
 
@@ -28,13 +28,8 @@ def _init_hist_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_operation(use_chunks):
-            """Set histogram data after user confirmation."""
-            # Set the text in the histogram area
-            app.hist_content.text = app.histogram_plotter.set_data_key(node)
-
-        # Prompt user if needed, then run operation
-        prompt_for_dataset_operation(app, node, run_operation)
+        # Set the text in the histogram area directly (no prompt here)
+        app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
     @error_handler
     def edit_bins(event):
@@ -247,36 +242,31 @@ def _init_hist_bindings(app):
                 app.print(f"{node.path} is not a Dataset")
                 return
 
-            def run_operation(use_chunks):
-                """Set histogram data and plot after user confirmation."""
-                # Set the text in the plotting area
-                app.hist_content.text = app.histogram_plotter.set_data_key(
-                    node
-                )
+            # Set the text in the plotting area
+            app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
-                # Compute and plot the histogram with wait indicator
-                with WaitIndicator(app, "Generating histogram..."):
-                    # Compute the histogram
-                    app.hist_content.text = app.histogram_plotter.compute_hist(
-                        app.hist_content.text
-                    )
-
-                    # Get the plot
-                    app.histogram_plotter.plot_and_show(app.hist_content.text)
-
-            # Prompt user if needed, then run operation
-            prompt_for_dataset_operation(app, node, run_operation)
-        else:
-            # Already have data, just plot
+        def do_plot(use_chunks):
+            """Actually perform the plot after chunking preference is set."""
             # Compute and plot the histogram with wait indicator
             with WaitIndicator(app, "Generating histogram..."):
                 # Compute the histogram
                 app.hist_content.text = app.histogram_plotter.compute_hist(
-                    app.hist_content.text
+                    app.hist_content.text, use_chunks=use_chunks
                 )
 
                 # Get the plot
                 app.histogram_plotter.plot_and_show(app.hist_content.text)
+
+        # Check if we have data selected
+        if "data" not in app.histogram_plotter.plot_params:
+            app.print("Please select a dataset first (Enter)")
+            return
+
+        # Get the node to check for chunking
+        nodes = [app.histogram_plotter.plot_params["data"]]
+
+        # Prompt for chunking preference if needed, then plot
+        prompt_for_chunking_preference(app, nodes, do_plot)
 
     @error_handler
     def save_hist(event):
@@ -291,32 +281,29 @@ def _init_hist_bindings(app):
                 app.print(f"{node.path} is not a Dataset")
                 return
 
-            def run_operation(use_chunks):
-                """Set histogram data and save after user confirmation."""
-                # Set the text in the plotting area
-                app.hist_content.text = app.histogram_plotter.set_data_key(
-                    node
-                )
+            # Set the text in the plotting area
+            app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
-                # Compute the histogram
-                app.hist_content.text = app.histogram_plotter.compute_hist(
-                    app.hist_content.text
-                )
-
-                # Get the plot
-                app.histogram_plotter.plot_and_save(app.hist_content.text)
-
-            # Prompt user if needed, then run operation
-            prompt_for_dataset_operation(app, node, run_operation)
-        else:
-            # Already have data, just save
+        def do_save(use_chunks):
+            """Actually save the plot after chunking preference is set."""
             # Compute the histogram
             app.hist_content.text = app.histogram_plotter.compute_hist(
-                app.hist_content.text
+                app.hist_content.text, use_chunks=use_chunks
             )
 
             # Get the plot
             app.histogram_plotter.plot_and_save(app.hist_content.text)
+
+        # Check if we have data selected
+        if "data" not in app.histogram_plotter.plot_params:
+            app.print("Please select a dataset first (Enter)")
+            return
+
+        # Get the node to check for chunking
+        nodes = [app.histogram_plotter.plot_params["data"]]
+
+        # Prompt for chunking preference if needed, then save
+        prompt_for_chunking_preference(app, nodes, do_save)
 
     @error_handler
     def reset_hist(event):

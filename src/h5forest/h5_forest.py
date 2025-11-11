@@ -166,6 +166,7 @@ class H5Forest:
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
         self._flag_search_mode = False
+        self._flag_in_prompt = False  # Track if we're in a prompt_yn dialog
 
         # Timer for debouncing search input
         self.search_timer = None
@@ -640,6 +641,7 @@ class H5Forest:
         self._flag_plotting_mode = False
         self._flag_hist_mode = False
         self._flag_search_mode = False
+        self._flag_in_prompt = False  # Track if we're in a prompt_yn dialog
         self.mode_title.update_title("Normal Mode")
 
     def _init_text_areas(self):
@@ -1110,6 +1112,9 @@ class H5Forest:
             on_no (callable):
                 Callback to execute when user presses 'n'.
         """
+        # Set the prompt flag to True
+        self._flag_in_prompt = True
+
         # Set the prompt message
         self.input_buffer_content.text = prompt
         self.mini_buffer_content.text = ""
@@ -1120,6 +1125,9 @@ class H5Forest:
 
         def cleanup():
             """Remove temporary keybindings and clear prompt."""
+            # Clear the prompt flag first
+            self._flag_in_prompt = False
+
             for handler in handlers_to_remove:
                 try:
                     self.kb.bindings.remove(handler)
@@ -1143,11 +1151,19 @@ class H5Forest:
             cleanup()
             on_no()
 
-        # Add temporary keybindings for y/n/escape
-        # These bindings should always be active during the prompt
-        y_handler = self.kb.add("y")(handle_yes)
-        n_handler = self.kb.add("n")(handle_no)
-        esc_handler = self.kb.add("escape")(handle_escape)
+        # Add temporary keybindings for y/n/escape with filter
+        # These bindings are ONLY active when _flag_in_prompt is True
+        from prompt_toolkit.filters import Condition
+
+        y_handler = self.kb.add(
+            "y", filter=Condition(lambda: self._flag_in_prompt)
+        )(handle_yes)
+        n_handler = self.kb.add(
+            "n", filter=Condition(lambda: self._flag_in_prompt)
+        )(handle_no)
+        esc_handler = self.kb.add(
+            "escape", filter=Condition(lambda: self._flag_in_prompt)
+        )(handle_escape)
 
         handlers_to_remove.extend([y_handler, n_handler, esc_handler])
 

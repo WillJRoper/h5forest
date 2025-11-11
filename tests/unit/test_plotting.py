@@ -128,9 +128,9 @@ class TestPlotter:
         plotter._plot = Mock()
 
         text = "test plot text"
-        plotter.plot_and_show(text)
+        plotter.plot_and_show(text, use_chunks=False)
 
-        plotter._plot.assert_called_once_with(text)
+        plotter._plot.assert_called_once_with(text, use_chunks=False)
         mock_show.assert_called_once()
 
     @patch("h5forest.plotting.Path.cwd")
@@ -148,9 +148,9 @@ class TestPlotter:
         plotter.fig.savefig = Mock()
 
         text = "test plot text"
-        plotter.plot_and_save(text)
+        plotter.plot_and_save(text, use_chunks=False)
 
-        plotter._plot.assert_called_once_with(text)
+        plotter._plot.assert_called_once_with(text, use_chunks=False)
         mock_forest.input.assert_called_once()
 
 
@@ -530,10 +530,10 @@ class TestScatterPlotter:
             "marker:      .\n"
         )
 
-        plotter._plot(text)
+        plotter._plot(text, use_chunks=True)
 
-        # Verify scatter was called multiple times
-        # (np.ndindex with chunks=(5,) gives 5 iterations)
+        # Verify scatter was called 5 times (once per chunk)
+        # np.ndindex((5,)) gives (0,), (1,), (2,), (3,), (4,) = 5 iterations
         assert mock_ax.scatter.call_count == 5
 
     @patch("h5forest.plotting.plt.figure")
@@ -1744,14 +1744,16 @@ class TestPlotterIntegration:
 
     @patch("h5forest.progress.get_window_size")
     @patch("h5forest.plotting.plt.show")
-    @patch("h5forest.plotting.get_app")
+    @patch("h5forest.h5_forest.H5Forest")
     def test_full_histogram_workflow(
-        self, mock_get_app, mock_show, mock_window_size, histogram_h5_file
+        self, mock_forest_class, mock_show, mock_window_size, histogram_h5_file
     ):
         """Test complete histogram workflow with real HDF5 file."""
         # Setup mocks
         mock_app = Mock()
-        mock_get_app.return_value = mock_app
+        mock_app.mini_buffer_content = Mock()
+        mock_app.mini_buffer_content.text = ""
+        mock_forest_class.return_value = mock_app
         mock_window_size.return_value = (24, 80)
 
         # Create plotter
@@ -1784,14 +1786,14 @@ class TestPlotterIntegration:
         node.is_chunked = False
 
         # Compute histogram
-        plotter.compute_hist(text)
+        plotter.compute_hist(text, use_chunks=False)
 
         # Wait for thread
         if plotter.compute_hist_thread:
             plotter.compute_hist_thread.join()
 
         # Create plot
-        plotter.plot_and_show(text)
+        plotter.plot_and_show(text, use_chunks=False)
 
         # Verify plot was shown
         mock_show.assert_called_once()
