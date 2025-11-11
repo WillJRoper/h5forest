@@ -162,7 +162,10 @@ class TestHistBindings:
         def set_data_key_side_effect(n):
             mock_app.histogram_plotter.plot_params["data"] = n
             return "data key text"
-        mock_app.histogram_plotter.set_data_key.side_effect = set_data_key_side_effect
+
+        mock_app.histogram_plotter.set_data_key.side_effect = (
+            set_data_key_side_effect
+        )
 
         bindings = [
             b
@@ -287,6 +290,7 @@ class TestHistBindings:
         def set_data_key_side_effect(n):
             mock_app.histogram_plotter.plot_params["data"] = n
             return "data key text"
+
         mock_app.histogram_plotter.set_data_key = MagicMock(
             side_effect=set_data_key_side_effect
         )
