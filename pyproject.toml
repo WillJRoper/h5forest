@@ -41,6 +41,7 @@ dependencies = [
   "prompt_toolkit",
   "matplotlib",
   "rapidfuzz>=3.0.0",
+  "pyyaml>=5.0",
 ]
 
 # Add special dependencies for development

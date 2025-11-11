@@ -36,6 +36,7 @@ from h5forest.bindings import (
     _init_tree_bindings,
     _init_window_bindings,
 )
+from h5forest.config import ConfigManager
 from h5forest.plotting import HistogramPlotter, ScatterPlotter
 from h5forest.styles import style
 from h5forest.tree import Tree, TreeProcessor
@@ -136,6 +137,9 @@ class H5Forest:
             hdf5_filepath (str):
                 The path to the HDF5 file to be explored.
         """
+        # Load configuration
+        self.config = ConfigManager()
+
         # We do, set up the Tree with the file
         # This will parse the root of the HDF5 file ready to populate the
         # tree text area
