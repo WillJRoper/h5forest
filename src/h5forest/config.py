@@ -65,20 +65,33 @@ class ConfigManager:
     # Reserved keys that cannot be remapped when vim mode is enabled.
     VIM_RESERVED_KEYS: Set[str] = {"h", "j", "k", "l", "g", "G"}
 
-    def __new__(cls) -> "ConfigManager":
+    def __new__(cls, use_default: bool = False) -> "ConfigManager":
         """Ensure only one instance of :class:`ConfigManager` exists.
+
+        Args:
+            use_default: If True, forces loading default config without
+                reading from disk.
 
         Returns:
             ConfigManager: The singleton instance.
+
         """
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self) -> None:
-        """Initialize the ConfigManager (only happens once)."""
+    def __init__(self, use_default: bool = False) -> None:
+        """Initialize the ConfigManager (only happens once).
+
+        Args:
+            use_default: If True, forces loading default config without
+                reading from disk.
+        """
         if self._initialized:
             return
+
+        # Are we forcing default config load?
+        self._use_default = use_default
 
         # Paths and YAML loader configured for round-trip behavior.
         self._yaml = YAML(typ="rt")
@@ -154,6 +167,15 @@ class ConfigManager:
         # The user's config file exists right?
         if not self._config_path.exists():
             self._create_default_config()
+
+        # If we're forcing default config load, skip reading from disk and
+        # just load the default template.
+        if self._use_default:
+            default_doc = self._load_default_template()
+            self._config_doc = default_doc
+            self._config = self._to_plain(default_doc)
+            self._defaults_plain = self._to_plain(default_doc)
+            return
 
         # Load user config, recreating on parse errors.
         try:

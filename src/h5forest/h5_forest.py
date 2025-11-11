@@ -126,7 +126,7 @@ class H5Forest:
             cls._instance._init(*args, **kwargs)
         return cls._instance
 
-    def _init(self, hdf5_filepath):
+    def _init(self, hdf5_filepath, use_default_config=False):
         """
         Initialise the application.
 
@@ -136,9 +136,11 @@ class H5Forest:
         Args:
             hdf5_filepath (str):
                 The path to the HDF5 file to be explored.
+            use_default_config (bool):
+                Whether to use the default configuration or load the users.
         """
         # Load configuration
-        self.config = ConfigManager()
+        self.config = ConfigManager(use_default=use_default_config)
 
         # We do, set up the Tree with the file
         # This will parse the root of the HDF5 file ready to populate the
@@ -1248,10 +1250,15 @@ def main():
         action="version",
         version=f"h5forest {__version__}",
     )
+    parser.add_argument(
+        "--use-default-config",
+        action="store_true",
+        help="Use the default configuration, ignoring any user config file.",
+    )
     args = parser.parse_args()
 
     # Set up the app
-    app = H5Forest(args.filepath)
+    app = H5Forest(args.filepath, use_default_config=args.use_default_config)
 
     # Lets get going!
     app.run()

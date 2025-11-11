@@ -96,7 +96,6 @@ def _init_tree_bindings(app):
 
     # Bind the functions
     # Get navigation keys from config early (needed for bindings below)
-
     jump_up_key = app.config.get_keymap("tree_navigation", "jump_up_10")
     jump_down_key = app.config.get_keymap("tree_navigation", "jump_down_10")
     expand_collapse_key = app.config.get_keymap(
@@ -167,7 +166,7 @@ def _init_tree_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "open_group": Label("Enter → Open Group"),
+        "open_group": Label(f"{expand_collapse_key} → Expand/Collapse Group"),
         "move_ten": Label(
             f"{jump_up_key}/{jump_down_key} → Move Up/Down 10 Lines"
         ),
