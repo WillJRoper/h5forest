@@ -9,6 +9,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.dataset_prompts import prompt_for_dataset_operation
 from h5forest.errors import error_handler
 from h5forest.utils import WaitIndicator
@@ -306,18 +307,38 @@ def _init_plot_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "edit_config": Label(f"{edit_key} → Edit Plot Config"),
-        "edit_tree": Label(f"{edit_key} → Back to Tree"),
-        "edit_entry": Label(f"{edit_entry_key} → Edit Entry"),
-        "select_x": Label(f"{select_x_key} → Select x-axis"),
-        "select_y": Label(f"{select_y_key} → Select y-axis"),
-        "toggle_x_scale": Label(f"{toggle_x_scale_key} → Toggle x-scale"),
-        "toggle_y_scale": Label(f"{toggle_y_scale_key} → Toggle y-scale"),
-        "plot": Label(f"{show_plot_key} → Show Plot"),
-        "save_plot": Label(f"{save_plot_key} → Save Plot"),
-        "reset": Label(f"{reset_key} → Reset Plot Config"),
-        "exit_mode": Label(f"{quit_key} → Exit Plot Mode"),
-        "exit_config": Label(f"{quit_key} → Exit Config Edit"),
+        "edit_config": Label(
+            f"{translate_key_label(edit_key)} → Edit Plot Config"
+        ),
+        "edit_tree": Label(f"{translate_key_label(edit_key)} → Back to Tree"),
+        "edit_entry": Label(
+            f"{translate_key_label(edit_entry_key)} → Edit Entry"
+        ),
+        "select_x": Label(
+            f"{translate_key_label(select_x_key)} → Select x-axis"
+        ),
+        "select_y": Label(
+            f"{translate_key_label(select_y_key)} → Select y-axis"
+        ),
+        "toggle_x_scale": Label(
+            f"{translate_key_label(toggle_x_scale_key)} → Toggle x-scale"
+        ),
+        "toggle_y_scale": Label(
+            f"{translate_key_label(toggle_y_scale_key)} → Toggle y-scale"
+        ),
+        "plot": Label(f"{translate_key_label(show_plot_key)} → Show Plot"),
+        "save_plot": Label(
+            f"{translate_key_label(save_plot_key)} → Save Plot"
+        ),
+        "reset": Label(
+            f"{translate_key_label(reset_key)} → Reset Plot Config"
+        ),
+        "exit_mode": Label(
+            f"{translate_key_label(quit_key)} → Exit Plot Mode"
+        ),
+        "exit_config": Label(
+            f"{translate_key_label(quit_key)} → Exit Config Edit"
+        ),
     }
 
     return hot_keys

@@ -8,6 +8,7 @@ application.
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
 
 
@@ -96,12 +97,18 @@ def _init_window_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "move_tree": Label(f"{tree_key} → Move to Tree"),
-        "move_attrs": Label(f"{attr_key} → Move to Attributes"),
-        "move_values": Label(f"{values_key} → Move to Values"),
-        "move_plot": Label(f"{plot_key} → Move to Plot"),
-        "move_hist": Label(f"{hist_key} → Move to Histogram"),
-        "exit": Label(f"{quit_key} → Exit Window Mode"),
+        "move_tree": Label(f"{translate_key_label(tree_key)} → Move to Tree"),
+        "move_attrs": Label(
+            f"{translate_key_label(attr_key)} → Move to Attributes"
+        ),
+        "move_values": Label(
+            f"{translate_key_label(values_key)} → Move to Values"
+        ),
+        "move_plot": Label(f"{translate_key_label(plot_key)} → Move to Plot"),
+        "move_hist": Label(
+            f"{translate_key_label(hist_key)} → Move to Histogram"
+        ),
+        "exit": Label(f"{translate_key_label(quit_key)} → Exit Window Mode"),
     }
 
     return hot_keys

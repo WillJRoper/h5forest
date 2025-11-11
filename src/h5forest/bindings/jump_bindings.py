@@ -11,6 +11,7 @@ application.
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
 
 
@@ -190,12 +191,16 @@ def _init_goto_bindings(app):
     # Return all hot keys as a list
     # No conditional labels in jump mode
     hot_keys = [
-        Label(f"{top_alt_key}/{top_key} → Go to Top"),
-        Label(f"{bottom_alt_key}/{bottom_key} → Go to Bottom"),
-        Label(f"{parent_key} → Go to Parent"),
-        Label(f"{next_key} → Next Parent Group"),
-        Label(f"{jump_key} → Jump to Key Containing"),
-        Label(f"{quit_key} → Exit Goto Mode"),
+        Label(
+            f"{translate_key_label(top_alt_key)}/{translate_key_label(top_key)} → Go to Top"
+        ),
+        Label(
+            f"{translate_key_label(bottom_alt_key)}/{translate_key_label(bottom_key)} → Go to Bottom"
+        ),
+        Label(f"{translate_key_label(parent_key)} → Go to Parent"),
+        Label(f"{translate_key_label(next_key)} → Next Parent Group"),
+        Label(f"{translate_key_label(jump_key)} → Jump to Key Containing"),
+        Label(f"{translate_key_label(quit_key)} → Exit Goto Mode"),
     ]
 
     return hot_keys

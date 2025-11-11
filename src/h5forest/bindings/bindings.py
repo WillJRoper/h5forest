@@ -14,6 +14,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
 from h5forest.utils import WaitIndicator
 
@@ -295,17 +296,33 @@ def _init_app_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "expand_attrs": Label(f"{toggle_attrs_key} → Expand Attributes"),
-        "shrink_attrs": Label(f"{toggle_attrs_key} → Shrink Attributes"),
-        "dataset_mode": Label(f"{dataset_leader} → Dataset Mode"),
-        "goto_mode": Label(f"{goto_leader} → Goto Mode"),
-        "hist_mode": Label(f"{hist_leader} → Histogram Mode"),
-        "plotting_mode": Label(f"{plot_leader} → Plotting Mode"),
-        "window_mode": Label(f"{window_leader} → Window Mode"),
-        "search": Label(f"{search_leader} → Search"),
-        "restore_tree": Label(f"{restore_key} → Restore Tree"),
-        "copy_key": Label(f"{copy_key_binding} → Copy Key"),
-        "exit": Label(f"{quit_key} → Exit"),
+        "expand_attrs": Label(
+            f"{translate_key_label(toggle_attrs_key)} → Expand Attributes"
+        ),
+        "shrink_attrs": Label(
+            f"{translate_key_label(toggle_attrs_key)} → Shrink Attributes"
+        ),
+        "dataset_mode": Label(
+            f"{translate_key_label(dataset_leader)} → Dataset Mode"
+        ),
+        "goto_mode": Label(f"{translate_key_label(goto_leader)} → Goto Mode"),
+        "hist_mode": Label(
+            f"{translate_key_label(hist_leader)} → Histogram Mode"
+        ),
+        "plotting_mode": Label(
+            f"{translate_key_label(plot_leader)} → Plotting Mode"
+        ),
+        "window_mode": Label(
+            f"{translate_key_label(window_leader)} → Window Mode"
+        ),
+        "search": Label(f"{translate_key_label(search_leader)} → Search"),
+        "restore_tree": Label(
+            f"{translate_key_label(restore_key)} → Restore Tree"
+        ),
+        "copy_key": Label(
+            f"{translate_key_label(copy_key_binding)} → Copy Key"
+        ),
+        "exit": Label(f"{translate_key_label(quit_key)} → Exit"),
     }
 
     return hot_keys

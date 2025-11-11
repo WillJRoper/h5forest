@@ -11,6 +11,7 @@ from prompt_toolkit.key_binding.key_processor import KeyPress
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
 
 
@@ -166,9 +167,11 @@ def _init_tree_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "open_group": Label(f"{expand_collapse_key} → Expand/Collapse Group"),
+        "open_group": Label(
+            f"{translate_key_label(expand_collapse_key)} → Expand/Collapse Group"
+        ),
         "move_ten": Label(
-            f"{jump_up_key}/{jump_down_key} → Move Up/Down 10 Lines"
+            f"{translate_key_label(jump_up_key)}/{translate_key_label(jump_down_key)} → Move Up/Down 10 Lines"
         ),
     }
 

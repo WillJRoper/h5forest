@@ -8,6 +8,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.dataset_prompts import prompt_for_dataset_operation
 from h5forest.errors import error_handler
 from h5forest.utils import WaitIndicator
@@ -407,18 +408,40 @@ def _init_hist_bindings(app):
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "edit_config": Label(f"{edit_config_key} → Edit Config"),
-        "edit_tree": Label(f"{edit_config_key} → Back To Tree"),
-        "edit_entry": Label(f"{edit_entry_key} → Edit entry"),
-        "select_data": Label(f"{select_data_key} → Select data"),
-        "edit_bins": Label(f"{edit_bins_key} → Edit Bins"),
-        "toggle_x_scale": Label(f"{toggle_x_scale_key} → Toggle x-scale"),
-        "toggle_y_scale": Label(f"{toggle_y_scale_key} → Toggle y-scale"),
-        "show_hist": Label(f"{show_hist_key} → Show Histogram"),
-        "save_hist": Label(f"{save_hist_key} → Save Histogram"),
-        "reset": Label(f"{reset_key} → Reset"),
-        "exit_mode": Label(f"{quit_key} → Exit Hist Mode"),
-        "exit_config": Label(f"{quit_key} → Exit Hist Config"),
+        "edit_config": Label(
+            f"{translate_key_label(edit_config_key)} → Edit Config"
+        ),
+        "edit_tree": Label(
+            f"{translate_key_label(edit_config_key)} → Back To Tree"
+        ),
+        "edit_entry": Label(
+            f"{translate_key_label(edit_entry_key)} → Edit entry"
+        ),
+        "select_data": Label(
+            f"{translate_key_label(select_data_key)} → Select data"
+        ),
+        "edit_bins": Label(
+            f"{translate_key_label(edit_bins_key)} → Edit Bins"
+        ),
+        "toggle_x_scale": Label(
+            f"{translate_key_label(toggle_x_scale_key)} → Toggle x-scale"
+        ),
+        "toggle_y_scale": Label(
+            f"{translate_key_label(toggle_y_scale_key)} → Toggle y-scale"
+        ),
+        "show_hist": Label(
+            f"{translate_key_label(show_hist_key)} → Show Histogram"
+        ),
+        "save_hist": Label(
+            f"{translate_key_label(save_hist_key)} → Save Histogram"
+        ),
+        "reset": Label(f"{translate_key_label(reset_key)} → Reset"),
+        "exit_mode": Label(
+            f"{translate_key_label(quit_key)} → Exit Hist Mode"
+        ),
+        "exit_config": Label(
+            f"{translate_key_label(quit_key)} → Exit Hist Config"
+        ),
     }
 
     return hot_keys

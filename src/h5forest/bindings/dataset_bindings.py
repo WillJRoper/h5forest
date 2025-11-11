@@ -13,6 +13,7 @@ import threading
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.dataset_prompts import prompt_for_dataset_operation
 from h5forest.errors import error_handler
 
@@ -253,13 +254,13 @@ def _init_dataset_bindings(app):
     # Return all hot keys as a list
     # No conditional labels in dataset mode
     hot_keys = [
-        Label(f"{view_values_key} → Show Values"),
-        Label(f"{view_range_key} → Show Values In Range"),
-        Label(f"{min_max_key} → Get Minimum and Maximum"),
-        Label(f"{mean_key} → Get Mean"),
-        Label(f"{std_key} → Get Standard Deviation"),
-        Label(f"{close_values_key} → Close Value View"),
-        Label(f"{quit_key} → Exit Dataset Mode"),
+        Label(f"{translate_key_label(view_values_key)} → Show Values"),
+        Label(f"{translate_key_label(view_range_key)} → Show Values In Range"),
+        Label(f"{translate_key_label(min_max_key)} → Get Minimum and Maximum"),
+        Label(f"{translate_key_label(mean_key)} → Get Mean"),
+        Label(f"{translate_key_label(std_key)} → Get Standard Deviation"),
+        Label(f"{translate_key_label(close_values_key)} → Close Value View"),
+        Label(f"{translate_key_label(quit_key)} → Exit Dataset Mode"),
     ]
 
     return hot_keys
