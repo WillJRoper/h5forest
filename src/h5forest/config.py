@@ -76,13 +76,19 @@ class ConfigManager:
             "dataset_mode": {
                 "leader": "d",
                 "view_values": "v",
-                "statistics": "s",
+                "view_values_range": "V",
+                "close_values": "c",
+                "min_max": "m",
+                "mean": "M",
+                "std_dev": "s",
             },
             "window_mode": {
                 "leader": "w",
                 "focus_tree": "t",
                 "focus_attributes": "a",
                 "focus_values": "v",
+                "focus_plot": "p",
+                "focus_hist": "h",
             },
             "plot_mode": {
                 "leader": "p",
@@ -175,7 +181,11 @@ keymaps:
   dataset_mode:
     leader: d
     view_values: v
-    statistics: s
+    view_values_range: V
+    close_values: c
+    min_max: m
+    mean: M
+    std_dev: s
 
   # Window mode - focus management (press 'w' to enter)
   window_mode:
@@ -183,6 +193,8 @@ keymaps:
     focus_tree: t
     focus_attributes: a
     focus_values: v
+    focus_plot: p
+    focus_hist: h
 
   # Plot mode - scatter plot creation (press 'p' to enter)
   plot_mode:

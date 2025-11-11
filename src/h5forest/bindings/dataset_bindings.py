@@ -224,33 +224,48 @@ def _init_dataset_bindings(app):
         # Prompt user if needed, then run operation
         prompt_for_dataset_operation(app, node, run_operation)
 
+    # Get keybindings from config
+    view_values_key = (
+        app.config.get_keymap("dataset_mode", "view_values") or "v"
+    )
+    view_range_key = (
+        app.config.get_keymap("dataset_mode", "view_values_range") or "V"
+    )
+    close_values_key = (
+        app.config.get_keymap("dataset_mode", "close_values") or "c"
+    )
+    min_max_key = app.config.get_keymap("dataset_mode", "min_max") or "m"
+    mean_key = app.config.get_keymap("dataset_mode", "mean") or "M"
+    std_key = app.config.get_keymap("dataset_mode", "std_dev") or "s"
+    quit_key = app.config.get_keymap("normal_mode", "quit") or "q"
+
     # Bind the functions
-    app.kb.add("v", filter=Condition(lambda: app.flag_dataset_mode))(
-        show_values
-    )
-    app.kb.add("V", filter=Condition(lambda: app.flag_dataset_mode))(
-        show_values_in_range
-    )
-    app.kb.add("c", filter=Condition(lambda: app.flag_dataset_mode))(
-        close_values
-    )
-    app.kb.add("m", filter=Condition(lambda: app.flag_dataset_mode))(
-        minimum_maximum
-    )
-    app.kb.add("M", filter=Condition(lambda: app.flag_dataset_mode))(mean)
-    app.kb.add("s", filter=Condition(lambda: app.flag_dataset_mode))(std)
+    app.kb.add(
+        view_values_key, filter=Condition(lambda: app.flag_dataset_mode)
+    )(show_values)
+    app.kb.add(
+        view_range_key, filter=Condition(lambda: app.flag_dataset_mode)
+    )(show_values_in_range)
+    app.kb.add(
+        close_values_key, filter=Condition(lambda: app.flag_dataset_mode)
+    )(close_values)
+    app.kb.add(
+        min_max_key, filter=Condition(lambda: app.flag_dataset_mode)
+    )(minimum_maximum)
+    app.kb.add(mean_key, filter=Condition(lambda: app.flag_dataset_mode))(mean)
+    app.kb.add(std_key, filter=Condition(lambda: app.flag_dataset_mode))(std)
 
     # Add the hot keys
     # Return all hot keys as a list
     # No conditional labels in dataset mode
     hot_keys = [
-        Label("v → Show Values"),
-        Label("V → Show Values In Range"),
-        Label("m → Get Minimum and Maximum"),
-        Label("M → Get Mean"),
-        Label("s → Get Standard Deviation"),
-        Label("c → Close Value View"),
-        Label("q → Exit Dataset Mode"),
+        Label(f"{view_values_key} → Show Values"),
+        Label(f"{view_range_key} → Show Values In Range"),
+        Label(f"{min_max_key} → Get Minimum and Maximum"),
+        Label(f"{mean_key} → Get Mean"),
+        Label(f"{std_key} → Get Standard Deviation"),
+        Label(f"{close_values_key} → Close Value View"),
+        Label(f"{quit_key} → Exit Dataset Mode"),
     ]
 
     return hot_keys

@@ -182,3 +182,23 @@ def suppress_matplotlib():
 
     matplotlib.use("Agg")  # Non-interactive backend
     yield
+
+
+def add_config_mock(mock_app):
+    """Add config mock to a mock app object.
+
+    This helper function adds config mock attributes to make tests
+    work with the new configuration system.
+
+    Args:
+        mock_app: Mock application object to add config to
+
+    Returns:
+        The mock app with config added
+    """
+    from unittest.mock import MagicMock
+
+    mock_app.config = MagicMock()
+    mock_app.config.get_keymap = MagicMock(return_value=None)
+    mock_app.config.is_vim_mode_enabled = MagicMock(return_value=True)
+    return mock_app

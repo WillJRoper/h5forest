@@ -48,6 +48,12 @@ class TestWindowBindings:
         app.app.layout = MagicMock()
         app.app.layout.has_focus = MagicMock(return_value=False)
 
+        # Add config mock
+        from unittest.mock import MagicMock as MM
+        app.config = MM()
+        app.config.get_keymap = MM(return_value=None)
+        app.config.is_vim_mode_enabled = MM(return_value=True)
+
         return app
 
     @pytest.fixture
