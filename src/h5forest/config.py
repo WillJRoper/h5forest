@@ -41,6 +41,7 @@ class ConfigManager:
 
     # Default configuration structure
     DEFAULT_CONFIG: Dict[str, Any] = {
+        "version": "1.0",
         "configuration": {
             "vim_mode": True,
             "theme": "default",
@@ -134,6 +135,10 @@ class ConfigManager:
         config_content = """# h5forest Configuration File
 # This file controls various aspects of the h5forest TUI application.
 # Location: ~/.h5forest/config.yaml
+
+# Configuration version - DO NOT EDIT
+# This is used to automatically update your config when h5forest is upgraded
+version: "1.0"
 
 # General configuration options
 configuration:
@@ -232,6 +237,9 @@ keymaps:
                 self.DEFAULT_CONFIG.copy(), user_config
             )
 
+            # Check if config needs migration to newer version
+            self._migrate_config_if_needed(user_config)
+
             # Validate configuration
             self._validate_config()
 
@@ -247,6 +255,51 @@ keymaps:
                 "Using default configuration."
             )
             self._config = self.DEFAULT_CONFIG.copy()
+
+    def _migrate_config_if_needed(self, user_config: Dict[str, Any]) -> None:
+        """Migrate config to newer version if needed.
+
+        Compares the version in user config with the current default version.
+        If they differ, adds new configuration options while preserving user
+        settings, then saves the updated config.
+
+        Args:
+            user_config: User's loaded configuration
+        """
+        user_version = user_config.get("version", "0.0")
+        current_version = self.DEFAULT_CONFIG.get("version", "1.0")
+
+        if user_version != current_version:
+            print(
+                f"Migrating config from version {user_version} to "
+                f"{current_version}..."
+            )
+
+            # Config has already been merged with defaults in _load_config
+            # Now we just need to update the version and save
+            self._config["version"] = current_version
+
+            # Save the updated config
+            self._save_config()
+
+            print(
+                f"Config migrated successfully. New options added while "
+                f"preserving your custom settings."
+            )
+
+    def _save_config(self) -> None:
+        """Save current configuration to file."""
+        try:
+            with open(self._config_path, "w") as f:
+                yaml.dump(
+                    self._config,
+                    f,
+                    default_flow_style=False,
+                    sort_keys=False,
+                    allow_unicode=True,
+                )
+        except Exception as e:
+            print(f"Error saving config file: {e}")
 
     def _deep_merge(
         self, base: Dict[str, Any], override: Dict[str, Any]

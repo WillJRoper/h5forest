@@ -424,3 +424,148 @@ class TestDeepMerge:
         assert config.get_keymap("tree_navigation", "move_up") == "k"
         assert config.get_keymap("jump_mode", "leader") == "g"
         assert config.get_keymap("dataset_mode", "leader") == "d"
+
+
+class TestConfigVersion:
+    """Test configuration version tracking and migration."""
+
+    def test_default_config_has_version(self, mock_home_dir):
+        """Test that default config includes version."""
+        config = ConfigManager()
+
+        assert "version" in config.config
+        assert config.get("version") == "1.0"
+
+    def test_new_config_file_has_version(self, mock_home_dir):
+        """Test that newly created config file has version."""
+        ConfigManager()
+
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        with open(config_path, "r") as f:
+            content = f.read()
+
+        assert 'version: "1.0"' in content
+
+    def test_old_config_without_version_gets_migrated(
+        self, mock_home_dir, capsys
+    ):
+        """Test that config without version gets migrated."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create old config without version
+        old_config = {
+            "configuration": {"vim_mode": False},
+            "keymaps": {"normal_mode": {"quit": "x"}},
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(old_config, f)
+
+        config = ConfigManager()
+
+        # Should have migrated
+        captured = capsys.readouterr()
+        assert "Migrating config from version 0.0 to 1.0" in captured.out
+        assert "Config migrated successfully" in captured.out
+
+        # Version should be updated
+        assert config.get("version") == "1.0"
+
+        # User settings should be preserved
+        assert config.get("configuration.vim_mode") is False
+        assert config.get_keymap("normal_mode", "quit") == "x"
+
+        # New defaults should be added
+        assert config.get("configuration.theme") == "default"
+        assert config.get_keymap("normal_mode", "search") == "s"
+
+    def test_migration_preserves_user_settings(self, mock_home_dir, capsys):
+        """Test that migration preserves all user customizations."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create old config with custom settings
+        old_config = {
+            "version": "0.9",  # Old version
+            "configuration": {"vim_mode": False},
+            "keymaps": {
+                "normal_mode": {
+                    "quit": "x",
+                    "search": "f",
+                    "copy_path": "y",
+                },
+                "tree_navigation": {
+                    "move_up": "w",
+                    "move_down": "s",
+                },
+            },
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(old_config, f)
+
+        config = ConfigManager()
+
+        # Should have migrated
+        captured = capsys.readouterr()
+        assert "Migrating config from version 0.9 to 1.0" in captured.out
+
+        # All user settings preserved
+        assert config.get("configuration.vim_mode") is False
+        assert config.get_keymap("normal_mode", "quit") == "x"
+        assert config.get_keymap("normal_mode", "search") == "f"
+        assert config.get_keymap("normal_mode", "copy_path") == "y"
+        assert config.get_keymap("tree_navigation", "move_up") == "w"
+        assert config.get_keymap("tree_navigation", "move_down") == "s"
+
+        # New defaults added for missing keys
+        assert config.get_keymap("normal_mode", "toggle_attributes") == "A"
+        assert config.get_keymap("tree_navigation", "move_left") == "h"
+
+    def test_migration_updates_config_file(self, mock_home_dir):
+        """Test that migration saves updated config to file."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create old config
+        old_config = {
+            "configuration": {"vim_mode": True},
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(old_config, f)
+
+        ConfigManager()
+
+        # Read the updated file
+        with open(config_path, "r") as f:
+            updated_config = yaml.safe_load(f)
+
+        # File should have version now
+        assert updated_config["version"] == "1.0"
+
+        # File should have new defaults
+        assert "theme" in updated_config["configuration"]
+        assert "keymaps" in updated_config
+
+    def test_same_version_no_migration(self, mock_home_dir, capsys):
+        """Test that same version doesn't trigger migration."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create config with current version
+        current_config = {
+            "version": "1.0",
+            "configuration": {"vim_mode": True, "theme": "default"},
+            "keymaps": {"normal_mode": {"quit": "q"}},
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(current_config, f)
+
+        ConfigManager()
+
+        # Should NOT have migrated
+        captured = capsys.readouterr()
+        assert "Migrating config" not in captured.out
