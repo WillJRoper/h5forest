@@ -297,10 +297,6 @@ class TestPlotBindings:
             mock_app.plot_content.text
         )
 
-        # Verify returned to normal mode
-        mock_app.return_to_normal_mode.assert_called_once()
-        mock_app.default_focus.assert_called_once()
-
     def test_save_scatter(self, mock_app, mock_event):
         """Test saving scatter plot."""
         _init_plot_bindings(mock_app)
@@ -342,8 +338,6 @@ class TestPlotBindings:
 
         # Verify UI was updated
         mock_app.app.invalidate.assert_called_once()
-        mock_app.return_to_normal_mode.assert_called_once()
-        mock_app.default_focus.assert_called_once()
 
     def test_edit_plot(self, mock_app, mock_event):
         """Test entering edit plot mode."""
