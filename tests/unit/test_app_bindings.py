@@ -361,7 +361,7 @@ class TestAppBindings:
         # Mock threading but capture and execute the thread target
         thread_path = "h5forest.bindings.bindings.threading.Thread"
         with patch(thread_path) as mock_thread:
-            with patch("h5forest.utils.WaitIndicator") as mock_wait_cls:
+            with patch("h5forest.bindings.bindings.WaitIndicator") as mock_wait_cls:
                 mock_wait_cls.return_value = mock_indicator
 
                 # Capture the thread target function

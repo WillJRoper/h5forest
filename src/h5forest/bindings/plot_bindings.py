@@ -272,16 +272,16 @@ def _init_plot_bindings(app):
 
     # Bind the functions
     app.kb.add(edit_key, filter=Condition(lambda: app.flag_plotting_mode))(
-        select_x
+        edit_plot
     )
     app.kb.add(select_x_key, filter=Condition(lambda: app.flag_plotting_mode))(
-        select_y
+        select_x
     )
     app.kb.add(
         toggle_x_scale_key, filter=Condition(lambda: app.flag_plotting_mode)
     )(toggle_x_scale)
     app.kb.add(select_y_key, filter=Condition(lambda: app.flag_plotting_mode))(
-        toggle_y_scale
+        select_y
     )
     app.kb.add(
         toggle_y_scale_key, filter=Condition(lambda: app.flag_plotting_mode)
