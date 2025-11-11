@@ -328,6 +328,149 @@ class TestPlotBindings:
             mock_app.plot_content.text, use_chunks=False
         )
 
+    def test_plot_scatter_missing_x_axis(self, mock_app, mock_event):
+        """Test plotting without x-axis selected."""
+        _init_plot_bindings(mock_app)
+
+        # Set plot_params with only y
+        mock_app.scatter_plotter.plot_params = {"y": "some_data"}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("p",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        expected_msg = (
+            "Please select both x-axis (x) and y-axis (y) datasets first"
+        )
+        mock_app.print.assert_called_once_with(expected_msg)
+        # Should not call plot_and_show
+        mock_app.scatter_plotter.plot_and_show.assert_not_called()
+
+    def test_plot_scatter_missing_y_axis(self, mock_app, mock_event):
+        """Test plotting without y-axis selected."""
+        _init_plot_bindings(mock_app)
+
+        # Set plot_params with only x
+        mock_app.scatter_plotter.plot_params = {"x": "some_data"}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("p",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        expected_msg = (
+            "Please select both x-axis (x) and y-axis (y) datasets first"
+        )
+        mock_app.print.assert_called_once_with(expected_msg)
+        # Should not call plot_and_show
+        mock_app.scatter_plotter.plot_and_show.assert_not_called()
+
+    def test_plot_scatter_missing_both_axes(self, mock_app, mock_event):
+        """Test plotting without any axes selected."""
+        _init_plot_bindings(mock_app)
+
+        # Set plot_params empty
+        mock_app.scatter_plotter.plot_params = {}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("p",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        expected_msg = (
+            "Please select both x-axis (x) and y-axis (y) datasets first"
+        )
+        mock_app.print.assert_called_once_with(expected_msg)
+        # Should not call plot_and_show
+        mock_app.scatter_plotter.plot_and_show.assert_not_called()
+
+    def test_save_scatter_missing_x_axis(self, mock_app, mock_event):
+        """Test saving without x-axis selected."""
+        _init_plot_bindings(mock_app)
+
+        # Set plot_params with only y
+        mock_app.scatter_plotter.plot_params = {"y": "some_data"}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("P",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        expected_msg = (
+            "Please select both x-axis (x) and y-axis (y) datasets first"
+        )
+        mock_app.print.assert_called_once_with(expected_msg)
+        # Should not call plot_and_save
+        mock_app.scatter_plotter.plot_and_save.assert_not_called()
+
+    def test_save_scatter_missing_y_axis(self, mock_app, mock_event):
+        """Test saving without y-axis selected."""
+        _init_plot_bindings(mock_app)
+
+        # Set plot_params with only x
+        mock_app.scatter_plotter.plot_params = {"x": "some_data"}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("P",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        expected_msg = (
+            "Please select both x-axis (x) and y-axis (y) datasets first"
+        )
+        mock_app.print.assert_called_once_with(expected_msg)
+        # Should not call plot_and_save
+        mock_app.scatter_plotter.plot_and_save.assert_not_called()
+
+    @patch("h5forest.bindings.plot_bindings.WaitIndicator")
+    @patch("h5forest.bindings.plot_bindings.prompt_for_chunking_preference")
+    def test_plot_scatter_calls_default_focus(
+        self, mock_prompt, mock_wait_indicator, mock_app, mock_event
+    ):
+        """Test that plot_scatter calls default_focus after plotting."""
+        # Mock WaitIndicator context manager
+        mock_wait_indicator.return_value.__enter__ = MagicMock()
+        mock_wait_indicator.return_value.__exit__ = MagicMock()
+
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
+            use_chunks=False
+        )
+
+        _init_plot_bindings(mock_app)
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("p",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Verify default_focus was called
+        mock_app.default_focus.assert_called_once()
+
     def test_reset(self, mock_app, mock_event):
         """Test resetting plot content."""
         _init_plot_bindings(mock_app)

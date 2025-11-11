@@ -694,3 +694,47 @@ class TestHistBindings:
         for key in ["c-m", "b", "x", "y", "h", "H", "r", "e", "q"]:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
             assert len(bindings) > 0, f"Key '{key}' not bound"
+
+    def test_plot_hist_missing_data(self, mock_app, mock_event):
+        """Test plotting histogram without data selected."""
+        _init_hist_bindings(mock_app)
+
+        # Set plot_params empty (no data selected)
+        mock_app.histogram_plotter.plot_params = {}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("h",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        mock_app.print.assert_called_once_with(
+            "Please select a dataset first (Enter)"
+        )
+        # Should not call compute_hist
+        mock_app.histogram_plotter.compute_hist.assert_not_called()
+
+    def test_save_hist_missing_data(self, mock_app, mock_event):
+        """Test saving histogram without data selected."""
+        _init_hist_bindings(mock_app)
+
+        # Set plot_params empty (no data selected)
+        mock_app.histogram_plotter.plot_params = {}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("H",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        mock_app.print.assert_called_once_with(
+            "Please select a dataset first (Enter)"
+        )
+        # Should not call compute_hist
+        mock_app.histogram_plotter.compute_hist.assert_not_called()

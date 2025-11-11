@@ -647,3 +647,70 @@ class TestDatasetPrompts:
         # and total chunk count (100 + 100 = 200)
         assert "0.02 GB" in prompt_msg
         assert "200 chunks" in prompt_msg
+
+    @patch("h5py.File")
+    def test_prompt_for_chunking_preference_user_aborts(
+        self, mock_h5py_file, mock_app, mock_chunked_node
+    ):
+        """Test chunking preference when user aborts operation."""
+        # Mock the h5py dataset
+        mock_dataset = Mock()
+        mock_dataset.size = 1000000
+        mock_dataset.dtype.itemsize = 8
+        mock_dataset.shape = (1000, 1000)
+        mock_dataset.chunks = (100, 100)
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(return_value=mock_dataset)
+        mock_h5py_file.return_value = mock_file
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with a list of chunked nodes
+        prompt_for_chunking_preference(mock_app, [mock_chunked_node], callback)
+
+        # Get the no callback from first prompt
+        on_no = mock_app.prompt_yn.call_args[0][2]
+
+        # Simulate user pressing 'n' (triggers second prompt)
+        on_no()
+
+        # Should have prompted again
+        assert mock_app.prompt_yn.call_count == 2
+
+        # Get the no callback from second prompt
+        second_on_no = mock_app.prompt_yn.call_args[0][2]
+
+        # Simulate user pressing 'n' on second prompt (abort)
+        second_on_no()
+
+        # Should NOT call the operation callback
+        callback.assert_not_called()
+        # Should print abort message
+        mock_app.print.assert_called_with("Operation aborted.")
+        mock_app.default_focus.assert_called()
+
+    def test_prompt_for_chunking_preference_file_access_error(
+        self, mock_app, mock_chunked_node
+    ):
+        """Test chunking preference when file access fails."""
+        # Don't patch h5py.File, let it fail naturally
+        # This will trigger the exception handler
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with a chunked node (will fail to open file)
+        prompt_for_chunking_preference(mock_app, [mock_chunked_node], callback)
+
+        # Should still prompt user (using nbytes estimate)
+        mock_app.prompt_yn.assert_called_once()
+        prompt_msg = mock_app.prompt_yn.call_args[0][0]
+        # Should contain size estimate from nbytes
+        assert "0.50 GB" in prompt_msg
+        # Should not contain chunk count (unknown)
+        assert "chunks)" not in prompt_msg
