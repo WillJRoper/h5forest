@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional, Set
 from ruamel.yaml import YAML
 
 from h5forest import __version__
+from h5forest.errors import error_handler
 
 
 class ConfigManager:
@@ -282,6 +283,7 @@ class ConfigManager:
                 "by setting\n  configuration.vim_mode: false\n"
             )
 
+    @error_handler
     def get(self, key_path: str, default: Any = None) -> Any:
         """Get a configuration value using dot notation.
 
@@ -312,6 +314,7 @@ class ConfigManager:
                 return default
         return value
 
+    @error_handler
     def get_keymap(self, mode: str, action: str) -> Optional[str]:
         """Get a specific key binding for a mode and action.
 
@@ -327,8 +330,20 @@ class ConfigManager:
             'q'
         """
         v = self.get(f"keymaps.{mode}.{action}")
-        return str(v) if isinstance(v, str) else None
 
+        # Ensure the result is a string if found, otherwise throw an error.
+        if v is None:
+            raise KeyError(
+                f"Keymap for mode '{mode}' action '{action}' not found "
+                f"in the config @ {self.config_path}."
+            )
+        elif not isinstance(v, str):
+            raise ValueError(
+                f"Keymap for mode '{mode}' action '{action}' is not a string."
+            )
+        return v
+
+    @error_handler
     def is_vim_mode_enabled(self) -> bool:
         """Return whether vim mode is enabled.
 
@@ -337,6 +352,7 @@ class ConfigManager:
         """
         return bool(self.get("configuration.vim_mode", False))
 
+    @error_handler
     def is_key_allowed(self, key: str) -> bool:
         """Return whether a key may be used when vim mode is enabled.
 
@@ -351,6 +367,7 @@ class ConfigManager:
             return True
         return key not in self.VIM_RESERVED_KEYS
 
+    @error_handler
     def reload(self) -> None:
         """Reload configuration from disk.
 
