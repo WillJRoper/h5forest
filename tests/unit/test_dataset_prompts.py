@@ -504,9 +504,7 @@ class TestDatasetPrompts:
         callback = MagicMock()
 
         # Call with a list of chunked nodes
-        prompt_for_chunking_preference(
-            mock_app, [mock_chunked_node], callback
-        )
+        prompt_for_chunking_preference(mock_app, [mock_chunked_node], callback)
 
         # Should prompt user
         mock_app.prompt_yn.assert_called_once()
@@ -537,9 +535,7 @@ class TestDatasetPrompts:
         callback = MagicMock()
 
         # Call with a list of chunked nodes
-        prompt_for_chunking_preference(
-            mock_app, [mock_chunked_node], callback
-        )
+        prompt_for_chunking_preference(mock_app, [mock_chunked_node], callback)
 
         # Get the yes callback
         on_yes = mock_app.prompt_yn.call_args[0][1]
@@ -574,9 +570,7 @@ class TestDatasetPrompts:
         callback = MagicMock()
 
         # Call with a list of chunked nodes
-        prompt_for_chunking_preference(
-            mock_app, [mock_chunked_node], callback
-        )
+        prompt_for_chunking_preference(mock_app, [mock_chunked_node], callback)
 
         # Get the no callback from first prompt
         on_no = mock_app.prompt_yn.call_args[0][2]
