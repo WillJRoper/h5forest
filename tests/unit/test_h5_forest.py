@@ -794,8 +794,9 @@ class TestH5ForestPrintAndInput:
         assert app.mini_buffer_content.text == "Default timeout message"
         app.app.invalidate.assert_called()
 
-        # The thread should be started, but not cleared yet since we're not waiting 5 seconds
-        # We'll just verify that the message is still there after a short time
+        # The thread should be started, but not cleared yet since we're not
+        # waiting 5 seconds, We'll just verify that the message is still there
+        # after a short time
         time.sleep(0.15)
         assert app.mini_buffer_content.text == "Default timeout message"
 

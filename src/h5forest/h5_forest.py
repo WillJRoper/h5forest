@@ -119,7 +119,7 @@ class H5Forest:
 
         This method ensures that only one instance of the class is created.
 
-        This method takes precendence over the usual __init__ method.
+        This method takes precedence over the usual __init__ method.
         """
         if cls._instance is None:
             cls._instance = super(H5Forest, cls).__new__(cls)
@@ -1004,9 +1004,9 @@ class H5Forest:
             *args:
                 Variable arguments to print.
             timeout (float, optional):
-                The message will be cleared after this many seconds.
-                Defaults to 5.0 seconds. Set to None to keep the message
-                indefinitely. Uses threading to clear without blocking.
+                The message will be cleared after this many seconds. Defaults
+                to 5.0 seconds. Set to None to keep the message indefinitely.
+                Uses threading to clear the message without blocking.
         """
         args = [str(a) for a in args]
         self.mini_buffer_content.text = " ".join(args)
