@@ -96,6 +96,7 @@ def _init_tree_bindings(app):
 
     # Bind the functions
     # Get navigation keys from config early (needed for bindings below)
+
     jump_up_key = app.config.get_keymap("tree_navigation", "jump_up_10")
     jump_down_key = app.config.get_keymap("tree_navigation", "jump_down_10")
     expand_collapse_key = app.config.get_keymap(
@@ -119,31 +120,48 @@ def _init_tree_bindings(app):
     )(expand_collapse_node)
 
     # Get other navigation keys from config
-    move_up_key = app.config.get_keymap("tree_navigation", "move_up") or "k"
-    move_down_key = (
-        app.config.get_keymap("tree_navigation", "move_down") or "j"
-    )
-    move_left_key = (
-        app.config.get_keymap("tree_navigation", "move_left") or "h"
-    )
-    move_right_key = (
-        app.config.get_keymap("tree_navigation", "move_right") or "l"
-    )
+    move_up_key = app.config.get_keymap("tree_navigation", "move_up")
+    move_down_key = app.config.get_keymap("tree_navigation", "move_down")
+    move_left_key = app.config.get_keymap("tree_navigation", "move_left")
+    move_right_key = app.config.get_keymap("tree_navigation", "move_right")
 
     # Bind navigation keys (respecting vim_mode for hjkl)
     # Only bind vim navigation if vim mode is enabled
     if app.config.is_vim_mode_enabled():
+        app.kb.add("h", filter=Condition(lambda: not app.flag_search_mode))(
+            move_left
+        )
+        app.kb.add("j", filter=Condition(lambda: not app.flag_search_mode))(
+            move_down
+        )
+        app.kb.add("k", filter=Condition(lambda: not app.flag_search_mode))(
+            move_up
+        )
+        app.kb.add("l", filter=Condition(lambda: not app.flag_search_mode))(
+            move_right
+        )
+
+    # If the normal movement keys are just up/down/left/right, we don't
+    # need to bind them again, otherwise we do
+    if move_up_key not in ["k", "up"]:
         app.kb.add(
-            move_left_key, filter=Condition(lambda: not app.flag_search_mode)
-        )(move_left)
-        app.kb.add(
-            move_down_key, filter=Condition(lambda: not app.flag_search_mode)
-        )(move_down)
-        app.kb.add(
-            move_up_key, filter=Condition(lambda: not app.flag_search_mode)
+            move_up_key,
+            filter=Condition(lambda: not app.flag_search_mode),
         )(move_up)
+    if move_down_key not in ["j", "down"]:
         app.kb.add(
-            move_right_key, filter=Condition(lambda: not app.flag_search_mode)
+            move_down_key,
+            filter=Condition(lambda: not app.flag_search_mode),
+        )(move_down)
+    if move_left_key not in ["h", "left"]:
+        app.kb.add(
+            move_left_key,
+            filter=Condition(lambda: not app.flag_search_mode),
+        )(move_left)
+    if move_right_key not in ["l", "right"]:
+        app.kb.add(
+            move_right_key,
+            filter=Condition(lambda: not app.flag_search_mode),
         )(move_right)
 
     # Return all possible hot keys as a dict
@@ -154,12 +172,5 @@ def _init_tree_bindings(app):
             f"{jump_up_key}/{jump_down_key} → Move Up/Down 10 Lines"
         ),
     }
-
-    # Only show vim navigation keys if vim mode is enabled
-    if app.config.is_vim_mode_enabled():
-        hot_keys["vim_nav"] = Label(
-            f"{move_left_key}{move_down_key}{move_up_key}{move_right_key}"
-            " → Navigate"
-        )
 
     return hot_keys

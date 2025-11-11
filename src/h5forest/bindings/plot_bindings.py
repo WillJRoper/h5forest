@@ -257,49 +257,67 @@ def _init_plot_bindings(app):
         """Exit edit plot mode."""
         app.shift_focus(app.tree_content)
 
+    # Get the keybindings from config
+    edit_key = app.config.get_keymap("plot_mode", "edit_config")
+    edit_entry_key = app.config.get_keymap("plot_mode", "edit_entry")
+    select_x_key = app.config.get_keymap("plot_mode", "select_x")
+    select_y_key = app.config.get_keymap("plot_mode", "select_y")
+    toggle_x_scale_key = app.config.get_keymap("plot_mode", "toggle_x_scale")
+    toggle_y_scale_key = app.config.get_keymap("plot_mode", "toggle_y_scale")
+    reset_key = app.config.get_keymap("plot_mode", "reset")
+    show_plot_key = app.config.get_keymap("plot_mode", "show_plot")
+    save_plot_key = app.config.get_keymap("plot_mode", "save_plot")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
+
     # Bind the functions
-    app.kb.add("x", filter=Condition(lambda: app.flag_plotting_mode))(select_x)
-    app.kb.add("y", filter=Condition(lambda: app.flag_plotting_mode))(select_y)
-    app.kb.add("X", filter=Condition(lambda: app.flag_plotting_mode))(
-        toggle_x_scale
+    app.kb.add(edit_key, filter=Condition(lambda: app.flag_plotting_mode))(
+        select_x
     )
-    app.kb.add("Y", filter=Condition(lambda: app.flag_plotting_mode))(
+    app.kb.add(select_x_key, filter=Condition(lambda: app.flag_plotting_mode))(
+        select_y
+    )
+    app.kb.add(
+        toggle_x_scale_key, filter=Condition(lambda: app.flag_plotting_mode)
+    )(toggle_x_scale)
+    app.kb.add(select_y_key, filter=Condition(lambda: app.flag_plotting_mode))(
         toggle_y_scale
     )
     app.kb.add(
-        "enter",
+        toggle_y_scale_key, filter=Condition(lambda: app.flag_plotting_mode)
+    )(toggle_y_scale)
+    app.kb.add(
+        edit_entry_key,
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
     )(edit_plot_entry)
-    app.kb.add("p", filter=Condition(lambda: app.flag_plotting_mode))(
-        plot_scatter
-    )
-    app.kb.add("P", filter=Condition(lambda: app.flag_plotting_mode))(
-        save_scatter
-    )
-    app.kb.add("r", filter=Condition(lambda: app.flag_plotting_mode))(reset)
-    app.kb.add("e", filter=Condition(lambda: app.flag_plotting_mode))(
-        edit_plot
+    app.kb.add(
+        show_plot_key, filter=Condition(lambda: app.flag_plotting_mode)
+    )(plot_scatter)
+    app.kb.add(
+        save_plot_key, filter=Condition(lambda: app.flag_plotting_mode)
+    )(save_scatter)
+    app.kb.add(reset_key, filter=Condition(lambda: app.flag_plotting_mode))(
+        reset
     )
     app.kb.add(
-        "q",
+        quit_key,
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
     )(exit_edit_plot)
 
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "edit_config": Label("e → Edit Config"),
-        "edit_tree": Label("e → Back To Tree"),
-        "edit_entry": Label("Enter → Edit entry"),
-        "select_x": Label("x → Select x-axis"),
-        "select_y": Label("y → Select y-axis"),
-        "toggle_x_scale": Label("X → Toggle x-scale"),
-        "toggle_y_scale": Label("Y → Toggle y-scale"),
-        "plot": Label("p → Plot"),
-        "save_plot": Label("P → Save Plot"),
-        "reset": Label("r → Reset"),
-        "exit_mode": Label("q → Exit Plotting Mode"),
-        "exit_config": Label("q → Exit Config"),
+        "edit_config": Label(f"{edit_key} → Edit Plot Config"),
+        "edit_tree": Label(f"{edit_key} → Back to Tree"),
+        "edit_entry": Label(f"{edit_entry_key} → Edit Entry"),
+        "select_x": Label(f"{select_x_key} → Select x-axis"),
+        "select_y": Label(f"{select_y_key} → Select y-axis"),
+        "toggle_x_scale": Label(f"{toggle_x_scale_key} → Toggle x-scale"),
+        "toggle_y_scale": Label(f"{toggle_y_scale_key} → Toggle y-scale"),
+        "plot": Label(f"{show_plot_key} → Show Plot"),
+        "save_plot": Label(f"{save_plot_key} → Save Plot"),
+        "reset": Label(f"{reset_key} → Reset Plot Config"),
+        "exit_mode": Label(f"{quit_key} → Exit Plot Mode"),
+        "exit_config": Label(f"{quit_key} → Exit Config Edit"),
     }
 
     return hot_keys

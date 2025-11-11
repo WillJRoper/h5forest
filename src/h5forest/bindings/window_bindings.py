@@ -65,12 +65,12 @@ def _init_window_bindings(app):
         app.return_to_normal_mode()
 
     # Get keybindings from config
-    tree_key = app.config.get_keymap("window_mode", "focus_tree") or "t"
-    attr_key = app.config.get_keymap("window_mode", "focus_attributes") or "a"
-    values_key = app.config.get_keymap("window_mode", "focus_values") or "v"
-    plot_key = app.config.get_keymap("window_mode", "focus_plot") or "p"
-    hist_key = app.config.get_keymap("window_mode", "focus_hist") or "h"
-    quit_key = app.config.get_keymap("normal_mode", "quit") or "q"
+    tree_key = app.config.get_keymap("window_mode", "focus_tree")
+    attr_key = app.config.get_keymap("window_mode", "focus_attributes")
+    values_key = app.config.get_keymap("window_mode", "focus_values")
+    plot_key = app.config.get_keymap("window_mode", "focus_plot")
+    hist_key = app.config.get_keymap("window_mode", "focus_hist")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
 
     # Bind the functions
     app.kb.add(tree_key, filter=Condition(lambda: app.flag_window_mode))(
