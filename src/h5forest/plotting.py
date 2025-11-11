@@ -96,31 +96,35 @@ class Plotter:
         )
 
     @error_handler
-    def plot_and_show(self, text):
+    def plot_and_show(self, text, use_chunks=False):
         """
         Plot the data and show the plot.
 
         Args:
             text (str):
                 The text to extract the plot parameters from.
+            use_chunks (bool):
+                Whether to use chunked processing.
         """
         # Compute the plot
-        self._plot(text)
+        self._plot(text, use_chunks=use_chunks)
 
         # Show the plot
         self.show()
 
     @error_handler
-    def plot_and_save(self, text):
+    def plot_and_save(self, text, use_chunks=False):
         """
         Plot the data and save the plot.
 
         Args:
             text (str):
                 The text to extract the plot parameters from.
+            use_chunks (bool):
+                Whether to use chunked processing.
         """
         # Compute the plot
-        self._plot(text)
+        self._plot(text, use_chunks=use_chunks)
 
         # Save the plot
         self.save()
@@ -184,10 +188,6 @@ class ScatterPlotter(Plotter):
         self.assignx_thread = None
         self.assigny_thread = None
         self.plot_thread = None
-
-        # Chunking preference (None = not asked, True = use chunks,
-        # False = don't)
-        self.chunk_preference = None
 
     def set_x_key(self, node):
         """
@@ -284,10 +284,9 @@ class ScatterPlotter(Plotter):
         self.xs = None
         self.ys = None
         self.plot_params = {}
-        self.chunk_preference = None
         return self.plot_text
 
-    def _plot(self, text):
+    def _plot(self, text, use_chunks=False):
         """
         Compute a scatter plot of the datasets.
 
@@ -327,12 +326,11 @@ class ScatterPlotter(Plotter):
             # Now lets plot the data
             # Use chunk preference to determine if we should load in chunks
             # Conditions for loading all at once:
-            # 1. User preference is to not use chunking
-            #    (chunk_preference == False)
+            # 1. User preference is to not use chunking (use_chunks == False)
             # 2. Neither dataset is chunked
             # 3. Datasets have incompatible chunk layouts
             should_load_all = (
-                self.chunk_preference is False
+                not use_chunks
                 or (x_node.chunks == (1,) and y_node.chunks == (1,))
                 or x_node.chunks != y_node.chunks
             )
@@ -500,10 +498,6 @@ class HistogramPlotter(Plotter):
         self.assign_data_thread = None
         self.compute_hist_thread = None
 
-        # Chunking preference (None = not asked, True = use chunks,
-        # False = don't)
-        self.chunk_preference = None
-
     @error_handler
     def set_data_key(self, node):
         """
@@ -540,13 +534,15 @@ class HistogramPlotter(Plotter):
         return self.plot_text
 
     @error_handler
-    def compute_hist(self, text):
+    def compute_hist(self, text, use_chunks=False):
         """
         Compute the histogram.
 
         Args:
             text (str):
                 The text to extract the plot parameters from.
+            use_chunks (bool):
+                Whether to use chunked processing.
         """
 
         @error_handler
@@ -602,12 +598,9 @@ class HistogramPlotter(Plotter):
 
             # Use chunk preference to determine if we should load in chunks
             # Load all at once if:
-            # 1. User preference is to not use chunking
-            #    (chunk_preference == False)
+            # 1. User preference is to not use chunking (use_chunks == False)
             # 2. Dataset is not chunked
-            should_load_all = (
-                self.chunk_preference is False or not node.is_chunked
-            )
+            should_load_all = not use_chunks or not node.is_chunked
 
             if should_load_all:
                 # Get the data all at once
@@ -739,5 +732,4 @@ class HistogramPlotter(Plotter):
         self.fig = None
         self.ax = None
         self.plot_params = {}
-        self.chunk_preference = None
         return self.plot_text

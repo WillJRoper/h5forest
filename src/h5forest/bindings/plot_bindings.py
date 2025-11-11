@@ -221,11 +221,13 @@ def _init_plot_bindings(app):
             app.print(msg)
             return
 
-        def do_plot():
+        def do_plot(use_chunks):
             """Actually perform the plot after chunking preference is set."""
             # Make the plot with wait indicator
             with WaitIndicator(app, "Generating scatter plot..."):
-                app.scatter_plotter.plot_and_show(app.plot_content.text)
+                app.scatter_plotter.plot_and_show(
+                    app.plot_content.text, use_chunks=use_chunks
+                )
 
             app.default_focus()
 
@@ -236,9 +238,7 @@ def _init_plot_bindings(app):
         ]
 
         # Prompt for chunking preference if needed, then plot
-        prompt_for_chunking_preference(
-            app, app.scatter_plotter, nodes, do_plot
-        )
+        prompt_for_chunking_preference(app, nodes, do_plot)
 
     @error_handler
     def save_scatter(event):
@@ -252,9 +252,11 @@ def _init_plot_bindings(app):
             app.print(msg)
             return
 
-        def do_save():
+        def do_save(use_chunks):
             """Actually save the plot after chunking preference is set."""
-            app.scatter_plotter.plot_and_save(app.plot_content.text)
+            app.scatter_plotter.plot_and_save(
+                app.plot_content.text, use_chunks=use_chunks
+            )
 
         # Get the nodes to check for chunking
         nodes = [
@@ -263,9 +265,7 @@ def _init_plot_bindings(app):
         ]
 
         # Prompt for chunking preference if needed, then save
-        prompt_for_chunking_preference(
-            app, app.scatter_plotter, nodes, do_save
-        )
+        prompt_for_chunking_preference(app, nodes, do_save)
 
     @error_handler
     def reset(event):
