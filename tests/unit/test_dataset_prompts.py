@@ -420,3 +420,22 @@ class TestDatasetPrompts:
             # Should print abort message
             mock_app.print.assert_called_with("Operation aborted.")
             mock_app.return_to_normal_mode.assert_called()
+
+    def test_prompt_for_dataset_operation_with_always_chunk(
+        self, mock_app, mock_node
+    ):
+        """Test dataset operation when always_chunk config is enabled."""
+        # Configure mock to enable always_chunk
+        mock_app.config.always_chunk_datasets.return_value = True
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call the function
+        prompt_for_dataset_operation(mock_app, mock_node, callback)
+
+        # Should call the callback immediately with use_chunks=True
+        callback.assert_called_once_with(use_chunks=True)
+
+        # Should not show any prompts
+        mock_app.prompt_yn.assert_not_called()
