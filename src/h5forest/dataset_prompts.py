@@ -182,6 +182,10 @@ def prompt_for_dataset_operation(app, node, operation_callback):
             Function to call with signature: operation_callback(use_chunks)
             where use_chunks is True to use chunked processing.
     """
+    # The config has the option to turn off these prompts entirely
+    if app.config.always_chunk_datasets:
+        operation_callback(use_chunks=True)
+        return
 
     def after_chunk_prompt(use_chunks, load_all):
         """Called after chunked dataset prompt is resolved."""

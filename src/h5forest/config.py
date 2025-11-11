@@ -353,6 +353,15 @@ class ConfigManager:
         return bool(self.get("configuration.vim_mode", False))
 
     @error_handler
+    def always_chunk_datasets(self) -> bool:
+        """Return whether datasets should always be chunked.
+
+        Returns:
+            bool: True if datasets should always be chunked; False otherwise.
+        """
+        return bool(self.get("configuration.always_chunk", False))
+
+    @error_handler
     def is_key_allowed(self, key: str) -> bool:
         """Return whether a key may be used when vim mode is enabled.
 
