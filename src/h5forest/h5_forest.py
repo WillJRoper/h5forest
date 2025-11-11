@@ -549,10 +549,9 @@ class H5Forest:
         labels.append(self._plot_keys_dict["toggle_x_scale"])
         labels.append(self._plot_keys_dict["toggle_y_scale"])
 
-        # Show plot/save only if there are params
-        if len(self.scatter_plotter) > 0:
-            labels.append(self._plot_keys_dict["plot"])
-            labels.append(self._plot_keys_dict["save_plot"])
+        # Always show plot/save options for simplicity
+        labels.append(self._plot_keys_dict["plot"])
+        labels.append(self._plot_keys_dict["save_plot"])
 
         labels.append(self._plot_keys_dict["reset"])
         labels.append(self._plot_keys_dict["exit_mode"])
