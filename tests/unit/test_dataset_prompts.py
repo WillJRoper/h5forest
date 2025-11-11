@@ -401,7 +401,9 @@ class TestDatasetPrompts:
         # Create a reference to after_chunk_prompt by capturing it
         captured_callback = None
 
-        def capture_callback(app, node, operation_callback):
+        def capture_callback(
+            app, node, operation_callback, return_to_normal=True
+        ):
             nonlocal captured_callback
             captured_callback = operation_callback
             # Don't call the original, just capture the callback
