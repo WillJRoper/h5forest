@@ -699,8 +699,10 @@ class TestHistBindings:
         """Test plotting histogram without data selected."""
         _init_hist_bindings(mock_app)
 
-        # Set plot_params empty (no data selected)
-        mock_app.histogram_plotter.plot_params = {}
+        # Set plot_params with other keys but not "data"
+        # This skips the "if len(plot_params) == 0" block
+        # but triggers the "if 'data' not in plot_params" check
+        mock_app.histogram_plotter.plot_params = {"other_key": "value"}
 
         bindings = [
             b
@@ -721,8 +723,10 @@ class TestHistBindings:
         """Test saving histogram without data selected."""
         _init_hist_bindings(mock_app)
 
-        # Set plot_params empty (no data selected)
-        mock_app.histogram_plotter.plot_params = {}
+        # Set plot_params with other keys but not "data"
+        # This skips the "if len(plot_params) == 0" block
+        # but triggers the "if 'data' not in plot_params" check
+        mock_app.histogram_plotter.plot_params = {"other_key": "value"}
 
         bindings = [
             b
