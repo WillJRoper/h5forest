@@ -220,20 +220,20 @@ def _init_app_bindings(app):
         event.app.invalidate()
 
     # Get keybindings from config
-    quit_key = app.config.get_keymap("normal_mode", "quit") or "q"
-    search_key = app.config.get_keymap("normal_mode", "search") or "s"
-    copy_key_binding = app.config.get_keymap("normal_mode", "copy_path") or "c"
-    toggle_attrs_key = (
-        app.config.get_keymap("normal_mode", "toggle_attributes") or "A"
+    quit_key = app.config.get_keymap("normal_mode", "quit")
+    search_key = app.config.get_keymap("normal_mode", "search")
+    copy_key_binding = app.config.get_keymap("normal_mode", "copy_path")
+    toggle_attrs_key = app.config.get_keymap(
+        "normal_mode", "expand_attributes"
     )
-    restore_key = app.config.get_keymap("normal_mode", "restore_tree") or "r"
+    restore_key = app.config.get_keymap("normal_mode", "restore_tree")
 
     # Leader keys for different modes
-    goto_leader = app.config.get_keymap("jump_mode", "leader") or "g"
-    dataset_leader = app.config.get_keymap("dataset_mode", "leader") or "d"
-    window_leader = app.config.get_keymap("window_mode", "leader") or "w"
-    plot_leader = app.config.get_keymap("plot_mode", "leader") or "p"
-    hist_leader = app.config.get_keymap("histogram_mode", "leader") or "H"
+    goto_leader = app.config.get_keymap("jump_mode", "leader")
+    dataset_leader = app.config.get_keymap("dataset_mode", "leader")
+    window_leader = app.config.get_keymap("window_mode", "leader")
+    plot_leader = app.config.get_keymap("plot_mode", "leader")
+    hist_leader = app.config.get_keymap("histogram_mode", "leader")
 
     # Bind the functions
     app.kb.add(quit_key, filter=Condition(lambda: app.flag_normal_mode))(

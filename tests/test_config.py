@@ -516,7 +516,7 @@ class TestConfigVersion:
         assert config.get_keymap("tree_navigation", "move_down") == "s"
 
         # New defaults added for missing keys
-        assert config.get_keymap("normal_mode", "toggle_attributes") == "A"
+        assert config.get_keymap("normal_mode", "expand_attributes") == "A"
         assert config.get_keymap("tree_navigation", "move_left") == "h"
 
     def test_migration_updates_config_file(self, mock_home_dir):
