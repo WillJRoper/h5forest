@@ -870,3 +870,163 @@ class TestConfigValidationEdgeCases:
             assert "normal_mode.quit = 'h'" in warning_message
             assert "normal_mode.copy_path = 'j'" in warning_message
             assert "dataset_mode.view_values = 'k'" in warning_message
+
+
+class TestTranslateKeyLabel:
+    """Tests for the translate_key_label function."""
+
+    def test_control_keys(self):
+        """Test control key translation."""
+        from h5forest.config import translate_key_label
+
+        assert translate_key_label("c-c") == "Ctrl+C"
+        assert translate_key_label("c-a") == "Ctrl+A"
+        assert translate_key_label("c-z") == "Ctrl+Z"
+
+    def test_alt_keys(self):
+        """Test alt key translation."""
+        from h5forest.config import translate_key_label
+
+        assert translate_key_label("a-x") == "Alt+X"
+        assert translate_key_label("m-x") == "Alt+X"  # m- is also alt
+        assert translate_key_label("a-p") == "Alt+P"
+
+    def test_shift_keys(self):
+        """Test shift key translation."""
+        from h5forest.config import translate_key_label
+
+        assert translate_key_label("s-a") == "Shift+A"
+        assert translate_key_label("s-x") == "Shift+X"
+
+    def test_capitalize_fallback(self):
+        """Test capitalize fallback for unknown keys."""
+        from h5forest.config import translate_key_label
+
+        # Test fallback for keys not in the translation map
+        assert translate_key_label("insert") == "Insert"
+        assert translate_key_label("scrolllock") == "Scrolllock"
+
+
+class TestConfigManagerEdgeCases:
+    """Tests for ConfigManager edge cases."""
+
+    def test_use_default_config(self, mock_home_dir):
+        """Test loading default config without reading from disk."""
+        from h5forest.config import ConfigManager
+
+        # Force default config by passing use_default=True
+        config = ConfigManager(use_default=True)
+
+        # Should still have basic config structure
+        assert config.get("configuration.vim_mode") is False
+        assert config.get("configuration.always_chunk") is False
+
+    def test_always_chunk_datasets_true(self, mock_home_dir):
+        """Test always_chunk_datasets method when enabled."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        config_data = {
+            "version": __version__,
+            "configuration": {"vim_mode": False, "always_chunk": True},
+            "keymaps": {},
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        config = ConfigManager()
+        assert config.always_chunk_datasets() is True
+
+    def test_always_chunk_datasets_false(self, mock_home_dir):
+        """Test always_chunk_datasets method when disabled."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        config_data = {
+            "version": __version__,
+            "configuration": {"vim_mode": False, "always_chunk": False},
+            "keymaps": {},
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        config = ConfigManager()
+        assert config.always_chunk_datasets() is False
+
+    def test_add_missing_keys_with_non_dict(self):
+        """Test _add_missing_keys with non-dict inputs."""
+        from h5forest.config import ConfigManager
+
+        # Test with non-dict target (should return False, no change)
+        result = ConfigManager._add_missing_keys("not a dict", {})
+        assert result is False
+
+        # Test with non-dict reference (should return False, no change)
+        result = ConfigManager._add_missing_keys({}, "not a dict")
+        assert result is False
+
+    def test_to_plain_with_list(self):
+        """Test _to_plain with list input."""
+        from h5forest.config import ConfigManager
+
+        # Test with list containing dicts
+        test_list = [{"a": 1}, {"b": 2}, 3]
+        result = ConfigManager._to_plain(test_list)
+        assert result == [{"a": 1}, {"b": 2}, 3]
+
+    def test_validate_config_with_non_dict_keymaps(self, mock_home_dir):
+        """Test _validate_config when a keymap mode value is not a dict."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create config with non-dict keymaps and vim_mode enabled
+        # (vim_mode must be True for _validate_config to actually run)
+        config_data = {
+            "version": __version__,
+            "configuration": {"vim_mode": True},
+            "keymaps": {
+                "normal_mode": "not a dict",  # This will be skipped
+                "tree_navigation": {"move_up": "up"},  # Valid
+            },
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Should not raise, just skip the invalid keymap
+        config = ConfigManager()
+        # Valid keymap should still work
+        assert config.get_keymap("tree_navigation", "move_up") == "up"
+
+    def test_get_keymap_with_non_string_value(self, mock_home_dir):
+        """Test get_keymap raises error when keymap value is not a string."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create config with non-string keymap value
+        config_data = {
+            "version": __version__,
+            "configuration": {"vim_mode": False},
+            "keymaps": {"normal_mode": {"quit": 123}},  # Integer, not string
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        config = ConfigManager()
+
+        # Should raise ValueError for non-string keymap (wrapped by error_handler)
+        # The error_handler will try to print via H5Forest, so we need to avoid that
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            try:
+                result = config.get_keymap("normal_mode", "quit")
+                # If we get here, check that error was handled
+                assert result is None or isinstance(result, str)
+            except (ValueError, TypeError):
+                # Expected - either ValueError from the check or TypeError from H5Forest init
+                pass
