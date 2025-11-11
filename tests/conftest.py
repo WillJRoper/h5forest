@@ -265,7 +265,7 @@ def add_config_mock(mock_app):
         if key in default_keymaps:
             return default_keymaps[key]
         raise KeyError(
-            f"Keymap for mode '{mode}' action '{action}' not found in mock config."
+            f"Keymap for '{mode}.{action}' not found in mock config."
         )
 
     mock_app.config = MagicMock()
