@@ -210,7 +210,7 @@ def _init_plot_bindings(app):
 
     @error_handler
     def plot_scatter(event):
-        """Plot and show pcolormesh with mean in bins."""
+        """Plot and show scatter with mean in bins."""
         # Make the plot with wait indicator
         with WaitIndicator(app, "Generating scatter plot..."):
             app.scatter_plotter.plot_and_show(app.plot_content.text)
