@@ -12,9 +12,6 @@ build-backend = "setuptools.build_meta"
 version_file = "src/h5forest/_version.py"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
-packages = { find = {} }
-
 # Include non-Python files from within packages when building the wheel.
 include-package-data = true
 
