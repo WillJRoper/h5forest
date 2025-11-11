@@ -850,9 +850,12 @@ class H5Forest:
 
         # Set up the mini buffer and input buffer (these are where we'll
         # display messages to the user and accept input)
-        self.mini_buffer = Frame(
-            self.mini_buffer_content,
-            height=3,
+        self.mini_buffer = ConditionalContainer(
+            Frame(
+                self.mini_buffer_content,
+                height=3,
+            ),
+            filter=Condition(lambda: len(self.mini_buffer_content.text) > 0),
         )
         self.input_buffer = ConditionalContainer(
             Frame(
