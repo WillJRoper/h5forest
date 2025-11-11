@@ -219,35 +219,53 @@ def _init_app_bindings(app):
 
         event.app.invalidate()
 
+    # Get keybindings from config
+    quit_key = app.config.get_keymap("normal_mode", "quit") or "q"
+    search_key = app.config.get_keymap("normal_mode", "search") or "s"
+    copy_key_binding = app.config.get_keymap("normal_mode", "copy_path") or "c"
+    toggle_attrs_key = (
+        app.config.get_keymap("normal_mode", "toggle_attributes") or "A"
+    )
+    restore_key = app.config.get_keymap("normal_mode", "restore_tree") or "r"
+
+    # Leader keys for different modes
+    goto_leader = app.config.get_keymap("jump_mode", "leader") or "g"
+    dataset_leader = app.config.get_keymap("dataset_mode", "leader") or "d"
+    window_leader = app.config.get_keymap("window_mode", "leader") or "w"
+    plot_leader = app.config.get_keymap("plot_mode", "leader") or "p"
+    hist_leader = app.config.get_keymap("histogram_mode", "leader") or "H"
+
     # Bind the functions
-    app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
+    app.kb.add(quit_key, filter=Condition(lambda: app.flag_normal_mode))(
+        exit_app
+    )
     app.kb.add("c-q")(exit_app)
-    app.kb.add("g", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add(goto_leader, filter=Condition(lambda: app.flag_normal_mode))(
         goto_leader_mode
     )
-    app.kb.add("d", filter=Condition(lambda: app.flag_normal_mode))(
-        dataset_leader_mode
-    )
-    app.kb.add("w", filter=Condition(lambda: app.flag_normal_mode))(
-        window_leader_mode
-    )
-    app.kb.add("p", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add(
+        dataset_leader, filter=Condition(lambda: app.flag_normal_mode)
+    )(dataset_leader_mode)
+    app.kb.add(
+        window_leader, filter=Condition(lambda: app.flag_normal_mode)
+    )(window_leader_mode)
+    app.kb.add(plot_leader, filter=Condition(lambda: app.flag_normal_mode))(
         plotting_leader_mode
     )
-    app.kb.add("H", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add(hist_leader, filter=Condition(lambda: app.flag_normal_mode))(
         hist_leader_mode
     )
-    app.kb.add("q", filter=Condition(lambda: not app.flag_normal_mode))(
+    app.kb.add(quit_key, filter=Condition(lambda: not app.flag_normal_mode))(
         exit_leader_mode
     )
     app.kb.add(
-        "A",
+        toggle_attrs_key,
         filter=Condition(
             lambda: app.flag_normal_mode and not app.flag_expanded_attrs
         ),
     )(expand_attributes)
     app.kb.add(
-        "A",
+        toggle_attrs_key,
         filter=Condition(
             lambda: app.flag_normal_mode and app.flag_expanded_attrs
         ),
@@ -255,7 +273,7 @@ def _init_app_bindings(app):
 
     # Only including the search if the tree has focus
     app.kb.add(
-        "s",
+        search_key,
         filter=Condition(
             lambda: app.flag_normal_mode
             and app.app.layout.has_focus(app.tree_content.content)
@@ -264,30 +282,30 @@ def _init_app_bindings(app):
 
     # Bind 'r' to restore tree to initial state
     app.kb.add(
-        "r",
+        restore_key,
         filter=Condition(lambda: app.flag_normal_mode),
     )(restore_tree_to_initial)
 
     # Bind 'c' to copy the HDF5 key to clipboard
     app.kb.add(
-        "c",
+        copy_key_binding,
         filter=Condition(lambda: app.flag_normal_mode),
     )(copy_key)
 
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "expand_attrs": Label("A → Expand Attributes"),
-        "shrink_attrs": Label("A → Shrink Attributes"),
-        "dataset_mode": Label("d → Dataset Mode"),
-        "goto_mode": Label("g → Goto Mode"),
-        "hist_mode": Label("H → Histogram Mode"),
-        "plotting_mode": Label("p → Plotting Mode"),
-        "window_mode": Label("w → Window Mode"),
-        "search": Label("s → Search"),
-        "restore_tree": Label("r → Restore Tree"),
-        "copy_key": Label("c → Copy Key"),
-        "exit": Label("q → Exit"),
+        "expand_attrs": Label(f"{toggle_attrs_key} → Expand Attributes"),
+        "shrink_attrs": Label(f"{toggle_attrs_key} → Shrink Attributes"),
+        "dataset_mode": Label(f"{dataset_leader} → Dataset Mode"),
+        "goto_mode": Label(f"{goto_leader} → Goto Mode"),
+        "hist_mode": Label(f"{hist_leader} → Histogram Mode"),
+        "plotting_mode": Label(f"{plot_leader} → Plotting Mode"),
+        "window_mode": Label(f"{window_leader} → Window Mode"),
+        "search": Label(f"{search_key} → Search"),
+        "restore_tree": Label(f"{restore_key} → Restore Tree"),
+        "copy_key": Label(f"{copy_key_binding} → Copy Key"),
+        "exit": Label(f"{quit_key} → Exit"),
     }
 
     return hot_keys

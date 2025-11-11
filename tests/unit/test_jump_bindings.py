@@ -32,6 +32,12 @@ class TestJumpBindings:
         app.input = MagicMock()
         app.user_input = ""
         app.kb = KeyBindings()
+        # Add config mock
+        from unittest.mock import MagicMock as MM
+        app.config = MM()
+        app.config.get_keymap = MM(return_value=None)
+        app.config.is_vim_mode_enabled = MM(return_value=True)
+
         return app
 
     @pytest.fixture

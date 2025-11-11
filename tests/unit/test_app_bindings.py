@@ -19,6 +19,11 @@ class TestAppBindings:
         """Create a mock H5Forest application for testing."""
         app = MagicMock()
 
+        # Set up config with default keymaps
+        app.config = MagicMock()
+        app.config.get_keymap = MagicMock(return_value=None)  # Return None to use defaults
+        app.config.is_vim_mode_enabled = MagicMock(return_value=True)
+
         # Set up mode flags
         app.flag_normal_mode = True
         app._flag_normal_mode = True

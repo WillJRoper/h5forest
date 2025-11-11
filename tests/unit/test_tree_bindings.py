@@ -45,6 +45,12 @@ class TestTreeBindings:
         app.app.layout = MagicMock()
         app.app.layout.has_focus = MagicMock(return_value=True)
 
+        # Add config mock
+        from unittest.mock import MagicMock as MM
+        app.config = MM()
+        app.config.get_keymap = MM(return_value=None)
+        app.config.is_vim_mode_enabled = MM(return_value=True)
+
         return app
 
     @pytest.fixture
@@ -60,7 +66,8 @@ class TestTreeBindings:
         """Test that _init_tree_bindings returns a dict of hotkeys."""
         hot_keys = _init_tree_bindings(mock_app)
         assert isinstance(hot_keys, dict)
-        assert len(hot_keys) == 2
+        # 3 keys when vim mode is enabled: open_group, move_ten, vim_nav
+        assert len(hot_keys) == 3
 
     def test_move_up_ten_handler(self, mock_app, mock_event):
         """Test the move_up_ten handler."""
@@ -330,8 +337,8 @@ class TestTreeBindings:
         hot_keys = _init_tree_bindings(mock_app)
 
         # Should be a dict with Label values
-
-        assert len(hot_keys) == 2
+        # 3 keys when vim mode is enabled: open_group, move_ten, vim_nav
+        assert len(hot_keys) == 3
         for key, value in hot_keys.items():
             assert isinstance(key, str)
             assert isinstance(value, Label)
