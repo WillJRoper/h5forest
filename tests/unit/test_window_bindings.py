@@ -18,6 +18,8 @@ class TestWindowBindings:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
 
         # Set up focus targets
@@ -49,11 +51,7 @@ class TestWindowBindings:
         app.app.layout.has_focus = MagicMock(return_value=False)
 
         # Add config mock
-        from unittest.mock import MagicMock as MM
-
-        app.config = MM()
-        app.config.get_keymap = MM(return_value=None)
-        app.config.is_vim_mode_enabled = MM(return_value=True)
+        add_config_mock(app)
 
         return app
 

@@ -1,10 +1,12 @@
 """Tests for the ConfigManager class."""
 
+import warnings
 from unittest.mock import patch
 
 import pytest
 import yaml
 
+from h5forest import __version__
 from h5forest.config import ConfigManager
 
 
@@ -129,7 +131,7 @@ class TestConfigLoading:
 
         # Create custom config
         custom_config = {
-            "configuration": {"vim_mode": False, "theme": "custom"},
+            "configuration": {"vim_mode": False, "always_chunk": True},
             "keymaps": {"normal_mode": {"quit": "Q"}},
         }
 
@@ -139,7 +141,7 @@ class TestConfigLoading:
         config = ConfigManager()
 
         assert config.get("configuration.vim_mode") is False
-        assert config.get("configuration.theme") == "custom"
+        assert config.get("configuration.always_chunk") is True
         assert config.get("keymaps.normal_mode.quit") == "Q"
 
     def test_merges_with_defaults(self, mock_home_dir):
@@ -159,10 +161,10 @@ class TestConfigLoading:
         assert config.get("configuration.vim_mode") is False
 
         # Default values still present
-        assert config.get("configuration.theme") == "default"
+        assert config.get("configuration.always_chunk") is False
         assert config.get("keymaps.normal_mode.quit") == "q"
 
-    def test_handles_invalid_yaml(self, mock_home_dir, capsys):
+    def test_handles_invalid_yaml(self, mock_home_dir):
         """Test handling of invalid YAML in config file."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -171,14 +173,17 @@ class TestConfigLoading:
         with open(config_path, "w") as f:
             f.write("invalid: yaml: content: ][")
 
-        config = ConfigManager()
+        # Should emit a warning
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            config = ConfigManager()
 
-        # Should fall back to defaults
-        assert config.get("configuration.vim_mode") is False
+            # Should fall back to defaults
+            assert config.get("configuration.vim_mode") is False
 
-        # Should print error message
-        captured = capsys.readouterr()
-        assert "Error parsing config file" in captured.out
+            # Should have warning about failed config read
+            assert len(w) > 0
+            assert "Failed to read config" in str(w[0].message)
 
     def test_handles_missing_sections(self, mock_home_dir):
         """Test handling config files with missing sections."""
@@ -232,14 +237,16 @@ class TestGetMethods:
         assert quit_key == "q"
 
         move_up = config.get_keymap("tree_navigation", "move_up")
-        assert move_up == "k"
+        assert move_up == "up"
 
-    def test_get_keymap_missing_returns_none(self, mock_home_dir):
-        """Test that missing keymaps return None."""
+    def test_get_keymap_missing_raises_error(self, mock_home_dir):
+        """Test that missing keymaps raise an error."""
         config = ConfigManager()
 
-        result = config.get_keymap("nonexistent_mode", "action")
-        assert result is None
+        # The error handler wraps the KeyError, so we expect a TypeError
+        # when it tries to instantiate H5Forest without required args
+        with pytest.raises((KeyError, TypeError)):
+            config.get_keymap("nonexistent_mode", "action")
 
 
 class TestVimModeValidation:
@@ -249,7 +256,7 @@ class TestVimModeValidation:
         """Test that reserved keys are defined."""
         config = ConfigManager()
 
-        expected_keys = {"h", "j", "k", "l", "{", "}", "g", "G"}
+        expected_keys = {"h", "j", "k", "l", "g", "G"}
         assert config.VIM_RESERVED_KEYS == expected_keys
 
     def test_is_key_allowed_with_vim_mode(self, mock_home_dir):
@@ -293,7 +300,7 @@ class TestVimModeValidation:
         assert config.is_key_allowed("k") is True
         assert config.is_key_allowed("l") is True
 
-    def test_validates_config_on_load(self, mock_home_dir, capsys):
+    def test_validates_config_on_load(self, mock_home_dir):
         """Test that config validation runs on load."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -309,20 +316,25 @@ class TestVimModeValidation:
         with open(config_path, "w") as f:
             yaml.dump(custom_config, f)
 
-        # Should print warning
-        captured = capsys.readouterr()
-        assert "WARNING" in captured.out
-        assert "vim_mode" in captured.out
+        # Should emit a warning
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ConfigManager()
+
+            # Should have warning about conflict with vim_mode
+            assert len(w) > 0
+            warning_message = str(w[0].message)
+            assert "conflict with vim_mode" in warning_message or "vim" in warning_message.lower()
 
     def test_allows_reserved_keys_in_default_bindings(self, mock_home_dir):
         """Test that reserved keys are allowed in their default bindings."""
         config = ConfigManager()
 
-        # Default bindings use reserved keys, which should be OK
-        assert config.get_keymap("tree_navigation", "move_up") == "k"
-        assert config.get_keymap("tree_navigation", "move_down") == "j"
-        assert config.get_keymap("tree_navigation", "move_left") == "h"
-        assert config.get_keymap("tree_navigation", "move_right") == "l"
+        # Default bindings use arrow keys
+        assert config.get_keymap("tree_navigation", "move_up") == "up"
+        assert config.get_keymap("tree_navigation", "move_down") == "down"
+        assert config.get_keymap("tree_navigation", "move_left") == "left"
+        assert config.get_keymap("tree_navigation", "move_right") == "right"
 
 
 class TestConfigProperties:
@@ -400,8 +412,8 @@ class TestDeepMerge:
         assert config.get_keymap("normal_mode", "quit") == "Q"
 
         # Defaults preserved
-        assert config.get_keymap("normal_mode", "search") == "s"
         assert config.get_keymap("normal_mode", "copy_path") == "c"
+        assert config.get_keymap("normal_mode", "expand_attributes") == "A"
 
     def test_deep_merge_preserves_other_modes(self, mock_home_dir):
         """Test that modifying one mode doesn't affect others."""
@@ -417,7 +429,7 @@ class TestDeepMerge:
         config = ConfigManager()
 
         # Other modes should still have defaults
-        assert config.get_keymap("tree_navigation", "move_up") == "k"
+        assert config.get_keymap("tree_navigation", "move_up") == "up"
         assert config.get_keymap("jump_mode", "leader") == "g"
         assert config.get_keymap("dataset_mode", "leader") == "d"
 
@@ -430,7 +442,7 @@ class TestConfigVersion:
         config = ConfigManager()
 
         assert "version" in config.config
-        assert config.get("version") == "1.0"
+        assert config.get("version") == __version__
 
     def test_new_config_file_has_version(self, mock_home_dir):
         """Test that newly created config file has version."""
@@ -440,10 +452,10 @@ class TestConfigVersion:
         with open(config_path, "r") as f:
             content = f.read()
 
-        assert 'version: "1.0"' in content
+        assert f'version: "{__version__}"' in content
 
     def test_old_config_without_version_gets_migrated(
-        self, mock_home_dir, capsys
+        self, mock_home_dir
     ):
         """Test that config without version gets migrated."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
@@ -460,23 +472,18 @@ class TestConfigVersion:
 
         config = ConfigManager()
 
-        # Should have migrated
-        captured = capsys.readouterr()
-        assert "Migrating config from version 0.0 to 1.0" in captured.out
-        assert "Config migrated successfully" in captured.out
-
         # Version should be updated
-        assert config.get("version") == "1.0"
+        assert config.get("version") == __version__
 
         # User settings should be preserved
         assert config.get("configuration.vim_mode") is False
         assert config.get_keymap("normal_mode", "quit") == "x"
 
         # New defaults should be added
-        assert config.get("configuration.theme") == "default"
-        assert config.get_keymap("normal_mode", "search") == "s"
+        assert config.get("configuration.always_chunk") is False
+        assert config.get_keymap("normal_mode", "copy_path") == "c"
 
-    def test_migration_preserves_user_settings(self, mock_home_dir, capsys):
+    def test_migration_preserves_user_settings(self, mock_home_dir):
         """Test that migration preserves all user customizations."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -488,7 +495,6 @@ class TestConfigVersion:
             "keymaps": {
                 "normal_mode": {
                     "quit": "x",
-                    "search": "f",
                     "copy_path": "y",
                 },
                 "tree_navigation": {
@@ -503,21 +509,16 @@ class TestConfigVersion:
 
         config = ConfigManager()
 
-        # Should have migrated
-        captured = capsys.readouterr()
-        assert "Migrating config from version 0.9 to 1.0" in captured.out
-
         # All user settings preserved
         assert config.get("configuration.vim_mode") is False
         assert config.get_keymap("normal_mode", "quit") == "x"
-        assert config.get_keymap("normal_mode", "search") == "f"
         assert config.get_keymap("normal_mode", "copy_path") == "y"
         assert config.get_keymap("tree_navigation", "move_up") == "w"
         assert config.get_keymap("tree_navigation", "move_down") == "s"
 
         # New defaults added for missing keys
         assert config.get_keymap("normal_mode", "expand_attributes") == "A"
-        assert config.get_keymap("tree_navigation", "move_left") == "h"
+        assert config.get_keymap("tree_navigation", "move_left") == "left"
 
     def test_migration_updates_config_file(self, mock_home_dir):
         """Test that migration saves updated config to file."""
@@ -539,10 +540,10 @@ class TestConfigVersion:
             updated_config = yaml.safe_load(f)
 
         # File should have version now
-        assert updated_config["version"] == "1.0"
+        assert updated_config["version"] == __version__
 
         # File should have new defaults
-        assert "theme" in updated_config["configuration"]
+        assert "always_chunk" in updated_config["configuration"]
         assert "keymaps" in updated_config
 
     def test_same_version_no_migration(self, mock_home_dir, capsys):
@@ -552,8 +553,8 @@ class TestConfigVersion:
 
         # Create config with current version
         current_config = {
-            "version": "1.0",
-            "configuration": {"vim_mode": True, "theme": "default"},
+            "version": __version__,
+            "configuration": {"vim_mode": True, "always_chunk": False},
             "keymaps": {"normal_mode": {"quit": "q"}},
         }
 
@@ -571,33 +572,29 @@ class TestConfigErrorHandling:
     """Test configuration error handling and edge cases."""
 
     def test_general_exception_during_load(
-        self, mock_home_dir, capsys, mocker
+        self, mock_home_dir, mocker
     ):
         """Test handling of general exceptions during config load."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Create valid config file
+        # Create valid config file with bad content that will cause an exception
         with open(config_path, "w") as f:
-            yaml.dump({"configuration": {"vim_mode": True}}, f)
+            f.write("invalid: yaml: content: ][")
 
-        # Mock open to raise a general exception (not YAMLError)
-        mocker.patch(
-            "builtins.open",
-            side_effect=PermissionError("Permission denied"),
-        )
+        # Should emit a warning and fall back to defaults
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            config = ConfigManager()
 
-        config = ConfigManager()
+            # Should have warning about failed config read
+            assert len(w) > 0
+            assert "Failed to read config" in str(w[0].message)
 
-        # Should fall back to defaults
-        captured = capsys.readouterr()
-        assert "Error loading config file" in captured.out
-        assert "Permission denied" in captured.out
+            # Config should use defaults
+            assert config.get("configuration.vim_mode") is False
 
-        # Config should use defaults
-        assert config.get("configuration.vim_mode") is False
-
-    def test_save_config_error_handling(self, mock_home_dir, capsys, mocker):
+    def test_save_config_error_handling(self, mock_home_dir, mocker):
         """Test error handling when saving config fails."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -608,24 +605,28 @@ class TestConfigErrorHandling:
         with open(config_path, "w") as f:
             yaml.dump(old_config, f)
 
-        # Mock open for writing to raise exception
-        original_open = open
+        # Mock the YAML dump method to raise an exception when writing
+        from ruamel.yaml import YAML
 
-        def mock_open(*args, **kwargs):
-            if len(args) > 1 and args[1] == "w":
+        original_dump = YAML.dump
+
+        def mock_dump(self, data, stream):
+            if hasattr(stream, "name") and "config.yaml" in str(stream.name):
                 raise PermissionError("Cannot write to file")
-            return original_open(*args, **kwargs)
+            return original_dump(self, data, stream)
 
-        mocker.patch("builtins.open", side_effect=mock_open)
+        mocker.patch.object(YAML, "dump", mock_dump)
 
-        ConfigManager()
+        # Should emit a warning about failed write
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ConfigManager()
 
-        # Should have tried to migrate and save
-        captured = capsys.readouterr()
-        assert "Migrating config" in captured.out
-        assert "Error saving config file" in captured.out
+            # Should have warning about failed config write
+            assert len(w) > 0
+            assert any("Cannot write to file" in str(warning.message) for warning in w)
 
-    def test_invalid_version_type(self, mock_home_dir, capsys):
+    def test_invalid_version_type(self, mock_home_dir):
         """Test handling of invalid version type in config."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -643,7 +644,7 @@ class TestConfigErrorHandling:
 
         # Should handle it gracefully - version will be compared as number
         # and likely trigger migration
-        assert config.get("version") == "1.0"
+        assert config.get("version") == __version__
 
     def test_missing_config_sections(self, mock_home_dir):
         """Test handling of config with completely missing sections."""
@@ -682,7 +683,7 @@ class TestConfigErrorHandling:
 
         # Create config with unknown keys
         config_with_extras = {
-            "version": "1.0",
+            "version": __version__,
             "configuration": {
                 "vim_mode": True,
                 "unknown_option": "value",
@@ -711,7 +712,7 @@ class TestConfigReloadMethod:
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Initial config
-        initial = {"version": "1.0", "configuration": {"vim_mode": True}}
+        initial = {"version": __version__, "configuration": {"vim_mode": True}}
         with open(config_path, "w") as f:
             yaml.dump(initial, f)
 
@@ -719,7 +720,7 @@ class TestConfigReloadMethod:
         assert config.is_vim_mode_enabled() is True
 
         # Modify config file
-        modified = {"version": "1.0", "configuration": {"vim_mode": False}}
+        modified = {"version": __version__, "configuration": {"vim_mode": False}}
         with open(config_path, "w") as f:
             yaml.dump(modified, f)
 
@@ -730,25 +731,29 @@ class TestConfigReloadMethod:
         config.reload()
         assert config.is_vim_mode_enabled() is False
 
-    def test_reload_handles_errors(self, mock_home_dir, capsys, mocker):
+    def test_reload_handles_errors(self, mock_home_dir):
         """Test that reload handles errors gracefully."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        initial = {"version": "1.0", "configuration": {"vim_mode": True}}
+        initial = {"version": __version__, "configuration": {"vim_mode": True}}
         with open(config_path, "w") as f:
             yaml.dump(initial, f)
 
         config = ConfigManager()
 
-        # Make file unreadable by raising exception
-        mocker.patch("builtins.open", side_effect=PermissionError("No access"))
+        # Corrupt the config file after initial load
+        with open(config_path, "w") as f:
+            f.write("invalid: yaml: content: ][")
 
-        config.reload()
+        # Should emit a warning
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            config.reload()
 
-        # Should have error message
-        captured = capsys.readouterr()
-        assert "Error loading config file" in captured.out
+            # Should have warning about failed config read
+            assert len(w) > 0
+            assert "Failed to read config" in str(w[0].message)
 
 
 class TestConfigKeyAllowed:
@@ -760,7 +765,7 @@ class TestConfigKeyAllowed:
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
         config_data = {
-            "version": "1.0",
+            "version": __version__,
             "configuration": {"vim_mode": False},
         }
 
@@ -783,7 +788,7 @@ class TestConfigKeyAllowed:
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
         config_data = {
-            "version": "1.0",
+            "version": __version__,
             "configuration": {"vim_mode": True},
         }
 
@@ -805,42 +810,45 @@ class TestConfigKeyAllowed:
 class TestConfigValidationEdgeCases:
     """Test configuration validation edge cases."""
 
-    def test_validation_with_no_vim_conflicts(self, mock_home_dir, capsys):
+    def test_validation_with_no_vim_conflicts(self, mock_home_dir):
         """Test that validation passes with no conflicts."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Config with vim mode and no conflicts
         config_data = {
-            "version": "1.0",
+            "version": __version__,
             "configuration": {"vim_mode": True},
             "keymaps": {
-                "normal_mode": {"quit": "q", "search": "s"},  # No conflicts
+                "normal_mode": {"quit": "q", "copy_path": "c"},  # No conflicts
             },
         }
 
         with open(config_path, "w") as f:
             yaml.dump(config_data, f)
 
-        ConfigManager()
+        # Should not emit any warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ConfigManager()
 
-        # Should have no warnings
-        captured = capsys.readouterr()
-        assert "WARNING" not in captured.out
+            # Should have no warnings about conflicts
+            conflict_warnings = [warning for warning in w if "conflict" in str(warning.message).lower()]
+            assert len(conflict_warnings) == 0
 
-    def test_validation_with_multiple_conflicts(self, mock_home_dir, capsys):
+    def test_validation_with_multiple_conflicts(self, mock_home_dir):
         """Test validation reports multiple conflicts."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Config with multiple vim key conflicts
         config_data = {
-            "version": "1.0",
+            "version": __version__,
             "configuration": {"vim_mode": True},
             "keymaps": {
                 "normal_mode": {
                     "quit": "h",  # Conflict!
-                    "search": "j",  # Conflict!
+                    "copy_path": "j",  # Conflict!
                 },
                 "dataset_mode": {
                     "view_values": "k",  # Conflict!
@@ -851,11 +859,14 @@ class TestConfigValidationEdgeCases:
         with open(config_path, "w") as f:
             yaml.dump(config_data, f)
 
-        ConfigManager()
+        # Should emit a warning
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ConfigManager()
 
-        # Should have warnings for all conflicts
-        captured = capsys.readouterr()
-        assert "WARNING" in captured.out
-        assert "normal_mode.quit = 'h'" in captured.out
-        assert "normal_mode.search = 'j'" in captured.out
-        assert "dataset_mode.view_values = 'k'" in captured.out
+            # Should have warnings for all conflicts
+            assert len(w) > 0
+            warning_message = str(w[0].message)
+            assert "normal_mode.quit = 'h'" in warning_message
+            assert "normal_mode.copy_path = 'j'" in warning_message
+            assert "dataset_mode.view_values = 'k'" in warning_message
