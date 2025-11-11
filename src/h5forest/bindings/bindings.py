@@ -112,6 +112,12 @@ def _init_app_bindings(app):
 
             # If user has already typed a query, trigger search update
             def update_search():
+                # Clear the mini buffer explicitly
+                app.print("")
+
+                # Ensure focus is back on search content
+                app.shift_focus(app.search_content)
+
                 query = app.search_content.text
                 if query:  # Only update if there's a query
                     from prompt_toolkit.document import Document
