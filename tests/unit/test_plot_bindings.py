@@ -103,8 +103,10 @@ class TestPlotBindings:
     def test_select_x_with_dataset(self, mock_prompt, mock_app, mock_event):
         """Test selecting x-axis with a dataset node."""
         # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback(
-            use_chunks=False
+        mock_prompt.side_effect = (
+            lambda app, node, callback, return_to_normal=True: callback(
+                use_chunks=False
+            )
         )
 
         _init_plot_bindings(mock_app)
@@ -159,8 +161,10 @@ class TestPlotBindings:
     def test_select_y_with_dataset(self, mock_prompt, mock_app, mock_event):
         """Test selecting y-axis with a dataset node."""
         # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback(
-            use_chunks=False
+        mock_prompt.side_effect = (
+            lambda app, node, callback, return_to_normal=True: callback(
+                use_chunks=False
+            )
         )
 
         _init_plot_bindings(mock_app)

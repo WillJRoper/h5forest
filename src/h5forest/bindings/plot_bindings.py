@@ -35,7 +35,10 @@ def _init_plot_bindings(app):
             app.plot_content.text = app.scatter_plotter.set_x_key(node)
 
         # Prompt user if needed, then run operation
-        prompt_for_dataset_operation(app, node, run_operation)
+        # Stay in plotting mode after prompts (don't return to normal)
+        prompt_for_dataset_operation(
+            app, node, run_operation, return_to_normal=False
+        )
 
     @error_handler
     def select_y(event):
@@ -54,7 +57,10 @@ def _init_plot_bindings(app):
             app.plot_content.text = app.scatter_plotter.set_y_key(node)
 
         # Prompt user if needed, then run operation
-        prompt_for_dataset_operation(app, node, run_operation)
+        # Stay in plotting mode after prompts (don't return to normal)
+        prompt_for_dataset_operation(
+            app, node, run_operation, return_to_normal=False
+        )
 
     @error_handler
     def toggle_x_scale(event):
