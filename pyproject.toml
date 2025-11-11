@@ -11,6 +11,17 @@ build-backend = "setuptools.build_meta"
 # Make a version file at build time
 version_file = "src/h5forest/_version.py"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = { find = {} }
+
+# Include non-Python files from within packages when building the wheel.
+include-package-data = true
+
+[tool.setuptools.package-data]
+# Ship YAML data files bundled in the h5forest wheel
+"h5forest" = ["data/*.yaml"]
+
 [project]
 dynamic = ["version"]
 
@@ -42,6 +53,7 @@ dependencies = [
   "matplotlib",
   "rapidfuzz>=3.0.0",
   "pyyaml>=5.0",
+  "ruamel.yaml>=0.18",
 ]
 
 # Add special dependencies for development

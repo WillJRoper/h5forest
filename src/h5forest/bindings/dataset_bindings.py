@@ -249,9 +249,9 @@ def _init_dataset_bindings(app):
     app.kb.add(
         close_values_key, filter=Condition(lambda: app.flag_dataset_mode)
     )(close_values)
-    app.kb.add(
-        min_max_key, filter=Condition(lambda: app.flag_dataset_mode)
-    )(minimum_maximum)
+    app.kb.add(min_max_key, filter=Condition(lambda: app.flag_dataset_mode))(
+        minimum_maximum
+    )
     app.kb.add(mean_key, filter=Condition(lambda: app.flag_dataset_mode))(mean)
     app.kb.add(std_key, filter=Condition(lambda: app.flag_dataset_mode))(std)
 

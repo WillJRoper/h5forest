@@ -34,6 +34,7 @@ class TestDatasetBindings:
         app.app.loop = MagicMock()
         # Add config mock
         from unittest.mock import MagicMock as MM
+
         app.config = MM()
         app.config.get_keymap = MM(return_value=None)
         app.config.is_vim_mode_enabled = MM(return_value=True)

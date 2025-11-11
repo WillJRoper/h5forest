@@ -15,6 +15,7 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
 from h5forest.errors import error_handler
+from h5forest.utils import WaitIndicator
 
 
 def _init_app_bindings(app):
@@ -80,7 +81,6 @@ def _init_app_bindings(app):
 
     def search_leader_mode(event):
         """Enter search mode."""
-        from h5forest.utils import WaitIndicator
 
         app._flag_normal_mode = False
         app._flag_search_mode = True
@@ -243,12 +243,12 @@ def _init_app_bindings(app):
     app.kb.add(goto_leader, filter=Condition(lambda: app.flag_normal_mode))(
         goto_leader_mode
     )
-    app.kb.add(
-        dataset_leader, filter=Condition(lambda: app.flag_normal_mode)
-    )(dataset_leader_mode)
-    app.kb.add(
-        window_leader, filter=Condition(lambda: app.flag_normal_mode)
-    )(window_leader_mode)
+    app.kb.add(dataset_leader, filter=Condition(lambda: app.flag_normal_mode))(
+        dataset_leader_mode
+    )
+    app.kb.add(window_leader, filter=Condition(lambda: app.flag_normal_mode))(
+        window_leader_mode
+    )
     app.kb.add(plot_leader, filter=Condition(lambda: app.flag_normal_mode))(
         plotting_leader_mode
     )

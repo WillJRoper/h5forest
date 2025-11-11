@@ -96,33 +96,30 @@ def _init_tree_bindings(app):
 
     # Bind the functions
     # Get navigation keys from config early (needed for bindings below)
-    jump_up_key = (
-        app.config.get_keymap("tree_navigation", "jump_up_10") or "{"
-    )
-    jump_down_key = (
-        app.config.get_keymap("tree_navigation", "jump_down_10") or "}"
+    jump_up_key = app.config.get_keymap("tree_navigation", "jump_up_10")
+    jump_down_key = app.config.get_keymap("tree_navigation", "jump_down_10")
+    expand_collapse_key = app.config.get_keymap(
+        "tree_navigation",
+        "expand/collapse",
     )
 
-    # Bind jump keys if vim mode is enabled
-    if app.config.is_vim_mode_enabled():
-        app.kb.add(
-            jump_up_key,
-            filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
-        )(move_up_ten)
-        app.kb.add(
-            jump_down_key,
-            filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
-        )(move_down_ten)
+    # Bind jump keys
+    app.kb.add(
+        jump_up_key,
+        filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
+    )(move_up_ten)
+    app.kb.add(
+        jump_down_key,
+        filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
+    )(move_down_ten)
 
     app.kb.add(
-        "enter",
+        expand_collapse_key,
         filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
     )(expand_collapse_node)
 
     # Get other navigation keys from config
-    move_up_key = (
-        app.config.get_keymap("tree_navigation", "move_up") or "k"
-    )
+    move_up_key = app.config.get_keymap("tree_navigation", "move_up") or "k"
     move_down_key = (
         app.config.get_keymap("tree_navigation", "move_down") or "j"
     )
@@ -153,13 +150,16 @@ def _init_tree_bindings(app):
     # The app will use property methods to filter based on state
     hot_keys = {
         "open_group": Label("Enter → Open Group"),
-        "move_ten": Label(f"{jump_up_key}/{jump_down_key} → Move Up/Down 10 Lines"),
+        "move_ten": Label(
+            f"{jump_up_key}/{jump_down_key} → Move Up/Down 10 Lines"
+        ),
     }
 
     # Only show vim navigation keys if vim mode is enabled
     if app.config.is_vim_mode_enabled():
         hot_keys["vim_nav"] = Label(
-            f"{move_left_key}{move_down_key}{move_up_key}{move_right_key} → Navigate"
+            f"{move_left_key}{move_down_key}{move_up_key}{move_right_key}"
+            " → Navigate"
         )
 
     return hot_keys

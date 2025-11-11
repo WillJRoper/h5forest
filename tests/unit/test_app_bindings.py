@@ -21,7 +21,9 @@ class TestAppBindings:
 
         # Set up config with default keymaps
         app.config = MagicMock()
-        app.config.get_keymap = MagicMock(return_value=None)  # Return None to use defaults
+        app.config.get_keymap = MagicMock(
+            return_value=None
+        )  # Return None to use defaults
         app.config.is_vim_mode_enabled = MagicMock(return_value=True)
 
         # Set up mode flags

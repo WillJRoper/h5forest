@@ -1,7 +1,5 @@
 """Tests for the ConfigManager class."""
 
-import tempfile
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -311,8 +309,6 @@ class TestVimModeValidation:
         with open(config_path, "w") as f:
             yaml.dump(custom_config, f)
 
-        config = ConfigManager()
-
         # Should print warning
         captured = capsys.readouterr()
         assert "WARNING" in captured.out
@@ -574,7 +570,9 @@ class TestConfigVersion:
 class TestConfigErrorHandling:
     """Test configuration error handling and edge cases."""
 
-    def test_general_exception_during_load(self, mock_home_dir, capsys, mocker):
+    def test_general_exception_during_load(
+        self, mock_home_dir, capsys, mocker
+    ):
         """Test handling of general exceptions during config load."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -744,9 +742,7 @@ class TestConfigReloadMethod:
         config = ConfigManager()
 
         # Make file unreadable by raising exception
-        mocker.patch(
-            "builtins.open", side_effect=PermissionError("No access")
-        )
+        mocker.patch("builtins.open", side_effect=PermissionError("No access"))
 
         config.reload()
 
