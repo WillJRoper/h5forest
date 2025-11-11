@@ -5,6 +5,116 @@ the implications of their actions and can make informed decisions.
 """
 
 
+def prompt_for_chunking_preference(app, nodes, operation_callback):
+    """
+    Prompt user about chunking preference for plotting/histogram operations.
+
+    This function checks if any of the provided nodes are chunked, and
+    prompts the user to decide whether to use chunked processing.
+
+    Args:
+        app (H5Forest):
+            The main application instance.
+        nodes (list):
+            List of Node objects to check for chunking.
+        operation_callback (callable):
+            Function to call with signature: operation_callback(use_chunks)
+            where use_chunks is True to use chunked processing.
+    """
+    # Check if config has always_chunk enabled
+    if app.config.always_chunk_datasets():
+        operation_callback(use_chunks=True)
+        return
+
+    # Check if any node is chunked
+    has_chunked = any(node.is_chunked for node in nodes)
+
+    # If no chunked data, proceed without chunking
+    if not has_chunked:
+        operation_callback(use_chunks=False)
+        return
+
+    # At this point, we have chunked data and need to prompt
+    # Calculate memory footprint for all nodes
+    import h5py
+    import numpy as np
+
+    total_size_gb = 0.0
+    total_chunks = 0
+
+    try:
+        for node in nodes:
+            if node.is_chunked:
+                with h5py.File(node.filepath, "r") as hdf:
+                    dataset = hdf[node.path]
+                    uncompressed_bytes = dataset.size * dataset.dtype.itemsize
+                    total_size_gb += uncompressed_bytes / (10**9)
+
+                    if dataset.chunks:
+                        num_chunks = int(
+                            np.prod(
+                                [
+                                    np.ceil(s / c)
+                                    for s, c in zip(
+                                        dataset.shape, dataset.chunks
+                                    )
+                                ]
+                            )
+                        )
+                        total_chunks += num_chunks
+    except (OSError, FileNotFoundError, KeyError):
+        # If file access fails, use node's nbytes as estimate
+        for node in nodes:
+            if node.is_chunked:
+                total_size_gb += node.nbytes / (10**9)
+        total_chunks = "unknown"
+
+    def on_yes_chunk():
+        """User wants chunk-by-chunk processing."""
+        app.default_focus()
+        operation_callback(use_chunks=True)
+
+    def on_no_chunk():
+        """User wants to load all at once."""
+        app.default_focus()
+
+        def on_yes_load_all():
+            """User confirms loading all at once."""
+            app.default_focus()
+            operation_callback(use_chunks=False)
+
+        def on_no_load_all():
+            """User wants to abort."""
+            app.default_focus()
+            app.print("Operation aborted.")
+
+        # Ask second question
+        app.prompt_yn(
+            "Should we load all at once? (If not, we will abort) [y/n]:",
+            on_yes_load_all,
+            on_no_load_all,
+        )
+
+    # Build the prompt message
+    if isinstance(total_chunks, int) and total_chunks > 0:
+        prompt_msg = (
+            f"Chunked Dataset found ({total_size_gb:.2f} GB, "
+            f"{total_chunks} chunks). "
+            f"Should we process chunk by chunk? [y/n]:"
+        )
+    else:
+        prompt_msg = (
+            f"Chunked Dataset found ({total_size_gb:.2f} GB). "
+            f"Should we process chunk by chunk? [y/n]:"
+        )
+
+    app.prompt_yn(
+        prompt_msg,
+        on_yes_chunk,
+        on_no_chunk,
+    )
+
+
 def prompt_for_chunked_dataset(
     app, node, operation_callback, return_to_normal=True
 ):
