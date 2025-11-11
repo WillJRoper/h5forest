@@ -16,6 +16,16 @@ When you first run h5forest after installing this version, the configuration fil
 
 The configuration file is organized into sections:
 
+### 0. Version (Automatic)
+
+```yaml
+# Configuration version - DO NOT EDIT
+# This is used to automatically update your config when h5forest is upgraded
+version: "1.0"
+```
+
+**Important:** The version field is managed automatically by h5forest. When you upgrade to a newer version of h5forest with new configuration options, your config file will be automatically migrated. New options will be added while preserving all your custom settings.
+
 ### 1. General Configuration
 
 ```yaml
@@ -217,6 +227,47 @@ Currently, configuration is loaded when h5forest starts. To apply configuration 
 2. Restart h5forest
 
 Future versions may support hot-reloading configuration while the application is running.
+
+## Automatic Version Migration
+
+When you upgrade h5forest to a newer version with additional configuration options, your config file will be automatically migrated. This process:
+
+1. **Preserves all your custom settings** - Any keybindings or options you've customized will remain unchanged
+2. **Adds new default options** - New configuration options introduced in the upgrade will be added with their default values
+3. **Updates the version** - The version field in your config file will be updated to match the new version
+4. **Saves the updated config** - The migrated config is automatically saved back to `~/.h5forest/config.yaml`
+
+### Migration Example
+
+If you have this config on version 0.9:
+```yaml
+version: "0.9"
+configuration:
+  vim_mode: false
+keymaps:
+  normal_mode:
+    quit: x
+```
+
+After upgrading to version 1.0, it will automatically become:
+```yaml
+version: "1.0"
+configuration:
+  vim_mode: false    # Your custom setting preserved
+  theme: default     # New option added
+keymaps:
+  normal_mode:
+    quit: x          # Your custom setting preserved
+    search: s        # New option added
+    copy_path: c     # New option added
+    # ... etc.
+```
+
+You'll see a message when h5forest starts:
+```
+Migrating config from version 0.9 to 1.0...
+Config migrated successfully. New options added while preserving your custom settings.
+```
 
 ## Troubleshooting
 
