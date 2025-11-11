@@ -99,16 +99,8 @@ class TestPlotBindings:
             assert isinstance(key, str)
             assert isinstance(value, Label)
 
-    @patch("h5forest.bindings.plot_bindings.prompt_for_dataset_operation")
-    def test_select_x_with_dataset(self, mock_prompt, mock_app, mock_event):
+    def test_select_x_with_dataset(self, mock_app, mock_event):
         """Test selecting x-axis with a dataset node."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = (
-            lambda app, node, callback, return_to_normal=True: callback(
-                use_chunks=False
-            )
-        )
-
         _init_plot_bindings(mock_app)
 
         # Create a dataset node
@@ -157,16 +149,8 @@ class TestPlotBindings:
         # Verify set_x_key was NOT called
         mock_app.scatter_plotter.set_x_key.assert_not_called()
 
-    @patch("h5forest.bindings.plot_bindings.prompt_for_dataset_operation")
-    def test_select_y_with_dataset(self, mock_prompt, mock_app, mock_event):
+    def test_select_y_with_dataset(self, mock_app, mock_event):
         """Test selecting y-axis with a dataset node."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = (
-            lambda app, node, callback, return_to_normal=True: callback(
-                use_chunks=False
-            )
-        )
-
         _init_plot_bindings(mock_app)
 
         # Create a dataset node
