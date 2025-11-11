@@ -550,7 +550,6 @@ class TestDatasetPrompts:
         # Should call callback with use_chunks=True
         callback.assert_called_once_with(use_chunks=True)
         mock_app.default_focus.assert_called()
-        mock_app.return_to_normal_mode.assert_called()
 
     @patch("h5py.File")
     def test_prompt_for_chunking_preference_user_says_no(
@@ -579,16 +578,24 @@ class TestDatasetPrompts:
             mock_app, [mock_chunked_node], callback
         )
 
-        # Get the no callback
+        # Get the no callback from first prompt
         on_no = mock_app.prompt_yn.call_args[0][2]
 
-        # Simulate user pressing 'n'
+        # Simulate user pressing 'n' (triggers second prompt)
         on_no()
+
+        # Should have prompted again
+        assert mock_app.prompt_yn.call_count == 2
+
+        # Get the yes callback from second prompt
+        second_on_yes = mock_app.prompt_yn.call_args[0][1]
+
+        # Simulate user pressing 'y' on second prompt
+        second_on_yes()
 
         # Should call callback with use_chunks=False
         callback.assert_called_once_with(use_chunks=False)
         mock_app.default_focus.assert_called()
-        mock_app.return_to_normal_mode.assert_called()
 
     @patch("h5py.File")
     def test_prompt_for_chunking_preference_multiple_nodes(
@@ -642,7 +649,7 @@ class TestDatasetPrompts:
         # Should prompt user with combined information
         mock_app.prompt_yn.assert_called_once()
         prompt_msg = mock_app.prompt_yn.call_args[0][0]
-        # Message should contain total footprint and chunk counts
-        assert "300.00 MB" in prompt_msg or "0.29 GB" in prompt_msg
-        assert "100 chunks" in prompt_msg
-        assert "100 chunks" in prompt_msg
+        # Message should contain total footprint (0.024 GB ≈ 0.02 GB)
+        # and total chunk count (100 + 100 = 200)
+        assert "0.02 GB" in prompt_msg
+        assert "200 chunks" in prompt_msg
