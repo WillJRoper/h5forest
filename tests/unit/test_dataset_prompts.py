@@ -6,6 +6,7 @@ import pytest
 
 from h5forest.dataset_prompts import (
     prompt_for_chunked_dataset,
+    prompt_for_chunking_preference,
     prompt_for_dataset_operation,
     prompt_for_large_dataset,
 )
@@ -441,3 +442,207 @@ class TestDatasetPrompts:
 
         # Should not show any prompts
         mock_app.prompt_yn.assert_not_called()
+
+    def test_prompt_for_chunking_preference_always_chunk(
+        self, mock_app, mock_node
+    ):
+        """Test chunking preference with always_chunk config enabled."""
+        # Configure mock to enable always_chunk
+        mock_app.config.always_chunk_datasets.return_value = True
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with a list of nodes
+        prompt_for_chunking_preference(mock_app, [mock_node], callback)
+
+        # Should call the callback immediately with use_chunks=True
+        callback.assert_called_once_with(use_chunks=True)
+
+        # Should not show any prompts
+        mock_app.prompt_yn.assert_not_called()
+
+    def test_prompt_for_chunking_preference_no_chunked_nodes(
+        self, mock_app, mock_node
+    ):
+        """Test chunking preference with no chunked nodes."""
+        # Ensure node is not chunked
+        mock_node.is_chunked = False
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with a list of non-chunked nodes
+        prompt_for_chunking_preference(mock_app, [mock_node], callback)
+
+        # Should call the callback immediately with use_chunks=False
+        callback.assert_called_once_with(use_chunks=False)
+
+        # Should not show any prompts
+        mock_app.prompt_yn.assert_not_called()
+
+    @patch("h5py.File")
+    def test_prompt_for_chunking_preference_with_chunked_nodes(
+        self, mock_h5py_file, mock_app, mock_chunked_node
+    ):
+        """Test chunking preference with chunked nodes."""
+        # Mock the h5py dataset
+        mock_dataset = Mock()
+        mock_dataset.size = 1000000
+        mock_dataset.dtype.itemsize = 8
+        mock_dataset.shape = (1000, 1000)
+        mock_dataset.chunks = (100, 100)
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(return_value=mock_dataset)
+        mock_h5py_file.return_value = mock_file
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with a list of chunked nodes
+        prompt_for_chunking_preference(
+            mock_app, [mock_chunked_node], callback
+        )
+
+        # Should prompt user
+        mock_app.prompt_yn.assert_called_once()
+        prompt_msg = mock_app.prompt_yn.call_args[0][0]
+        # The message should contain chunk count
+        assert "100 chunks" in prompt_msg
+
+    @patch("h5py.File")
+    def test_prompt_for_chunking_preference_user_says_yes(
+        self, mock_h5py_file, mock_app, mock_chunked_node
+    ):
+        """Test chunking preference when user chooses to use chunks."""
+        # Mock the h5py dataset
+        mock_dataset = Mock()
+        mock_dataset.size = 1000000
+        mock_dataset.dtype.itemsize = 8
+        mock_dataset.shape = (1000, 1000)
+        mock_dataset.chunks = (100, 100)
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(return_value=mock_dataset)
+        mock_h5py_file.return_value = mock_file
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with a list of chunked nodes
+        prompt_for_chunking_preference(
+            mock_app, [mock_chunked_node], callback
+        )
+
+        # Get the yes callback
+        on_yes = mock_app.prompt_yn.call_args[0][1]
+
+        # Simulate user pressing 'y'
+        on_yes()
+
+        # Should call callback with use_chunks=True
+        callback.assert_called_once_with(use_chunks=True)
+        mock_app.default_focus.assert_called()
+        mock_app.return_to_normal_mode.assert_called()
+
+    @patch("h5py.File")
+    def test_prompt_for_chunking_preference_user_says_no(
+        self, mock_h5py_file, mock_app, mock_chunked_node
+    ):
+        """Test chunking preference when user chooses to load all."""
+        # Mock the h5py dataset
+        mock_dataset = Mock()
+        mock_dataset.size = 1000000
+        mock_dataset.dtype.itemsize = 8
+        mock_dataset.shape = (1000, 1000)
+        mock_dataset.chunks = (100, 100)
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(return_value=mock_dataset)
+        mock_h5py_file.return_value = mock_file
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with a list of chunked nodes
+        prompt_for_chunking_preference(
+            mock_app, [mock_chunked_node], callback
+        )
+
+        # Get the no callback
+        on_no = mock_app.prompt_yn.call_args[0][2]
+
+        # Simulate user pressing 'n'
+        on_no()
+
+        # Should call callback with use_chunks=False
+        callback.assert_called_once_with(use_chunks=False)
+        mock_app.default_focus.assert_called()
+        mock_app.return_to_normal_mode.assert_called()
+
+    @patch("h5py.File")
+    def test_prompt_for_chunking_preference_multiple_nodes(
+        self, mock_h5py_file, mock_app
+    ):
+        """Test chunking preference with multiple chunked nodes."""
+        # Create two chunked nodes
+        node1 = MagicMock()
+        node1.is_chunked = True
+        node1.filepath = "/test/file.h5"
+        node1.path = "/dataset1"
+        node1.nbytes = 100 * 10**6
+
+        node2 = MagicMock()
+        node2.is_chunked = True
+        node2.filepath = "/test/file.h5"
+        node2.path = "/dataset2"
+        node2.nbytes = 200 * 10**6
+
+        # Mock the h5py datasets
+        mock_dataset1 = Mock()
+        mock_dataset1.size = 1000000
+        mock_dataset1.dtype.itemsize = 8
+        mock_dataset1.shape = (1000, 1000)
+        mock_dataset1.chunks = (100, 100)
+
+        mock_dataset2 = Mock()
+        mock_dataset2.size = 2000000
+        mock_dataset2.dtype.itemsize = 8
+        mock_dataset2.shape = (2000, 1000)
+        mock_dataset2.chunks = (200, 100)
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(
+            side_effect=lambda key: {
+                "/dataset1": mock_dataset1,
+                "/dataset2": mock_dataset2,
+            }[key]
+        )
+        mock_h5py_file.return_value = mock_file
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with multiple nodes
+        prompt_for_chunking_preference(mock_app, [node1, node2], callback)
+
+        # Should prompt user with combined information
+        mock_app.prompt_yn.assert_called_once()
+        prompt_msg = mock_app.prompt_yn.call_args[0][0]
+        # Message should contain total footprint and chunk counts
+        assert "300.00 MB" in prompt_msg or "0.29 GB" in prompt_msg
+        assert "100 chunks" in prompt_msg
+        assert "100 chunks" in prompt_msg
