@@ -142,13 +142,13 @@ class TestHistBindings:
             assert "New Title" in mock_app.hist_content.text
             mock_app.shift_focus.assert_called_with(mock_app.hist_content)
 
-    @patch("h5forest.bindings.hist_bindings.prompt_for_dataset_operation")
+    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
     def test_plot_hist_with_empty_params(
         self, mock_prompt, mock_app, mock_event
     ):
         """Test plotting histogram when params are empty."""
         # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback(
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
             use_chunks=False
         )
 
@@ -157,6 +157,16 @@ class TestHistBindings:
         node = MagicMock()
         node.is_group = False
         mock_app.tree.get_current_node = MagicMock(return_value=node)
+
+        # Make set_data_key actually update plot_params
+        def set_data_key_side_effect(n):
+            mock_app.histogram_plotter.plot_params["data"] = n
+            return "data key text"
+
+        mock_app.histogram_plotter.set_data_key.side_effect = (
+            set_data_key_side_effect
+        )
+
         bindings = [
             b
             for b in mock_app.kb.bindings
@@ -168,10 +178,25 @@ class TestHistBindings:
         mock_app.histogram_plotter.compute_hist.assert_called_once()
         mock_app.histogram_plotter.plot_and_show.assert_called_once()
 
-    def test_plot_hist_with_existing_params(self, mock_app, mock_event):
+    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
+    @patch("h5forest.bindings.hist_bindings.WaitIndicator")
+    def test_plot_hist_with_existing_params(
+        self, mock_wait_indicator, mock_prompt, mock_app, mock_event
+    ):
         """Test plotting histogram with existing params."""
+        # Mock WaitIndicator context manager
+        mock_wait_indicator.return_value.__enter__ = MagicMock()
+        mock_wait_indicator.return_value.__exit__ = MagicMock()
+
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
+            use_chunks=False
+        )
+
         _init_hist_bindings(mock_app)
-        mock_app.histogram_plotter.plot_params = {"data": "test"}
+        # Create a mock node for plot_params
+        mock_node = MagicMock()
+        mock_app.histogram_plotter.plot_params = {"data": mock_node}
         bindings = [
             b
             for b in mock_app.kb.bindings
@@ -199,10 +224,25 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    def test_save_hist(self, mock_app, mock_event):
+    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
+    @patch("h5forest.bindings.hist_bindings.WaitIndicator")
+    def test_save_hist(
+        self, mock_wait_indicator, mock_prompt, mock_app, mock_event
+    ):
         """Test saving histogram."""
+        # Mock WaitIndicator context manager
+        mock_wait_indicator.return_value.__enter__ = MagicMock()
+        mock_wait_indicator.return_value.__exit__ = MagicMock()
+
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
+            use_chunks=False
+        )
+
         _init_hist_bindings(mock_app)
-        mock_app.histogram_plotter.plot_params = {"data": "test"}
+        # Create a mock node for plot_params
+        mock_node = MagicMock()
+        mock_app.histogram_plotter.plot_params = {"data": mock_node}
         bindings = [
             b
             for b in mock_app.kb.bindings
@@ -229,13 +269,13 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    @patch("h5forest.bindings.hist_bindings.prompt_for_dataset_operation")
+    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
     def test_save_hist_with_empty_params(
         self, mock_prompt, mock_app, mock_event
     ):
         """Test saving histogram with empty params and dataset."""
         # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback(
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
             use_chunks=False
         )
 
@@ -245,8 +285,14 @@ class TestHistBindings:
         node.is_group = False
         node.path = "/dataset"
         mock_app.tree.get_current_node = MagicMock(return_value=node)
+
+        # Make set_data_key actually update plot_params
+        def set_data_key_side_effect(n):
+            mock_app.histogram_plotter.plot_params["data"] = n
+            return "data key text"
+
         mock_app.histogram_plotter.set_data_key = MagicMock(
-            return_value="data key text"
+            side_effect=set_data_key_side_effect
         )
         mock_app.histogram_plotter.compute_hist = MagicMock(
             return_value="computed hist"
@@ -315,13 +361,8 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.shift_focus.assert_called_with(mock_app.tree_content)
 
-    @patch("h5forest.bindings.hist_bindings.prompt_for_dataset_operation")
-    def test_select_data(self, mock_prompt, mock_app, mock_event):
+    def test_select_data(self, mock_app, mock_event):
         """Test selecting data for histogram."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback(
-            use_chunks=False
-        )
 
         _init_hist_bindings(mock_app)
         node = MagicMock()
@@ -653,3 +694,51 @@ class TestHistBindings:
         for key in ["c-m", "b", "x", "y", "h", "H", "r", "e", "q"]:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
             assert len(bindings) > 0, f"Key '{key}' not bound"
+
+    def test_plot_hist_missing_data(self, mock_app, mock_event):
+        """Test plotting histogram without data selected."""
+        _init_hist_bindings(mock_app)
+
+        # Set plot_params with other keys but not "data"
+        # This skips the "if len(plot_params) == 0" block
+        # but triggers the "if 'data' not in plot_params" check
+        mock_app.histogram_plotter.plot_params = {"other_key": "value"}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("h",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        mock_app.print.assert_called_once_with(
+            "Please select a dataset first (Enter)"
+        )
+        # Should not call compute_hist
+        mock_app.histogram_plotter.compute_hist.assert_not_called()
+
+    def test_save_hist_missing_data(self, mock_app, mock_event):
+        """Test saving histogram without data selected."""
+        _init_hist_bindings(mock_app)
+
+        # Set plot_params with other keys but not "data"
+        # This skips the "if len(plot_params) == 0" block
+        # but triggers the "if 'data' not in plot_params" check
+        mock_app.histogram_plotter.plot_params = {"other_key": "value"}
+
+        bindings = [
+            b
+            for b in mock_app.kb.bindings
+            if b.keys == ("H",) and b.filter is not None
+        ]
+        handler = bindings[0].handler
+        handler(mock_event)
+
+        # Should print error message
+        mock_app.print.assert_called_once_with(
+            "Please select a dataset first (Enter)"
+        )
+        # Should not call compute_hist
+        mock_app.histogram_plotter.compute_hist.assert_not_called()

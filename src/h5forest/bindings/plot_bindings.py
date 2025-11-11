@@ -10,6 +10,7 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
 from h5forest.config import translate_key_label
+from h5forest.dataset_prompts import prompt_for_chunking_preference
 from h5forest.errors import error_handler
 from h5forest.utils import WaitIndicator
 
@@ -211,16 +212,60 @@ def _init_plot_bindings(app):
     @error_handler
     def plot_scatter(event):
         """Plot and show scatter with mean in bins."""
-        # Make the plot with wait indicator
-        with WaitIndicator(app, "Generating scatter plot..."):
-            app.scatter_plotter.plot_and_show(app.plot_content.text)
+        # Check if we have both x and y datasets selected
+        if (
+            "x" not in app.scatter_plotter.plot_params
+            or "y" not in app.scatter_plotter.plot_params
+        ):
+            msg = "Please select both x-axis (x) and y-axis (y) datasets first"
+            app.print(msg)
+            return
 
-        app.default_focus()
+        def do_plot(use_chunks):
+            """Actually perform the plot after chunking preference is set."""
+            # Make the plot with wait indicator
+            with WaitIndicator(app, "Generating scatter plot..."):
+                app.scatter_plotter.plot_and_show(
+                    app.plot_content.text, use_chunks=use_chunks
+                )
+
+            app.default_focus()
+
+        # Get the nodes to check for chunking
+        nodes = [
+            app.scatter_plotter.plot_params["x"],
+            app.scatter_plotter.plot_params["y"],
+        ]
+
+        # Prompt for chunking preference if needed, then plot
+        prompt_for_chunking_preference(app, nodes, do_plot)
 
     @error_handler
     def save_scatter(event):
         """Save the plot."""
-        app.scatter_plotter.plot_and_save(app.plot_content.text)
+        # Check if we have both x and y datasets selected
+        if (
+            "x" not in app.scatter_plotter.plot_params
+            or "y" not in app.scatter_plotter.plot_params
+        ):
+            msg = "Please select both x-axis (x) and y-axis (y) datasets first"
+            app.print(msg)
+            return
+
+        def do_save(use_chunks):
+            """Actually save the plot after chunking preference is set."""
+            app.scatter_plotter.plot_and_save(
+                app.plot_content.text, use_chunks=use_chunks
+            )
+
+        # Get the nodes to check for chunking
+        nodes = [
+            app.scatter_plotter.plot_params["x"],
+            app.scatter_plotter.plot_params["y"],
+        ]
+
+        # Prompt for chunking preference if needed, then save
+        prompt_for_chunking_preference(app, nodes, do_save)
 
     @error_handler
     def reset(event):
