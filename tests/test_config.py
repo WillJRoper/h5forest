@@ -113,12 +113,12 @@ class TestConfigFileCreation:
         assert "configuration" in config
         assert "keymaps" in config
 
-    def test_default_vim_mode_enabled(self, mock_home_dir):
-        """Test that vim mode is enabled by default."""
+    def test_default_vim_mode_disabled(self, mock_home_dir):
+        """Test that vim mode is disabled by default."""
         config = ConfigManager()
 
-        assert config.is_vim_mode_enabled() is True
-        assert config.get("configuration.vim_mode") is True
+        assert config.is_vim_mode_enabled() is False
+        assert config.get("configuration.vim_mode") is False
 
 
 class TestConfigLoading:
@@ -176,7 +176,7 @@ class TestConfigLoading:
         config = ConfigManager()
 
         # Should fall back to defaults
-        assert config.get("configuration.vim_mode") is True
+        assert config.get("configuration.vim_mode") is False
 
         # Should print error message
         captured = capsys.readouterr()
@@ -210,7 +210,7 @@ class TestGetMethods:
         config = ConfigManager()
 
         vim_mode = config.get("configuration.vim_mode")
-        assert vim_mode is True
+        assert vim_mode is False
 
     def test_get_nested_key(self, mock_home_dir):
         """Test getting a nested key using dot notation."""
@@ -597,7 +597,7 @@ class TestConfigErrorHandling:
         assert "Permission denied" in captured.out
 
         # Config should use defaults
-        assert config.get("configuration.vim_mode") is True
+        assert config.get("configuration.vim_mode") is False
 
     def test_save_config_error_handling(self, mock_home_dir, capsys, mocker):
         """Test error handling when saving config fails."""
@@ -661,7 +661,7 @@ class TestConfigErrorHandling:
         config = ConfigManager()
 
         # Should merge with defaults
-        assert config.get("configuration.vim_mode") is True
+        assert config.get("configuration.vim_mode") is False
         assert config.get_keymap("normal_mode", "quit") == "q"
 
     def test_null_config_file(self, mock_home_dir):
@@ -675,7 +675,7 @@ class TestConfigErrorHandling:
         config = ConfigManager()
 
         # yaml.safe_load on empty file returns None, which we handle
-        assert config.get("configuration.vim_mode") is True
+        assert config.get("configuration.vim_mode") is False
 
     def test_config_with_extra_unknown_keys(self, mock_home_dir):
         """Test that unknown keys in config don't break anything."""
