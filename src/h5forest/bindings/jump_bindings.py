@@ -180,7 +180,9 @@ def _init_goto_bindings(app):
     app.kb.add(parent_key, filter=Condition(lambda: app.flag_jump_mode))(
         goto_parent
     )
-    app.kb.add(next_key, filter=Condition(lambda: app.flag_jump_mode))(goto_next)
+    app.kb.add(next_key, filter=Condition(lambda: app.flag_jump_mode))(
+        goto_next
+    )
     app.kb.add(jump_key, filter=Condition(lambda: app.flag_jump_mode))(
         jump_to_key
     )
