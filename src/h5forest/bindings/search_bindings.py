@@ -97,8 +97,8 @@ def _init_search_bindings(app):
     # Return all hot keys as a list
     # No conditional labels in search mode
     hot_keys = [
-        Label("Enter → Accept"),
-        Label("Esc/CTRL-c → Cancel"),
+        Label(f"{accept_key} → Accept"),
+        Label(f"{cancel_key}/{exit_key} → Cancel"),
     ]
 
     return hot_keys
