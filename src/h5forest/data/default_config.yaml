@@ -25,7 +25,7 @@ keymaps:
     quit: q
     search: s
     copy_path: c
-    toggle_attributes: A
+    expand_attributes: A
     restore_tree: r
 
   # Tree navigation - moving through the HDF5 structure
