@@ -185,6 +185,10 @@ class ScatterPlotter(Plotter):
         self.assigny_thread = None
         self.plot_thread = None
 
+        # Chunking preference (None = not asked, True = use chunks,
+        # False = don't)
+        self.chunk_preference = None
+
     def set_x_key(self, node):
         """
         Set the x-axis key for the plot.
@@ -280,6 +284,7 @@ class ScatterPlotter(Plotter):
         self.xs = None
         self.ys = None
         self.plot_params = {}
+        self.chunk_preference = None
         return self.plot_text
 
     def _plot(self, text):
@@ -319,14 +324,21 @@ class ScatterPlotter(Plotter):
         self.ax.set_axisbelow(True)
 
         def run_in_thread():
-            # Now lets plot the data, if we have chunked data we will plot each
-            # chunk separately
-            if (
-                x_node.chunks == (1,)
-                and y_node.chunks == (1,)
+            # Now lets plot the data
+            # Use chunk preference to determine if we should load in chunks
+            # Conditions for loading all at once:
+            # 1. User preference is to not use chunking
+            #    (chunk_preference == False)
+            # 2. Neither dataset is chunked
+            # 3. Datasets have incompatible chunk layouts
+            should_load_all = (
+                self.chunk_preference is False
+                or (x_node.chunks == (1,) and y_node.chunks == (1,))
                 or x_node.chunks != y_node.chunks
-            ):
-                # Get the data
+            )
+
+            if should_load_all:
+                # Get the data all at once
                 with h5py.File(x_node.filepath, "r") as hdf:
                     self.x_data = hdf[x_node.path][...]
                     self.y_data = hdf[y_node.path][...]
@@ -488,6 +500,10 @@ class HistogramPlotter(Plotter):
         self.assign_data_thread = None
         self.compute_hist_thread = None
 
+        # Chunking preference (None = not asked, True = use chunks,
+        # False = don't)
+        self.chunk_preference = None
+
     @error_handler
     def set_data_key(self, node):
         """
@@ -584,22 +600,27 @@ class HistogramPlotter(Plotter):
             self.widths = bins[1:] - bins[:-1]
             self.xs = (bins[1:] + bins[:-1]) / 2
 
-            # Get the number of chunks
-            chunks = node.chunks if node.is_chunked else 1
+            # Use chunk preference to determine if we should load in chunks
+            # Load all at once if:
+            # 1. User preference is to not use chunking
+            #    (chunk_preference == False)
+            # 2. Dataset is not chunked
+            should_load_all = (
+                self.chunk_preference is False or not node.is_chunked
+            )
 
-            # If neither node is not chunked we can just read and grid the data
-            if chunks == 1:
-                # Get the data
+            if should_load_all:
+                # Get the data all at once
                 with h5py.File(node.filepath, "r") as hdf:
                     data = hdf[node.path][...]
 
-                # Compute the grid
+                # Compute the histogram
                 self.hist, _ = np.histogram(data, bins=bins)
 
-            # Otherwise we need to read in the data chunk by chunk and add each
-            # chunks grid to the total grid
             else:
-                # Initialise the grid
+                # Load in chunks - read the data chunk by chunk and add each
+                # chunk's histogram to the total
+                # Initialise the histogram
                 self.hist = np.zeros(nbins)
 
                 # Get the data
@@ -625,7 +646,7 @@ class HistogramPlotter(Plotter):
                             # Get the chunk
                             chunk_data = data[slices]
 
-                            # Compute the grid for the chunk
+                            # Compute the histogram for the chunk
                             chunk_density, _ = np.histogram(
                                 chunk_data, bins=bins
                             )
@@ -718,4 +739,5 @@ class HistogramPlotter(Plotter):
         self.fig = None
         self.ax = None
         self.plot_params = {}
+        self.chunk_preference = None
         return self.plot_text
