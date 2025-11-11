@@ -168,10 +168,11 @@ def _init_tree_bindings(app):
     # The app will use property methods to filter based on state
     hot_keys = {
         "open_group": Label(
-            f"{translate_key_label(expand_collapse_key)} → Expand/Collapse Group"
+            f"{translate_key_label(expand_collapse_key)} → Open/Close Group"
         ),
         "move_ten": Label(
-            f"{translate_key_label(jump_up_key)}/{translate_key_label(jump_down_key)} → Move Up/Down 10 Lines"
+            f"{translate_key_label(jump_up_key)}/"
+            f"{translate_key_label(jump_down_key)} → Up/Down 10 Lines"
         ),
     }
 

@@ -433,7 +433,8 @@ def translate_key_label(key: str) -> str:
         key: A prompt_toolkit key identifier (e.g., "enter", "escape", "c-c").
 
     Returns:
-        str: A nicely formatted label for display (e.g., "Enter", "ESC", "Ctrl+C").
+        str: A nicely formatted label for display (e.g., "Enter", "ESC",
+            "Ctrl+C").
 
     Examples:
         >>> translate_key_label("a")

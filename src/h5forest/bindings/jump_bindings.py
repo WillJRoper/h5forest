@@ -192,10 +192,12 @@ def _init_goto_bindings(app):
     # No conditional labels in jump mode
     hot_keys = [
         Label(
-            f"{translate_key_label(top_alt_key)}/{translate_key_label(top_key)} → Go to Top"
+            f"{translate_key_label(top_alt_key)}/"
+            f"{translate_key_label(top_key)} → Go to Top"
         ),
         Label(
-            f"{translate_key_label(bottom_alt_key)}/{translate_key_label(bottom_key)} → Go to Bottom"
+            f"{translate_key_label(bottom_alt_key)}/"
+            f"{translate_key_label(bottom_key)} → Go to Bottom"
         ),
         Label(f"{translate_key_label(parent_key)} → Go to Parent"),
         Label(f"{translate_key_label(next_key)} → Next Parent Group"),
