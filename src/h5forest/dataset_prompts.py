@@ -5,7 +5,9 @@ the implications of their actions and can make informed decisions.
 """
 
 
-def prompt_for_chunked_dataset(app, node, operation_callback):
+def prompt_for_chunked_dataset(
+    app, node, operation_callback, return_to_normal=True
+):
     """
     Prompt user about how to handle a chunked dataset.
 
@@ -22,6 +24,9 @@ def prompt_for_chunked_dataset(app, node, operation_callback):
             Function to call with signature: operation_callback(use_chunks,
             load_all) where use_chunks is True to use chunked processing,
             and load_all is True to load all data at once.
+        return_to_normal (bool):
+            If True, return to normal mode after operation completes.
+            If False, stay in current mode. Default: True.
     """
     # First, check if dataset is chunked
     if not node.is_chunked:
@@ -62,7 +67,8 @@ def prompt_for_chunked_dataset(app, node, operation_callback):
         """User wants chunk-by-chunk processing."""
         app.default_focus()
         operation_callback(use_chunks=True, load_all=False)
-        app.return_to_normal_mode()
+        if return_to_normal:
+            app.return_to_normal_mode()
 
     def on_no_chunk_by_chunk():
         """User doesn't want chunk-by-chunk, ask about loading all."""
@@ -72,13 +78,15 @@ def prompt_for_chunked_dataset(app, node, operation_callback):
             """User wants to load all at once."""
             app.default_focus()
             operation_callback(use_chunks=False, load_all=True)
-            app.return_to_normal_mode()
+            if return_to_normal:
+                app.return_to_normal_mode()
 
         def on_no_load_all():
             """User wants to abort."""
             app.default_focus()
             app.print("Operation aborted.")
-            app.return_to_normal_mode()
+            if return_to_normal:
+                app.return_to_normal_mode()
 
         # Ask second question
         app.prompt_yn(
@@ -107,7 +115,9 @@ def prompt_for_chunked_dataset(app, node, operation_callback):
     )
 
 
-def prompt_for_large_dataset(app, node, operation_callback):
+def prompt_for_large_dataset(
+    app, node, operation_callback, return_to_normal=True
+):
     """
     Prompt user before loading a large dataset.
 
@@ -121,6 +131,9 @@ def prompt_for_large_dataset(app, node, operation_callback):
             The dataset node to operate on.
         operation_callback (callable):
             Function to call if user confirms, with no arguments.
+        return_to_normal (bool):
+            If True, return to normal mode after operation completes.
+            If False, stay in current mode. Default: True.
     """
     # Calculate uncompressed size in GB using node metadata
     # Node already has size and datatype information
@@ -148,13 +161,15 @@ def prompt_for_large_dataset(app, node, operation_callback):
         """User confirms, proceed with operation."""
         app.default_focus()
         operation_callback()
-        app.return_to_normal_mode()
+        if return_to_normal:
+            app.return_to_normal_mode()
 
     def on_no():
         """User wants to abort."""
         app.default_focus()
         app.print("Operation aborted.")
-        app.return_to_normal_mode()
+        if return_to_normal:
+            app.return_to_normal_mode()
 
     # Prompt the user
     app.prompt_yn(
@@ -165,7 +180,9 @@ def prompt_for_large_dataset(app, node, operation_callback):
     )
 
 
-def prompt_for_dataset_operation(app, node, operation_callback):
+def prompt_for_dataset_operation(
+    app, node, operation_callback, return_to_normal=True
+):
     """
     Combined prompt workflow for dataset operations.
 
@@ -181,7 +198,14 @@ def prompt_for_dataset_operation(app, node, operation_callback):
         operation_callback (callable):
             Function to call with signature: operation_callback(use_chunks)
             where use_chunks is True to use chunked processing.
+        return_to_normal (bool):
+            If True, return to normal mode after operation completes.
+            If False, stay in current mode. Default: True.
     """
+    # The config has the option to turn off these prompts entirely
+    if app.config.always_chunk_datasets():
+        operation_callback(use_chunks=True)
+        return
 
     def after_chunk_prompt(use_chunks, load_all):
         """Called after chunked dataset prompt is resolved."""
@@ -193,7 +217,8 @@ def prompt_for_dataset_operation(app, node, operation_callback):
         # If user declined both chunk-by-chunk and load-all, abort
         if not load_all:
             app.print("Operation aborted.")
-            app.return_to_normal_mode()
+            if return_to_normal:
+                app.return_to_normal_mode()
             return
 
         # User wants to load all at once, check for large dataset
@@ -201,7 +226,9 @@ def prompt_for_dataset_operation(app, node, operation_callback):
             """Called after large dataset prompt is resolved."""
             operation_callback(use_chunks=False)
 
-        prompt_for_large_dataset(app, node, after_size_prompt)
+        prompt_for_large_dataset(
+            app, node, after_size_prompt, return_to_normal
+        )
 
     # Start with chunked dataset prompt
-    prompt_for_chunked_dataset(app, node, after_chunk_prompt)
+    prompt_for_chunked_dataset(app, node, after_chunk_prompt, return_to_normal)

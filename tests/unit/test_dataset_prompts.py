@@ -17,11 +17,14 @@ class TestDatasetPrompts:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
         app.prompt_yn = MagicMock()
         app.print = MagicMock()
         app.default_focus = MagicMock()
         app.return_to_normal_mode = MagicMock()
+        add_config_mock(app)
         return app
 
     @pytest.fixture
@@ -398,7 +401,9 @@ class TestDatasetPrompts:
         # Create a reference to after_chunk_prompt by capturing it
         captured_callback = None
 
-        def capture_callback(app, node, operation_callback):
+        def capture_callback(
+            app, node, operation_callback, return_to_normal=True
+        ):
             nonlocal captured_callback
             captured_callback = operation_callback
             # Don't call the original, just capture the callback
@@ -417,3 +422,22 @@ class TestDatasetPrompts:
             # Should print abort message
             mock_app.print.assert_called_with("Operation aborted.")
             mock_app.return_to_normal_mode.assert_called()
+
+    def test_prompt_for_dataset_operation_with_always_chunk(
+        self, mock_app, mock_node
+    ):
+        """Test dataset operation when always_chunk config is enabled."""
+        # Configure mock to enable always_chunk
+        mock_app.config.always_chunk_datasets.return_value = True
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call the function
+        prompt_for_dataset_operation(mock_app, mock_node, callback)
+
+        # Should call the callback immediately with use_chunks=True
+        callback.assert_called_once_with(use_chunks=True)
+
+        # Should not show any prompts
+        mock_app.prompt_yn.assert_not_called()

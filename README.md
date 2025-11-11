@@ -25,7 +25,7 @@ Well, `h5forest` brings interactivity and new functionality not available in its
 - Peeking inside Datasets.
 - On-the-fly statistics. 
 - Fuzzy search with real-time filtering to quickly find datasets and groups.
-- A fully terminal-based interface with vim motions (I use Neovim by the way...).
+- A fully terminal-based interface with optional vim-style navigation (configurable in `~/.h5forest/config.yaml`).
 
 <br clear="right">
 

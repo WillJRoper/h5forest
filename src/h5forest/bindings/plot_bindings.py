@@ -9,7 +9,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
-from h5forest.dataset_prompts import prompt_for_dataset_operation
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
 from h5forest.utils import WaitIndicator
 
@@ -28,13 +28,8 @@ def _init_plot_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_operation(use_chunks):
-            """Set x-axis after user confirmation."""
-            # Set the text in the plotting area
-            app.plot_content.text = app.scatter_plotter.set_x_key(node)
-
-        # Prompt user if needed, then run operation
-        prompt_for_dataset_operation(app, node, run_operation)
+        # Set x-axis directly (data loads asynchronously in background)
+        app.plot_content.text = app.scatter_plotter.set_x_key(node)
 
     @error_handler
     def select_y(event):
@@ -47,13 +42,8 @@ def _init_plot_bindings(app):
             app.print(f"{node.path} is not a Dataset")
             return
 
-        def run_operation(use_chunks):
-            """Set y-axis after user confirmation."""
-            # Set the text in the plotting area
-            app.plot_content.text = app.scatter_plotter.set_y_key(node)
-
-        # Prompt user if needed, then run operation
-        prompt_for_dataset_operation(app, node, run_operation)
+        # Set y-axis directly (data loads asynchronously in background)
+        app.plot_content.text = app.scatter_plotter.set_y_key(node)
 
     @error_handler
     def toggle_x_scale(event):
@@ -220,12 +210,11 @@ def _init_plot_bindings(app):
 
     @error_handler
     def plot_scatter(event):
-        """Plot and show pcolormesh with mean in bins."""
+        """Plot and show scatter with mean in bins."""
         # Make the plot with wait indicator
         with WaitIndicator(app, "Generating scatter plot..."):
             app.scatter_plotter.plot_and_show(app.plot_content.text)
 
-        app.return_to_normal_mode()
         app.default_focus()
 
     @error_handler
@@ -240,7 +229,6 @@ def _init_plot_bindings(app):
         app.plot_content.text = app.scatter_plotter.reset()
 
         app.app.invalidate()
-        app.return_to_normal_mode()
         app.default_focus()
 
     @error_handler
@@ -257,49 +245,87 @@ def _init_plot_bindings(app):
         """Exit edit plot mode."""
         app.shift_focus(app.tree_content)
 
+    # Get the keybindings from config
+    edit_key = app.config.get_keymap("plot_mode", "edit_config")
+    edit_entry_key = app.config.get_keymap("plot_mode", "edit_entry")
+    select_x_key = app.config.get_keymap("plot_mode", "select_x")
+    select_y_key = app.config.get_keymap("plot_mode", "select_y")
+    toggle_x_scale_key = app.config.get_keymap("plot_mode", "toggle_x_scale")
+    toggle_y_scale_key = app.config.get_keymap("plot_mode", "toggle_y_scale")
+    reset_key = app.config.get_keymap("plot_mode", "reset")
+    show_plot_key = app.config.get_keymap("plot_mode", "show_plot")
+    save_plot_key = app.config.get_keymap("plot_mode", "save_plot")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
+
     # Bind the functions
-    app.kb.add("x", filter=Condition(lambda: app.flag_plotting_mode))(select_x)
-    app.kb.add("y", filter=Condition(lambda: app.flag_plotting_mode))(select_y)
-    app.kb.add("X", filter=Condition(lambda: app.flag_plotting_mode))(
-        toggle_x_scale
-    )
-    app.kb.add("Y", filter=Condition(lambda: app.flag_plotting_mode))(
-        toggle_y_scale
-    )
-    app.kb.add(
-        "enter",
-        filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
-    )(edit_plot_entry)
-    app.kb.add("p", filter=Condition(lambda: app.flag_plotting_mode))(
-        plot_scatter
-    )
-    app.kb.add("P", filter=Condition(lambda: app.flag_plotting_mode))(
-        save_scatter
-    )
-    app.kb.add("r", filter=Condition(lambda: app.flag_plotting_mode))(reset)
-    app.kb.add("e", filter=Condition(lambda: app.flag_plotting_mode))(
+    app.kb.add(edit_key, filter=Condition(lambda: app.flag_plotting_mode))(
         edit_plot
     )
+    app.kb.add(select_x_key, filter=Condition(lambda: app.flag_plotting_mode))(
+        select_x
+    )
     app.kb.add(
-        "q",
+        toggle_x_scale_key, filter=Condition(lambda: app.flag_plotting_mode)
+    )(toggle_x_scale)
+    app.kb.add(select_y_key, filter=Condition(lambda: app.flag_plotting_mode))(
+        select_y
+    )
+    app.kb.add(
+        toggle_y_scale_key, filter=Condition(lambda: app.flag_plotting_mode)
+    )(toggle_y_scale)
+    app.kb.add(
+        edit_entry_key,
+        filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
+    )(edit_plot_entry)
+    app.kb.add(
+        show_plot_key, filter=Condition(lambda: app.flag_plotting_mode)
+    )(plot_scatter)
+    app.kb.add(
+        save_plot_key, filter=Condition(lambda: app.flag_plotting_mode)
+    )(save_scatter)
+    app.kb.add(reset_key, filter=Condition(lambda: app.flag_plotting_mode))(
+        reset
+    )
+    app.kb.add(
+        quit_key,
         filter=Condition(lambda: app.app.layout.has_focus(app.plot_content)),
     )(exit_edit_plot)
 
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "edit_config": Label("e → Edit Config"),
-        "edit_tree": Label("e → Back To Tree"),
-        "edit_entry": Label("Enter → Edit entry"),
-        "select_x": Label("x → Select x-axis"),
-        "select_y": Label("y → Select y-axis"),
-        "toggle_x_scale": Label("X → Toggle x-scale"),
-        "toggle_y_scale": Label("Y → Toggle y-scale"),
-        "plot": Label("p → Plot"),
-        "save_plot": Label("P → Save Plot"),
-        "reset": Label("r → Reset"),
-        "exit_mode": Label("q → Exit Plotting Mode"),
-        "exit_config": Label("q → Exit Config"),
+        "edit_config": Label(
+            f"{translate_key_label(edit_key)} → Edit Plot Config"
+        ),
+        "edit_tree": Label(f"{translate_key_label(edit_key)} → Back to Tree"),
+        "edit_entry": Label(
+            f"{translate_key_label(edit_entry_key)} → Edit Entry"
+        ),
+        "select_x": Label(
+            f"{translate_key_label(select_x_key)} → Select x-axis"
+        ),
+        "select_y": Label(
+            f"{translate_key_label(select_y_key)} → Select y-axis"
+        ),
+        "toggle_x_scale": Label(
+            f"{translate_key_label(toggle_x_scale_key)} → Toggle x-scale"
+        ),
+        "toggle_y_scale": Label(
+            f"{translate_key_label(toggle_y_scale_key)} → Toggle y-scale"
+        ),
+        "plot": Label(f"{translate_key_label(show_plot_key)} → Show Plot"),
+        "save_plot": Label(
+            f"{translate_key_label(save_plot_key)} → Save Plot"
+        ),
+        "reset": Label(
+            f"{translate_key_label(reset_key)} → Reset Plot Config"
+        ),
+        "exit_mode": Label(
+            f"{translate_key_label(quit_key)} → Exit Plot Mode"
+        ),
+        "exit_config": Label(
+            f"{translate_key_label(quit_key)} → Exit Config Edit"
+        ),
     }
 
     return hot_keys

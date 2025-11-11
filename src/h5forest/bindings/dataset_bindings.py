@@ -13,6 +13,7 @@ import threading
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.dataset_prompts import prompt_for_dataset_operation
 from h5forest.errors import error_handler
 
@@ -112,7 +113,7 @@ def _init_dataset_bindings(app):
 
         # Get the indices from the user
         app.input(
-            "Enter the index range (seperated by -):",
+            "Enter the index range (separated by -):",
             values_in_range_callback,
         )
 
@@ -224,33 +225,42 @@ def _init_dataset_bindings(app):
         # Prompt user if needed, then run operation
         prompt_for_dataset_operation(app, node, run_operation)
 
+    # Get keybindings from config
+    view_values_key = app.config.get_keymap("dataset_mode", "view_values")
+    view_range_key = app.config.get_keymap("dataset_mode", "view_values_range")
+    close_values_key = app.config.get_keymap("dataset_mode", "close_values")
+    min_max_key = app.config.get_keymap("dataset_mode", "min_max")
+    mean_key = app.config.get_keymap("dataset_mode", "mean")
+    std_key = app.config.get_keymap("dataset_mode", "std_dev")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
+
     # Bind the functions
-    app.kb.add("v", filter=Condition(lambda: app.flag_dataset_mode))(
-        show_values
-    )
-    app.kb.add("V", filter=Condition(lambda: app.flag_dataset_mode))(
-        show_values_in_range
-    )
-    app.kb.add("c", filter=Condition(lambda: app.flag_dataset_mode))(
-        close_values
-    )
-    app.kb.add("m", filter=Condition(lambda: app.flag_dataset_mode))(
+    app.kb.add(
+        view_values_key, filter=Condition(lambda: app.flag_dataset_mode)
+    )(show_values)
+    app.kb.add(
+        view_range_key, filter=Condition(lambda: app.flag_dataset_mode)
+    )(show_values_in_range)
+    app.kb.add(
+        close_values_key, filter=Condition(lambda: app.flag_dataset_mode)
+    )(close_values)
+    app.kb.add(min_max_key, filter=Condition(lambda: app.flag_dataset_mode))(
         minimum_maximum
     )
-    app.kb.add("M", filter=Condition(lambda: app.flag_dataset_mode))(mean)
-    app.kb.add("s", filter=Condition(lambda: app.flag_dataset_mode))(std)
+    app.kb.add(mean_key, filter=Condition(lambda: app.flag_dataset_mode))(mean)
+    app.kb.add(std_key, filter=Condition(lambda: app.flag_dataset_mode))(std)
 
     # Add the hot keys
     # Return all hot keys as a list
     # No conditional labels in dataset mode
     hot_keys = [
-        Label("v → Show Values"),
-        Label("V → Show Values In Range"),
-        Label("m → Get Minimum and Maximum"),
-        Label("M → Get Mean"),
-        Label("s → Get Standard Deviation"),
-        Label("c → Close Value View"),
-        Label("q → Exit Dataset Mode"),
+        Label(f"{translate_key_label(view_values_key)} → Show Values"),
+        Label(f"{translate_key_label(view_range_key)} → Show Values In Range"),
+        Label(f"{translate_key_label(min_max_key)} → Get Minimum and Maximum"),
+        Label(f"{translate_key_label(mean_key)} → Get Mean"),
+        Label(f"{translate_key_label(std_key)} → Get Standard Deviation"),
+        Label(f"{translate_key_label(close_values_key)} → Close Value View"),
+        Label(f"{translate_key_label(quit_key)} → Exit Dataset Mode"),
     ]
 
     return hot_keys

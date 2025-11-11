@@ -1,0 +1,2 @@
+# Include the YAML config template in sdists
+include src/h5forest/data/default_config.yaml

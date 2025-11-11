@@ -15,6 +15,8 @@ class TestDatasetBindings:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
         app.flag_dataset_mode = True
         app.tree = MagicMock()
@@ -32,6 +34,9 @@ class TestDatasetBindings:
         app.kb = KeyBindings()
         app.app = MagicMock()
         app.app.loop = MagicMock()
+        # Add config mock
+        add_config_mock(app)
+
         return app
 
     @pytest.fixture

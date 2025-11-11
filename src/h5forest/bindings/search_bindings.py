@@ -78,24 +78,27 @@ def _init_search_bindings(app):
         # Invalidate to refresh display
         event.app.invalidate()
 
+    # Get keybindings from config
+    accept_key = app.config.get_keymap("search_mode", "accept_search")
+    cancel_key = app.config.get_keymap("search_mode", "cancel_search")
+    exit_key = app.config.get_keymap("search_mode", "exit_search")
+
     # Bind the keys
-    app.kb.add("escape", filter=Condition(lambda: app.flag_search_mode))(
+    app.kb.add(exit_key, filter=Condition(lambda: app.flag_search_mode))(
         exit_search_mode
     )
-
-    app.kb.add("c-c", filter=Condition(lambda: app.flag_search_mode))(
+    app.kb.add(cancel_key, filter=Condition(lambda: app.flag_search_mode))(
         exit_search_mode
     )
-
-    app.kb.add("enter", filter=Condition(lambda: app.flag_search_mode))(
+    app.kb.add(accept_key, filter=Condition(lambda: app.flag_search_mode))(
         accept_search_results
     )
 
     # Return all hot keys as a list
     # No conditional labels in search mode
     hot_keys = [
-        Label("Enter → Accept"),
-        Label("Esc → Cancel"),
+        Label(f"{accept_key} → Accept"),
+        Label(f"{cancel_key}/{exit_key} → Cancel"),
     ]
 
     return hot_keys
