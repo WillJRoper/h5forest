@@ -212,9 +212,14 @@ def _init_plot_bindings(app):
     @error_handler
     def plot_scatter(event):
         """Plot and show scatter with mean in bins."""
-        # Make the plot with wait indicator
-        with WaitIndicator(app, "Generating scatter plot..."):
-            app.scatter_plotter.plot_and_show(app.plot_content.text)
+        # Check if we have both x and y datasets selected
+        if (
+            "x" not in app.scatter_plotter.plot_params
+            or "y" not in app.scatter_plotter.plot_params
+        ):
+            msg = "Please select both x-axis (x) and y-axis (y) datasets first"
+            app.print(msg)
+            return
 
         def do_plot(use_chunks):
             """Actually perform the plot after chunking preference is set."""
