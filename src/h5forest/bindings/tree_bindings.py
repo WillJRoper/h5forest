@@ -11,6 +11,7 @@ from prompt_toolkit.key_binding.key_processor import KeyPress
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
 
 
@@ -95,38 +96,84 @@ def _init_tree_bindings(app):
             )
 
     # Bind the functions
+    # Get navigation keys from config early (needed for bindings below)
+    jump_up_key = app.config.get_keymap("tree_navigation", "jump_up_10")
+    jump_down_key = app.config.get_keymap("tree_navigation", "jump_down_10")
+    expand_collapse_key = app.config.get_keymap(
+        "tree_navigation",
+        "expand/collapse",
+    )
+
+    # Bind jump keys
     app.kb.add(
-        "{",
+        jump_up_key,
         filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
     )(move_up_ten)
     app.kb.add(
-        "}",
+        jump_down_key,
         filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
     )(move_down_ten)
+
     app.kb.add(
-        "enter",
+        expand_collapse_key,
         filter=Condition(lambda: app.app.layout.has_focus(app.tree_content)),
     )(expand_collapse_node)
 
-    # Add vim-style navigation (hjkl) - exclude search mode
-    app.kb.add("h", filter=Condition(lambda: not app.flag_search_mode))(
-        move_left
-    )
-    app.kb.add("j", filter=Condition(lambda: not app.flag_search_mode))(
-        move_down
-    )
-    app.kb.add("k", filter=Condition(lambda: not app.flag_search_mode))(
-        move_up
-    )
-    app.kb.add("l", filter=Condition(lambda: not app.flag_search_mode))(
-        move_right
-    )
+    # Get other navigation keys from config
+    move_up_key = app.config.get_keymap("tree_navigation", "move_up")
+    move_down_key = app.config.get_keymap("tree_navigation", "move_down")
+    move_left_key = app.config.get_keymap("tree_navigation", "move_left")
+    move_right_key = app.config.get_keymap("tree_navigation", "move_right")
+
+    # Bind navigation keys (respecting vim_mode for hjkl)
+    # Only bind vim navigation if vim mode is enabled
+    if app.config.is_vim_mode_enabled():
+        app.kb.add("h", filter=Condition(lambda: not app.flag_search_mode))(
+            move_left
+        )
+        app.kb.add("j", filter=Condition(lambda: not app.flag_search_mode))(
+            move_down
+        )
+        app.kb.add("k", filter=Condition(lambda: not app.flag_search_mode))(
+            move_up
+        )
+        app.kb.add("l", filter=Condition(lambda: not app.flag_search_mode))(
+            move_right
+        )
+
+    # If the normal movement keys are just up/down/left/right, we don't
+    # need to bind them again, otherwise we do
+    if move_up_key not in ["k", "up"]:
+        app.kb.add(
+            move_up_key,
+            filter=Condition(lambda: not app.flag_search_mode),
+        )(move_up)
+    if move_down_key not in ["j", "down"]:
+        app.kb.add(
+            move_down_key,
+            filter=Condition(lambda: not app.flag_search_mode),
+        )(move_down)
+    if move_left_key not in ["h", "left"]:
+        app.kb.add(
+            move_left_key,
+            filter=Condition(lambda: not app.flag_search_mode),
+        )(move_left)
+    if move_right_key not in ["l", "right"]:
+        app.kb.add(
+            move_right_key,
+            filter=Condition(lambda: not app.flag_search_mode),
+        )(move_right)
 
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "open_group": Label("Enter → Open Group"),
-        "move_ten": Label("{/} → Move Up/Down 10 Lines"),
+        "open_group": Label(
+            f"{translate_key_label(expand_collapse_key)} → Open/Close Group"
+        ),
+        "move_ten": Label(
+            f"{translate_key_label(jump_up_key)}/"
+            f"{translate_key_label(jump_down_key)} → Up/Down 10 Lines"
+        ),
     }
 
     return hot_keys

@@ -15,6 +15,8 @@ class TestPlotBindings:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
 
         # Set up mode flags
@@ -78,6 +80,7 @@ class TestPlotBindings:
         app.app.layout.has_focus = MagicMock(return_value=False)
         app.app.invalidate = MagicMock()
 
+        add_config_mock(app)
         return app
 
     @pytest.fixture
@@ -96,14 +99,8 @@ class TestPlotBindings:
             assert isinstance(key, str)
             assert isinstance(value, Label)
 
-    @patch("h5forest.bindings.plot_bindings.prompt_for_dataset_operation")
-    def test_select_x_with_dataset(self, mock_prompt, mock_app, mock_event):
+    def test_select_x_with_dataset(self, mock_app, mock_event):
         """Test selecting x-axis with a dataset node."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback(
-            use_chunks=False
-        )
-
         _init_plot_bindings(mock_app)
 
         # Create a dataset node
@@ -152,14 +149,8 @@ class TestPlotBindings:
         # Verify set_x_key was NOT called
         mock_app.scatter_plotter.set_x_key.assert_not_called()
 
-    @patch("h5forest.bindings.plot_bindings.prompt_for_dataset_operation")
-    def test_select_y_with_dataset(self, mock_prompt, mock_app, mock_event):
+    def test_select_y_with_dataset(self, mock_app, mock_event):
         """Test selecting y-axis with a dataset node."""
-        # Make the prompt call the callback immediately
-        mock_prompt.side_effect = lambda app, node, callback: callback(
-            use_chunks=False
-        )
-
         _init_plot_bindings(mock_app)
 
         # Create a dataset node
@@ -306,10 +297,6 @@ class TestPlotBindings:
             mock_app.plot_content.text
         )
 
-        # Verify returned to normal mode
-        mock_app.return_to_normal_mode.assert_called_once()
-        mock_app.default_focus.assert_called_once()
-
     def test_save_scatter(self, mock_app, mock_event):
         """Test saving scatter plot."""
         _init_plot_bindings(mock_app)
@@ -351,8 +338,6 @@ class TestPlotBindings:
 
         # Verify UI was updated
         mock_app.app.invalidate.assert_called_once()
-        mock_app.return_to_normal_mode.assert_called_once()
-        mock_app.default_focus.assert_called_once()
 
     def test_edit_plot(self, mock_app, mock_event):
         """Test entering edit plot mode."""

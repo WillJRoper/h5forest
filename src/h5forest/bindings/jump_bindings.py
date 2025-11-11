@@ -11,6 +11,7 @@ application.
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
 
 
@@ -156,24 +157,52 @@ def _init_goto_bindings(app):
             jump_to_key_callback,
         )
 
+    # Get keybindings from config
+    top_key = app.config.get_keymap("jump_mode", "top")
+    top_alt_key = app.config.get_keymap("jump_mode", "top_alt")
+    bottom_key = app.config.get_keymap("jump_mode", "bottom")
+    bottom_alt_key = app.config.get_keymap("jump_mode", "bottom_alt")
+    parent_key = app.config.get_keymap("jump_mode", "parent")
+    next_key = app.config.get_keymap("jump_mode", "next_sibling")
+    jump_key = app.config.get_keymap("jump_mode", "jump_to_key")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
+
     # Bind the functions
-    app.kb.add("t", filter=Condition(lambda: app.flag_jump_mode))(goto_top)
-    app.kb.add("g", filter=Condition(lambda: app.flag_jump_mode))(goto_top)
-    app.kb.add("b", filter=Condition(lambda: app.flag_jump_mode))(goto_bottom)
-    app.kb.add("G", filter=Condition(lambda: app.flag_jump_mode))(goto_bottom)
-    app.kb.add("p", filter=Condition(lambda: app.flag_jump_mode))(goto_parent)
-    app.kb.add("n", filter=Condition(lambda: app.flag_jump_mode))(goto_next)
-    app.kb.add("K", filter=Condition(lambda: app.flag_jump_mode))(jump_to_key)
+    app.kb.add(top_alt_key, filter=Condition(lambda: app.flag_jump_mode))(
+        goto_top
+    )
+    app.kb.add(top_key, filter=Condition(lambda: app.flag_jump_mode))(goto_top)
+    app.kb.add(bottom_alt_key, filter=Condition(lambda: app.flag_jump_mode))(
+        goto_bottom
+    )
+    app.kb.add(bottom_key, filter=Condition(lambda: app.flag_jump_mode))(
+        goto_bottom
+    )
+    app.kb.add(parent_key, filter=Condition(lambda: app.flag_jump_mode))(
+        goto_parent
+    )
+    app.kb.add(next_key, filter=Condition(lambda: app.flag_jump_mode))(
+        goto_next
+    )
+    app.kb.add(jump_key, filter=Condition(lambda: app.flag_jump_mode))(
+        jump_to_key
+    )
 
     # Return all hot keys as a list
     # No conditional labels in jump mode
     hot_keys = [
-        Label("t/g → Go to Top"),
-        Label("b/G → Go to Bottom"),
-        Label("p → Go to Parent"),
-        Label("n → Next Parent Group"),
-        Label("K → Jump to Key Containing"),
-        Label("q → Exit Goto Mode"),
+        Label(
+            f"{translate_key_label(top_alt_key)}/"
+            f"{translate_key_label(top_key)} → Go to Top"
+        ),
+        Label(
+            f"{translate_key_label(bottom_alt_key)}/"
+            f"{translate_key_label(bottom_key)} → Go to Bottom"
+        ),
+        Label(f"{translate_key_label(parent_key)} → Go to Parent"),
+        Label(f"{translate_key_label(next_key)} → Next Parent Group"),
+        Label(f"{translate_key_label(jump_key)} → Jump to Key Containing"),
+        Label(f"{translate_key_label(quit_key)} → Exit Goto Mode"),
     ]
 
     return hot_keys

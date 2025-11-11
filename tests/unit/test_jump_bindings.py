@@ -15,6 +15,8 @@ class TestJumpBindings:
     @pytest.fixture
     def mock_app(self):
         """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
         app = MagicMock()
         app.flag_jump_mode = True
         app.tree = MagicMock()
@@ -32,6 +34,9 @@ class TestJumpBindings:
         app.input = MagicMock()
         app.user_input = ""
         app.kb = KeyBindings()
+        # Add config mock
+        add_config_mock(app)
+
         return app
 
     @pytest.fixture

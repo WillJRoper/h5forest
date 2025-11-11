@@ -10,6 +10,7 @@ Example Usage:
 
 import argparse
 import threading
+import time
 
 from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
@@ -36,6 +37,7 @@ from h5forest.bindings import (
     _init_tree_bindings,
     _init_window_bindings,
 )
+from h5forest.config import ConfigManager
 from h5forest.plotting import HistogramPlotter, ScatterPlotter
 from h5forest.styles import style
 from h5forest.tree import Tree, TreeProcessor
@@ -117,7 +119,7 @@ class H5Forest:
 
         This method ensures that only one instance of the class is created.
 
-        This method takes precendence over the usual __init__ method.
+        This method takes precedence over the usual __init__ method.
         """
         if cls._instance is None:
             cls._instance = super(H5Forest, cls).__new__(cls)
@@ -125,7 +127,7 @@ class H5Forest:
             cls._instance._init(*args, **kwargs)
         return cls._instance
 
-    def _init(self, hdf5_filepath):
+    def _init(self, hdf5_filepath, use_default_config=False):
         """
         Initialise the application.
 
@@ -135,7 +137,12 @@ class H5Forest:
         Args:
             hdf5_filepath (str):
                 The path to the HDF5 file to be explored.
+            use_default_config (bool):
+                Whether to use the default configuration or load the users.
         """
+        # Load configuration
+        self.config = ConfigManager(use_default=use_default_config)
+
         # We do, set up the Tree with the file
         # This will parse the root of the HDF5 file ready to populate the
         # tree text area
@@ -543,10 +550,9 @@ class H5Forest:
         labels.append(self._plot_keys_dict["toggle_x_scale"])
         labels.append(self._plot_keys_dict["toggle_y_scale"])
 
-        # Show plot/save only if there are params
-        if len(self.scatter_plotter) > 0:
-            labels.append(self._plot_keys_dict["plot"])
-            labels.append(self._plot_keys_dict["save_plot"])
+        # Always show plot/save options for simplicity
+        labels.append(self._plot_keys_dict["plot"])
+        labels.append(self._plot_keys_dict["save_plot"])
 
         labels.append(self._plot_keys_dict["reset"])
         labels.append(self._plot_keys_dict["exit_mode"])
@@ -845,9 +851,12 @@ class H5Forest:
 
         # Set up the mini buffer and input buffer (these are where we'll
         # display messages to the user and accept input)
-        self.mini_buffer = Frame(
-            self.mini_buffer_content,
-            height=3,
+        self.mini_buffer = ConditionalContainer(
+            Frame(
+                self.mini_buffer_content,
+                height=3,
+            ),
+            filter=Condition(lambda: len(self.mini_buffer_content.text) > 0),
         )
         self.input_buffer = ConditionalContainer(
             Frame(
@@ -985,10 +994,41 @@ class H5Forest:
             )
         )
 
-    def print(self, *args):
-        """Print a single line to the mini buffer."""
+    def print(self, *args, timeout=5.0):
+        """
+        Print a single line to the mini buffer.
+
+        Args:
+            *args:
+                Variable arguments to print.
+            timeout (float, optional):
+                The message will be cleared after this many seconds. Defaults
+                to 5.0 seconds. Set to None to keep the message indefinitely.
+                Uses threading to clear the message without blocking.
+        """
         args = [str(a) for a in args]
         self.mini_buffer_content.text = " ".join(args)
+        self.app.invalidate()
+
+        # If timeout is provided, clear the message after the specified time
+        if timeout is not None:
+
+            def _clear_message():
+                """Clear the message after timeout."""
+                time.sleep(timeout)
+                # Use call_soon_threadsafe to safely update UI from
+                # background thread
+                self.app.loop.call_soon_threadsafe(
+                    lambda: self._clear_mini_buffer()
+                )
+
+            # Start the clearing thread
+            thread = threading.Thread(target=_clear_message, daemon=True)
+            thread.start()
+
+    def _clear_mini_buffer(self):
+        """Clear the mini buffer content."""
+        self.mini_buffer_content.text = ""
         self.app.invalidate()
 
     def input(self, prompt, callback, mini_buffer_text=""):
@@ -1244,10 +1284,15 @@ def main():
         action="version",
         version=f"h5forest {__version__}",
     )
+    parser.add_argument(
+        "--use-default-config",
+        action="store_true",
+        help="Use the default configuration, ignoring any user config file.",
+    )
     args = parser.parse_args()
 
     # Set up the app
-    app = H5Forest(args.filepath)
+    app = H5Forest(args.filepath, use_default_config=args.use_default_config)
 
     # Lets get going!
     app.run()

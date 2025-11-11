@@ -14,7 +14,9 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
+from h5forest.utils import WaitIndicator
 
 
 def _init_app_bindings(app):
@@ -80,7 +82,6 @@ def _init_app_bindings(app):
 
     def search_leader_mode(event):
         """Enter search mode."""
-        from h5forest.utils import WaitIndicator
 
         app._flag_normal_mode = False
         app._flag_search_mode = True
@@ -111,6 +112,12 @@ def _init_app_bindings(app):
 
             # If user has already typed a query, trigger search update
             def update_search():
+                # Set mini buffer to show "Search:" prompt
+                app.print("")
+
+                # Ensure focus is back on search content
+                app.shift_focus(app.search_content)
+
                 query = app.search_content.text
                 if query:  # Only update if there's a query
                     from prompt_toolkit.document import Document
@@ -219,35 +226,53 @@ def _init_app_bindings(app):
 
         event.app.invalidate()
 
+    # Get keybindings from config
+    quit_key = app.config.get_keymap("normal_mode", "quit")
+    copy_key_binding = app.config.get_keymap("normal_mode", "copy_path")
+    toggle_attrs_key = app.config.get_keymap(
+        "normal_mode", "expand_attributes"
+    )
+    restore_key = app.config.get_keymap("normal_mode", "restore_tree")
+
+    # Leader keys for different modes
+    goto_leader = app.config.get_keymap("jump_mode", "leader")
+    dataset_leader = app.config.get_keymap("dataset_mode", "leader")
+    window_leader = app.config.get_keymap("window_mode", "leader")
+    plot_leader = app.config.get_keymap("plot_mode", "leader")
+    hist_leader = app.config.get_keymap("hist_mode", "leader")
+    search_leader = app.config.get_keymap("search_mode", "leader")
+
     # Bind the functions
-    app.kb.add("q", filter=Condition(lambda: app.flag_normal_mode))(exit_app)
+    app.kb.add(quit_key, filter=Condition(lambda: app.flag_normal_mode))(
+        exit_app
+    )
     app.kb.add("c-q")(exit_app)
-    app.kb.add("g", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add(goto_leader, filter=Condition(lambda: app.flag_normal_mode))(
         goto_leader_mode
     )
-    app.kb.add("d", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add(dataset_leader, filter=Condition(lambda: app.flag_normal_mode))(
         dataset_leader_mode
     )
-    app.kb.add("w", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add(window_leader, filter=Condition(lambda: app.flag_normal_mode))(
         window_leader_mode
     )
-    app.kb.add("p", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add(plot_leader, filter=Condition(lambda: app.flag_normal_mode))(
         plotting_leader_mode
     )
-    app.kb.add("H", filter=Condition(lambda: app.flag_normal_mode))(
+    app.kb.add(hist_leader, filter=Condition(lambda: app.flag_normal_mode))(
         hist_leader_mode
     )
-    app.kb.add("q", filter=Condition(lambda: not app.flag_normal_mode))(
+    app.kb.add(quit_key, filter=Condition(lambda: not app.flag_normal_mode))(
         exit_leader_mode
     )
     app.kb.add(
-        "A",
+        toggle_attrs_key,
         filter=Condition(
             lambda: app.flag_normal_mode and not app.flag_expanded_attrs
         ),
     )(expand_attributes)
     app.kb.add(
-        "A",
+        toggle_attrs_key,
         filter=Condition(
             lambda: app.flag_normal_mode and app.flag_expanded_attrs
         ),
@@ -255,7 +280,7 @@ def _init_app_bindings(app):
 
     # Only including the search if the tree has focus
     app.kb.add(
-        "s",
+        search_leader,
         filter=Condition(
             lambda: app.flag_normal_mode
             and app.app.layout.has_focus(app.tree_content.content)
@@ -264,30 +289,46 @@ def _init_app_bindings(app):
 
     # Bind 'r' to restore tree to initial state
     app.kb.add(
-        "r",
+        restore_key,
         filter=Condition(lambda: app.flag_normal_mode),
     )(restore_tree_to_initial)
 
     # Bind 'c' to copy the HDF5 key to clipboard
     app.kb.add(
-        "c",
+        copy_key_binding,
         filter=Condition(lambda: app.flag_normal_mode),
     )(copy_key)
 
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "expand_attrs": Label("A → Expand Attributes"),
-        "shrink_attrs": Label("A → Shrink Attributes"),
-        "dataset_mode": Label("d → Dataset Mode"),
-        "goto_mode": Label("g → Goto Mode"),
-        "hist_mode": Label("H → Histogram Mode"),
-        "plotting_mode": Label("p → Plotting Mode"),
-        "window_mode": Label("w → Window Mode"),
-        "search": Label("s → Search"),
-        "restore_tree": Label("r → Restore Tree"),
-        "copy_key": Label("c → Copy Key"),
-        "exit": Label("q → Exit"),
+        "expand_attrs": Label(
+            f"{translate_key_label(toggle_attrs_key)} → Expand Attributes"
+        ),
+        "shrink_attrs": Label(
+            f"{translate_key_label(toggle_attrs_key)} → Shrink Attributes"
+        ),
+        "dataset_mode": Label(
+            f"{translate_key_label(dataset_leader)} → Dataset Mode"
+        ),
+        "goto_mode": Label(f"{translate_key_label(goto_leader)} → Goto Mode"),
+        "hist_mode": Label(
+            f"{translate_key_label(hist_leader)} → Histogram Mode"
+        ),
+        "plotting_mode": Label(
+            f"{translate_key_label(plot_leader)} → Plotting Mode"
+        ),
+        "window_mode": Label(
+            f"{translate_key_label(window_leader)} → Window Mode"
+        ),
+        "search": Label(f"{translate_key_label(search_leader)} → Search"),
+        "restore_tree": Label(
+            f"{translate_key_label(restore_key)} → Restore Tree"
+        ),
+        "copy_key": Label(
+            f"{translate_key_label(copy_key_binding)} → Copy Key"
+        ),
+        "exit": Label(f"{translate_key_label(quit_key)} → Exit"),
     }
 
     return hot_keys

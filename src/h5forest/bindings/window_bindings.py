@@ -8,6 +8,7 @@ application.
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.config import translate_key_label
 from h5forest.errors import error_handler
 
 
@@ -64,28 +65,50 @@ def _init_window_bindings(app):
         app.default_focus()
         app.return_to_normal_mode()
 
+    # Get keybindings from config
+    tree_key = app.config.get_keymap("window_mode", "focus_tree")
+    attr_key = app.config.get_keymap("window_mode", "focus_attributes")
+    values_key = app.config.get_keymap("window_mode", "focus_values")
+    plot_key = app.config.get_keymap("window_mode", "focus_plot")
+    hist_key = app.config.get_keymap("window_mode", "focus_hist")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
+
     # Bind the functions
-    app.kb.add("t", filter=Condition(lambda: app.flag_window_mode))(move_tree)
-    app.kb.add("a", filter=Condition(lambda: app.flag_window_mode))(move_attr)
+    app.kb.add(tree_key, filter=Condition(lambda: app.flag_window_mode))(
+        move_tree
+    )
+    app.kb.add(attr_key, filter=Condition(lambda: app.flag_window_mode))(
+        move_attr
+    )
     app.kb.add(
-        "v",
+        values_key,
         filter=Condition(
             lambda: app.flag_window_mode and app.flag_values_visible
         ),
     )(move_values)
-    app.kb.add("p", filter=Condition(lambda: app.flag_window_mode))(move_plot)
-    app.kb.add("h", filter=Condition(lambda: app.flag_window_mode))(move_hist)
+    app.kb.add(plot_key, filter=Condition(lambda: app.flag_window_mode))(
+        move_plot
+    )
+    app.kb.add(hist_key, filter=Condition(lambda: app.flag_window_mode))(
+        move_hist
+    )
     app.kb.add("escape")(move_to_default)
 
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "move_tree": Label("t → Move to Tree"),
-        "move_attrs": Label("a → Move to Attributes"),
-        "move_values": Label("v → Move to Values"),
-        "move_plot": Label("p → Move to Plot"),
-        "move_hist": Label("h → Move to Histogram"),
-        "exit": Label("q → Exit Window Mode"),
+        "move_tree": Label(f"{translate_key_label(tree_key)} → Move to Tree"),
+        "move_attrs": Label(
+            f"{translate_key_label(attr_key)} → Move to Attributes"
+        ),
+        "move_values": Label(
+            f"{translate_key_label(values_key)} → Move to Values"
+        ),
+        "move_plot": Label(f"{translate_key_label(plot_key)} → Move to Plot"),
+        "move_hist": Label(
+            f"{translate_key_label(hist_key)} → Move to Histogram"
+        ),
+        "exit": Label(f"{translate_key_label(quit_key)} → Exit Window Mode"),
     }
 
     return hot_keys
