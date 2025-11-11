@@ -157,14 +157,14 @@ def _init_goto_bindings(app):
         )
 
     # Get keybindings from config
-    top_key = app.config.get_keymap("jump_mode", "top") or "g"
-    top_alt_key = app.config.get_keymap("jump_mode", "top_alt") or "t"
-    bottom_key = app.config.get_keymap("jump_mode", "bottom") or "G"
-    bottom_alt_key = app.config.get_keymap("jump_mode", "bottom_alt") or "b"
-    parent_key = app.config.get_keymap("jump_mode", "parent") or "p"
-    next_key = app.config.get_keymap("jump_mode", "next_sibling") or "n"
-    jump_key = app.config.get_keymap("jump_mode", "jump_to_key") or "K"
-    quit_key = app.config.get_keymap("normal_mode", "quit") or "q"
+    top_key = app.config.get_keymap("jump_mode", "top")
+    top_alt_key = app.config.get_keymap("jump_mode", "top_alt")
+    bottom_key = app.config.get_keymap("jump_mode", "bottom")
+    bottom_alt_key = app.config.get_keymap("jump_mode", "bottom_alt")
+    parent_key = app.config.get_keymap("jump_mode", "parent")
+    next_key = app.config.get_keymap("jump_mode", "next_sibling")
+    jump_key = app.config.get_keymap("jump_mode", "jump_to_key")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
 
     # Bind the functions
     app.kb.add(top_alt_key, filter=Condition(lambda: app.flag_jump_mode))(

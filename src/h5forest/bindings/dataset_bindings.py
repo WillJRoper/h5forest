@@ -112,7 +112,7 @@ def _init_dataset_bindings(app):
 
         # Get the indices from the user
         app.input(
-            "Enter the index range (seperated by -):",
+            "Enter the index range (separated by -):",
             values_in_range_callback,
         )
 
@@ -225,19 +225,13 @@ def _init_dataset_bindings(app):
         prompt_for_dataset_operation(app, node, run_operation)
 
     # Get keybindings from config
-    view_values_key = (
-        app.config.get_keymap("dataset_mode", "view_values") or "v"
-    )
-    view_range_key = (
-        app.config.get_keymap("dataset_mode", "view_values_range") or "V"
-    )
-    close_values_key = (
-        app.config.get_keymap("dataset_mode", "close_values") or "c"
-    )
-    min_max_key = app.config.get_keymap("dataset_mode", "min_max") or "m"
-    mean_key = app.config.get_keymap("dataset_mode", "mean") or "M"
-    std_key = app.config.get_keymap("dataset_mode", "std_dev") or "s"
-    quit_key = app.config.get_keymap("normal_mode", "quit") or "q"
+    view_values_key = app.config.get_keymap("dataset_mode", "view_values")
+    view_range_key = app.config.get_keymap("dataset_mode", "view_values_range")
+    close_values_key = app.config.get_keymap("dataset_mode", "close_values")
+    min_max_key = app.config.get_keymap("dataset_mode", "min_max")
+    mean_key = app.config.get_keymap("dataset_mode", "mean")
+    std_key = app.config.get_keymap("dataset_mode", "std_dev")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
 
     # Bind the functions
     app.kb.add(

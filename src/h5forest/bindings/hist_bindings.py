@@ -347,56 +347,78 @@ def _init_hist_bindings(app):
         """Exit the edit mode."""
         app.shift_focus(app.tree_content)
 
+    # Get the keybindings from config
+    edit_config_key = app.config.get_keymap("hist_mode", "edit_config")
+    edit_entry_key = app.config.get_keymap("hist_mode", "edit_entry")
+    select_data_key = app.config.get_keymap("hist_mode", "select_data")
+    edit_bins_key = app.config.get_keymap("hist_mode", "edit_bins")
+    toggle_x_scale_key = app.config.get_keymap("hist_mode", "toggle_x_scale")
+    toggle_y_scale_key = app.config.get_keymap("hist_mode", "toggle_y_scale")
+    reset_key = app.config.get_keymap("hist_mode", "reset")
+    show_hist_key = app.config.get_keymap("hist_mode", "show_hist")
+    save_hist_key = app.config.get_keymap("hist_mode", "save_hist")
+    quit_key = app.config.get_keymap("normal_mode", "quit")
+
     # Bind the functions
+    app.kb.add(edit_config_key, filter=Condition(lambda: app.flag_hist_mode))(
+        edit_hist
+    )
     app.kb.add(
-        "enter",
+        edit_entry_key,
+        filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
+    )(edit_hist_entry)
+    app.kb.add(
+        select_data_key,
         filter=Condition(
             lambda: app.flag_hist_mode
             and not app.app.layout.has_focus(app.hist_content)
         ),
     )(select_data)
-    app.kb.add(
-        "enter",
-        filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
-    )(edit_hist_entry)
-    app.kb.add("b", filter=Condition(lambda: app.flag_hist_mode))(edit_bins)
-    app.kb.add("x", filter=Condition(lambda: app.flag_hist_mode))(
-        toggle_x_scale
+    app.kb.add(edit_bins_key, filter=Condition(lambda: app.flag_hist_mode))(
+        edit_bins
     )
-    app.kb.add("y", filter=Condition(lambda: app.flag_hist_mode))(
-        toggle_y_scale
-    )
-    app.kb.add("h", filter=Condition(lambda: app.flag_hist_mode))(plot_hist)
-    app.kb.add("H", filter=Condition(lambda: app.flag_hist_mode))(save_hist)
-    app.kb.add("r", filter=Condition(lambda: app.flag_hist_mode))(reset_hist)
-    app.kb.add("e", filter=Condition(lambda: app.flag_hist_mode))(edit_hist)
     app.kb.add(
-        "q",
+        toggle_x_scale_key, filter=Condition(lambda: app.flag_hist_mode)
+    )(toggle_x_scale)
+    app.kb.add(
+        toggle_y_scale_key, filter=Condition(lambda: app.flag_hist_mode)
+    )(toggle_y_scale)
+    app.kb.add(show_hist_key, filter=Condition(lambda: app.flag_hist_mode))(
+        plot_hist
+    )
+    app.kb.add(save_hist_key, filter=Condition(lambda: app.flag_hist_mode))(
+        save_hist
+    )
+    app.kb.add(reset_key, filter=Condition(lambda: app.flag_hist_mode))(
+        reset_hist
+    )
+    app.kb.add(
+        quit_key,
         filter=Condition(
             lambda: app.flag_hist_mode
             and not app.app.layout.has_focus(app.hist_content)
         ),
     )(exit_hist_mode)
     app.kb.add(
-        "q",
+        quit_key,
         filter=Condition(lambda: app.app.layout.has_focus(app.hist_content)),
     )(exit_edit_hist)
 
     # Return all possible hot keys as a dict
     # The app will use property methods to filter based on state
     hot_keys = {
-        "edit_config": Label("e → Edit Config"),
-        "edit_tree": Label("e → Back To Tree"),
-        "edit_entry": Label("Enter → Edit entry"),
-        "select_data": Label("Enter → Select data"),
-        "edit_bins": Label("b → Edit bins"),
-        "toggle_x_scale": Label("x → Toggle x-scale"),
-        "toggle_y_scale": Label("y → Toggle y-scale"),
-        "show_hist": Label("h → Show Histogram"),
-        "save_hist": Label("H → Save Histogram"),
-        "reset": Label("r → Reset"),
-        "exit_mode": Label("q → Exit Hist Mode"),
-        "exit_config": Label("q → Exit Hist Config"),
+        "edit_config": Label(f"{edit_config_key} → Edit Config"),
+        "edit_tree": Label(f"{edit_config_key} → Back To Tree"),
+        "edit_entry": Label(f"{edit_entry_key} → Edit entry"),
+        "select_data": Label(f"{select_data_key} → Select data"),
+        "edit_bins": Label(f"{edit_bins_key} → Edit Bins"),
+        "toggle_x_scale": Label(f"{toggle_x_scale_key} → Toggle x-scale"),
+        "toggle_y_scale": Label(f"{toggle_y_scale_key} → Toggle y-scale"),
+        "show_hist": Label(f"{show_hist_key} → Show Histogram"),
+        "save_hist": Label(f"{save_hist_key} → Save Histogram"),
+        "reset": Label(f"{reset_key} → Reset"),
+        "exit_mode": Label(f"{quit_key} → Exit Hist Mode"),
+        "exit_config": Label(f"{quit_key} → Exit Hist Config"),
     }
 
     return hot_keys

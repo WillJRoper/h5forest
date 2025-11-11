@@ -221,7 +221,6 @@ def _init_app_bindings(app):
 
     # Get keybindings from config
     quit_key = app.config.get_keymap("normal_mode", "quit")
-    search_key = app.config.get_keymap("normal_mode", "search")
     copy_key_binding = app.config.get_keymap("normal_mode", "copy_path")
     toggle_attrs_key = app.config.get_keymap(
         "normal_mode", "expand_attributes"
@@ -234,6 +233,7 @@ def _init_app_bindings(app):
     window_leader = app.config.get_keymap("window_mode", "leader")
     plot_leader = app.config.get_keymap("plot_mode", "leader")
     hist_leader = app.config.get_keymap("histogram_mode", "leader")
+    search_leader = app.config.get_keymap("search_mode", "leader")
 
     # Bind the functions
     app.kb.add(quit_key, filter=Condition(lambda: app.flag_normal_mode))(
@@ -273,7 +273,7 @@ def _init_app_bindings(app):
 
     # Only including the search if the tree has focus
     app.kb.add(
-        search_key,
+        search_leader,
         filter=Condition(
             lambda: app.flag_normal_mode
             and app.app.layout.has_focus(app.tree_content.content)
@@ -302,7 +302,7 @@ def _init_app_bindings(app):
         "hist_mode": Label(f"{hist_leader} → Histogram Mode"),
         "plotting_mode": Label(f"{plot_leader} → Plotting Mode"),
         "window_mode": Label(f"{window_leader} → Window Mode"),
-        "search": Label(f"{search_key} → Search"),
+        "search": Label(f"{search_leader} → Search"),
         "restore_tree": Label(f"{restore_key} → Restore Tree"),
         "copy_key": Label(f"{copy_key_binding} → Copy Key"),
         "exit": Label(f"{quit_key} → Exit"),

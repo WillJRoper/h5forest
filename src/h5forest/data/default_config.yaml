@@ -2,6 +2,9 @@
 # This file controls various aspects of the h5forest TUI application.
 # Location: ~/.h5forest/config.yaml
 
+# For a list of prompt toolkit key bindings, see:
+# https://python-prompt-toolkit.readthedocs.io/en/stable/pages/advanced_topics/key_bindings.html#list-of-special-keys
+
 # Configuration version - DO NOT EDIT
 # This is used to automatically update your config when h5forest is upgraded
 version: "None" # Will be replaced with the running h5forest version at first run
@@ -23,7 +26,6 @@ keymaps:
   # Normal mode - default mode for general operations
   normal_mode:
     quit: q
-    search: s
     copy_path: c
     expand_attributes: A
     restore_tree: r
@@ -73,17 +75,32 @@ keymaps:
   # Plot mode - scatter plot creation (press 'p' to enter)
   plot_mode:
     leader: p
+    edit_config: e
+    edit_entry: enter
     select_x: x
     select_y: y
-    create_plot: p
+    toggle_x_scale: X
+    toggle_y_scale: Y
+    reset: r
+    show_plot: p
+    save_plot: P
 
   # Histogram mode - histogram creation (press 'H' to enter)
-  histogram_mode:
+  hist_mode:
     leader: H
-    select_dataset: d
-    create_histogram: h
+    edit_config: e
+    edit_entry: enter
+    select_data: enter
+    edit_bins: b
+    toggle_x_scale: x
+    toggle_y_scale: y
+    reset: r
+    show_hist: h
+    save_hist: H
 
   # Search mode - fuzzy search (press 's' to enter)
   search_mode:
     leader: s
-    exit: escape
+    accept_search: enter
+    cancel_search: c-c
+    exit_search: escape
