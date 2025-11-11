@@ -532,9 +532,9 @@ class TestScatterPlotter:
 
         plotter._plot(text, use_chunks=True)
 
-        # Verify scatter was called once for non-chunked data
-        # (chunks are (5,) but they match, so should_load_all is True)
-        assert mock_ax.scatter.call_count == 1
+        # Verify scatter was called 5 times (once per chunk)
+        # np.ndindex((5,)) gives (0,), (1,), (2,), (3,), (4,) = 5 iterations
+        assert mock_ax.scatter.call_count == 5
 
     @patch("h5forest.plotting.plt.figure")
     @patch("h5forest.plotting.h5py.File")
@@ -1744,16 +1744,16 @@ class TestPlotterIntegration:
 
     @patch("h5forest.progress.get_window_size")
     @patch("h5forest.plotting.plt.show")
-    @patch("h5forest.plotting.get_app")
+    @patch("h5forest.h5_forest.H5Forest")
     def test_full_histogram_workflow(
-        self, mock_get_app, mock_show, mock_window_size, histogram_h5_file
+        self, mock_forest_class, mock_show, mock_window_size, histogram_h5_file
     ):
         """Test complete histogram workflow with real HDF5 file."""
         # Setup mocks
         mock_app = Mock()
         mock_app.mini_buffer_content = Mock()
         mock_app.mini_buffer_content.text = ""
-        mock_get_app.return_value = mock_app
+        mock_forest_class.return_value = mock_app
         mock_window_size.return_value = (24, 80)
 
         # Create plotter

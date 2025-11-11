@@ -157,6 +157,13 @@ class TestHistBindings:
         node = MagicMock()
         node.is_group = False
         mock_app.tree.get_current_node = MagicMock(return_value=node)
+
+        # Make set_data_key actually update plot_params
+        def set_data_key_side_effect(n):
+            mock_app.histogram_plotter.plot_params["data"] = n
+            return "data key text"
+        mock_app.histogram_plotter.set_data_key.side_effect = set_data_key_side_effect
+
         bindings = [
             b
             for b in mock_app.kb.bindings
@@ -168,10 +175,25 @@ class TestHistBindings:
         mock_app.histogram_plotter.compute_hist.assert_called_once()
         mock_app.histogram_plotter.plot_and_show.assert_called_once()
 
-    def test_plot_hist_with_existing_params(self, mock_app, mock_event):
+    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
+    @patch("h5forest.bindings.hist_bindings.WaitIndicator")
+    def test_plot_hist_with_existing_params(
+        self, mock_wait_indicator, mock_prompt, mock_app, mock_event
+    ):
         """Test plotting histogram with existing params."""
+        # Mock WaitIndicator context manager
+        mock_wait_indicator.return_value.__enter__ = MagicMock()
+        mock_wait_indicator.return_value.__exit__ = MagicMock()
+
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
+            use_chunks=False
+        )
+
         _init_hist_bindings(mock_app)
-        mock_app.histogram_plotter.plot_params = {"data": "test"}
+        # Create a mock node for plot_params
+        mock_node = MagicMock()
+        mock_app.histogram_plotter.plot_params = {"data": mock_node}
         bindings = [
             b
             for b in mock_app.kb.bindings
@@ -199,10 +221,25 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    def test_save_hist(self, mock_app, mock_event):
+    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
+    @patch("h5forest.bindings.hist_bindings.WaitIndicator")
+    def test_save_hist(
+        self, mock_wait_indicator, mock_prompt, mock_app, mock_event
+    ):
         """Test saving histogram."""
+        # Mock WaitIndicator context manager
+        mock_wait_indicator.return_value.__enter__ = MagicMock()
+        mock_wait_indicator.return_value.__exit__ = MagicMock()
+
+        # Make the prompt call the callback immediately
+        mock_prompt.side_effect = lambda app, nodes, callback: callback(
+            use_chunks=False
+        )
+
         _init_hist_bindings(mock_app)
-        mock_app.histogram_plotter.plot_params = {"data": "test"}
+        # Create a mock node for plot_params
+        mock_node = MagicMock()
+        mock_app.histogram_plotter.plot_params = {"data": mock_node}
         bindings = [
             b
             for b in mock_app.kb.bindings
@@ -245,8 +282,13 @@ class TestHistBindings:
         node.is_group = False
         node.path = "/dataset"
         mock_app.tree.get_current_node = MagicMock(return_value=node)
+
+        # Make set_data_key actually update plot_params
+        def set_data_key_side_effect(n):
+            mock_app.histogram_plotter.plot_params["data"] = n
+            return "data key text"
         mock_app.histogram_plotter.set_data_key = MagicMock(
-            return_value="data key text"
+            side_effect=set_data_key_side_effect
         )
         mock_app.histogram_plotter.compute_hist = MagicMock(
             return_value="computed hist"
