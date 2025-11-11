@@ -81,9 +81,14 @@ def prompt_for_chunking_preference(app, plotter, nodes, operation_callback):
 
     def on_yes_chunk():
         """User wants chunk-by-chunk processing."""
-        app.default_focus()
+        from prompt_toolkit.application import get_app
+
         plotter.chunk_preference = True
-        operation_callback()
+        app.default_focus()
+
+        # Use call_from_executor to safely defer operation_callback
+        # This ensures prompt cleanup completes before execution
+        get_app().loop.call_soon(operation_callback)
 
     def on_no_chunk():
         """User wants to load all at once."""
@@ -91,9 +96,13 @@ def prompt_for_chunking_preference(app, plotter, nodes, operation_callback):
 
         def on_yes_load_all():
             """User confirms loading all at once."""
-            app.default_focus()
+            from prompt_toolkit.application import get_app
+
             plotter.chunk_preference = False
-            operation_callback()
+            app.default_focus()
+
+            # Use call_from_executor to safely defer operation_callback
+            get_app().loop.call_soon(operation_callback)
 
         def on_no_load_all():
             """User wants to abort."""
