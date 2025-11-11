@@ -142,14 +142,17 @@ version: "1.0"
 # General configuration options
 configuration:
   # Enable or disable vim-style key bindings (h, j, k, l for navigation)
-  # When enabled, vim navigation keys (h, j, k, l, g, G, {, }) are reserved
-  vim_mode: true
+  # Vim mode is OPTIONAL and disabled by default
+  # Set to 'true' to enable vim-style navigation (h, j, k, l, g, G, {, })
+  # When enabled, vim navigation keys are reserved and cannot be remapped
+  vim_mode: false
 
   # UI theme (currently only 'default' is supported)
   theme: default
 
 # Key mappings for different modes
-# Note: If vim_mode is enabled, you cannot remap h, j, k, l, g, G, {, }
+# Note: Vim mode is optional and disabled by default
+# If you enable vim_mode above, you cannot remap h, j, k, l, g, G, {, }
 keymaps:
   # Normal mode - default mode for general operations
   normal_mode:
@@ -330,7 +333,7 @@ keymaps:
         Raises warnings if user tries to remap reserved keys when vim_mode
         is enabled.
         """
-        vim_mode = self.get("configuration.vim_mode", True)
+        vim_mode = self.get("configuration.vim_mode", False)
 
         if vim_mode:
             violations: List[str] = []
@@ -361,8 +364,8 @@ keymaps:
                     f"{', '.join(sorted(self.VIM_RESERVED_KEYS))}"
                 )
                 print(
-                    "To use these keys, set 'configuration.vim_mode: "
-                    "false' in your config.\n"
+                    "To use these keys for other actions, disable vim mode by setting\n"
+                    "'configuration.vim_mode: false' in your config.\n"
                 )
 
     def get(self, key_path: str, default: Any = None) -> Any:
@@ -416,7 +419,7 @@ keymaps:
         Returns:
             True if vim mode is enabled, False otherwise
         """
-        return self.get("configuration.vim_mode", True)
+        return self.get("configuration.vim_mode", False)
 
     def is_key_allowed(self, key: str) -> bool:
         """Check if a key is allowed to be used (not reserved by vim mode).

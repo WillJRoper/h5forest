@@ -1,6 +1,6 @@
 # h5forest Configuration System
 
-The h5forest configuration system allows users to customize various aspects of the application, including vim mode settings and key bindings.
+The h5forest configuration system allows users to customize various aspects of the application, including key bindings and optional vim-style navigation.
 
 ## Configuration File Location
 
@@ -31,11 +31,15 @@ version: "1.0"
 ```yaml
 configuration:
   # Enable or disable vim-style key bindings
-  vim_mode: true
+  # Vim mode is OPTIONAL and disabled by default
+  # Set to 'true' to enable vim-style navigation (h, j, k, l, g, G, {, })
+  vim_mode: false
 
   # UI theme (currently only 'default' is supported)
   theme: default
 ```
+
+**Note:** Vim mode is **optional** and disabled by default. To enable vim-style navigation, edit `~/.h5forest/config.yaml` and set `vim_mode: true`.
 
 ### 2. Keymaps
 
@@ -105,54 +109,58 @@ keymaps:
     exit: escape
 ```
 
-## Vim Mode Key Reservation
+## Vim Mode (Optional Feature)
 
-When `vim_mode: true` is set, the following keys are **reserved** and cannot be remapped to other functions:
+**Vim mode is optional and disabled by default.** By default, all keys are available for custom bindings.
+
+### Enabling Vim Mode
+
+To enable vim-style navigation, edit `~/.h5forest/config.yaml` and set:
+
+```yaml
+configuration:
+  vim_mode: true
+```
+
+### Vim Mode Key Reservation
+
+When `vim_mode: true` is enabled, the following keys are **reserved** and cannot be remapped to other functions:
 
 - `h`, `j`, `k`, `l` - Basic navigation
 - `{`, `}` - Jump 10 lines up/down
 - `g`, `G` - Goto commands
 
-### Why Are Keys Reserved?
-
 These keys provide vim-style navigation throughout the application. If you try to remap these keys to other functions while vim mode is enabled, h5forest will display a warning and ignore those remappings.
-
-### Disabling Vim Mode
-
-If you want to use these keys for other purposes, set `vim_mode: false` in your configuration:
-
-```yaml
-configuration:
-  vim_mode: false
-```
 
 ## Configuration Examples
 
-### Example 1: Disable Vim Mode
+### Example 1: Enable Vim Mode
 
 ```yaml
 configuration:
-  vim_mode: false
+  vim_mode: true  # Enable vim-style navigation
   theme: default
 
 keymaps:
   normal_mode:
     quit: q
-    # Now you can use j, k, etc. for other purposes
-    jump_to_bottom: j
+    search: s
+    copy_path: c
+  # When vim mode is enabled, h, j, k, l, g, G, {, } are reserved for navigation
 ```
 
 ### Example 2: Customize Search Key
 
 ```yaml
 configuration:
-  vim_mode: true
+  vim_mode: false  # Vim mode disabled (default)
 
 keymaps:
   normal_mode:
     quit: q
     search: f  # Changed from 's' to 'f'
     copy_path: c
+    # All keys available for custom bindings when vim mode is off
 ```
 
 ### Example 3: Change Dataset Mode Keys
