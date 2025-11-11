@@ -232,7 +232,7 @@ def _init_app_bindings(app):
     dataset_leader = app.config.get_keymap("dataset_mode", "leader")
     window_leader = app.config.get_keymap("window_mode", "leader")
     plot_leader = app.config.get_keymap("plot_mode", "leader")
-    hist_leader = app.config.get_keymap("histogram_mode", "leader")
+    hist_leader = app.config.get_keymap("hist_mode", "leader")
     search_leader = app.config.get_keymap("search_mode", "leader")
 
     # Bind the functions
