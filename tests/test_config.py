@@ -324,7 +324,10 @@ class TestVimModeValidation:
             # Should have warning about conflict with vim_mode
             assert len(w) > 0
             warning_message = str(w[0].message)
-            assert "conflict with vim_mode" in warning_message or "vim" in warning_message.lower()
+            assert (
+                "conflict with vim_mode" in warning_message
+                or "vim" in warning_message.lower()
+            )
 
     def test_allows_reserved_keys_in_default_bindings(self, mock_home_dir):
         """Test that reserved keys are allowed in their default bindings."""
@@ -454,9 +457,7 @@ class TestConfigVersion:
 
         assert f'version: "{__version__}"' in content
 
-    def test_old_config_without_version_gets_migrated(
-        self, mock_home_dir
-    ):
+    def test_old_config_without_version_gets_migrated(self, mock_home_dir):
         """Test that config without version gets migrated."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -571,14 +572,12 @@ class TestConfigVersion:
 class TestConfigErrorHandling:
     """Test configuration error handling and edge cases."""
 
-    def test_general_exception_during_load(
-        self, mock_home_dir, mocker
-    ):
+    def test_general_exception_during_load(self, mock_home_dir, mocker):
         """Test handling of general exceptions during config load."""
         config_path = mock_home_dir / ".h5forest" / "config.yaml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Create valid config file with bad content that will cause an exception
+        # Create config file with bad content that causes exception
         with open(config_path, "w") as f:
             f.write("invalid: yaml: content: ][")
 
@@ -624,7 +623,9 @@ class TestConfigErrorHandling:
 
             # Should have warning about failed config write
             assert len(w) > 0
-            assert any("Cannot write to file" in str(warning.message) for warning in w)
+            assert any(
+                "Cannot write to file" in str(warning.message) for warning in w
+            )
 
     def test_invalid_version_type(self, mock_home_dir):
         """Test handling of invalid version type in config."""
@@ -720,7 +721,10 @@ class TestConfigReloadMethod:
         assert config.is_vim_mode_enabled() is True
 
         # Modify config file
-        modified = {"version": __version__, "configuration": {"vim_mode": False}}
+        modified = {
+            "version": __version__,
+            "configuration": {"vim_mode": False},
+        }
         with open(config_path, "w") as f:
             yaml.dump(modified, f)
 
@@ -833,7 +837,11 @@ class TestConfigValidationEdgeCases:
             ConfigManager()
 
             # Should have no warnings about conflicts
-            conflict_warnings = [warning for warning in w if "conflict" in str(warning.message).lower()]
+            conflict_warnings = [
+                warning
+                for warning in w
+                if "conflict" in str(warning.message).lower()
+            ]
             assert len(conflict_warnings) == 0
 
     def test_validation_with_multiple_conflicts(self, mock_home_dir):
@@ -1017,16 +1025,16 @@ class TestConfigManagerEdgeCases:
 
         config = ConfigManager()
 
-        # Should raise ValueError for non-string keymap (wrapped by error_handler)
-        # The error_handler will try to print via H5Forest, so we need to avoid that
+        # Should raise ValueError for non-string keymap
+        # error_handler wraps it, may try to print via H5Forest
         import warnings
 
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             try:
                 result = config.get_keymap("normal_mode", "quit")
                 # If we get here, check that error was handled
                 assert result is None or isinstance(result, str)
             except (ValueError, TypeError):
-                # Expected - either ValueError from the check or TypeError from H5Forest init
+                # Expected - ValueError or TypeError from H5Forest
                 pass

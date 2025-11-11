@@ -376,7 +376,9 @@ class TestTreeBindings:
             key = (mode, action)
             if key in custom_keymaps:
                 return custom_keymaps[key]
-            raise KeyError(f"Keymap for mode '{mode}' action '{action}' not found")
+            raise KeyError(
+                f"Keymap for mode '{mode}' action '{action}' not found"
+            )
 
         mock_app.config.get_keymap = MagicMock(side_effect=custom_get_keymap)
         mock_app.config.is_vim_mode_enabled.return_value = False
@@ -389,13 +391,15 @@ class TestTreeBindings:
         add_calls = [str(call) for call in mock_app.kb.add.call_args_list]
 
         # Verify custom keys are in the bindings
-        assert any("'w'" in call for call in add_calls), "Custom up key 'w' not bound"
-        assert any(
-            "'s'" in call for call in add_calls
-        ), "Custom down key 's' not bound"
-        assert any(
-            "'a'" in call for call in add_calls
-        ), "Custom left key 'a' not bound"
-        assert any(
-            "'d'" in call for call in add_calls
-        ), "Custom right key 'd' not bound"
+        assert any("'w'" in call for call in add_calls), (
+            "Custom up key 'w' not bound"
+        )
+        assert any("'s'" in call for call in add_calls), (
+            "Custom down key 's' not bound"
+        )
+        assert any("'a'" in call for call in add_calls), (
+            "Custom left key 'a' not bound"
+        )
+        assert any("'d'" in call for call in add_calls), (
+            "Custom right key 'd' not bound"
+        )
