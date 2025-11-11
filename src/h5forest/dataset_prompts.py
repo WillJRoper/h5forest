@@ -5,46 +5,36 @@ the implications of their actions and can make informed decisions.
 """
 
 
-def prompt_for_chunking_preference(app, plotter, nodes, operation_callback):
+def prompt_for_chunking_preference(app, nodes, operation_callback):
     """
     Prompt user about chunking preference for plotting/histogram operations.
 
-    This function checks if any of the provided nodes are chunked, and if
-    the plotter doesn't already have a chunking preference set, prompts
-    the user to decide whether to use chunked processing.
+    This function checks if any of the provided nodes are chunked, and
+    prompts the user to decide whether to use chunked processing.
 
     Args:
         app (H5Forest):
             The main application instance.
-        plotter (Plotter):
-            The plotter instance (ScatterPlotter or HistogramPlotter) that
-            will store the chunking preference.
         nodes (list):
             List of Node objects to check for chunking.
         operation_callback (callable):
-            Function to call after preference is set, with no arguments.
+            Function to call with signature: operation_callback(use_chunks)
+            where use_chunks is True to use chunked processing.
     """
-    # If preference is already set, proceed immediately
-    if plotter.chunk_preference is not None:
-        operation_callback()
-        return
-
     # Check if config has always_chunk enabled
     if app.config.always_chunk_datasets():
-        plotter.chunk_preference = True
-        operation_callback()
+        operation_callback(use_chunks=True)
         return
 
     # Check if any node is chunked
     has_chunked = any(node.is_chunked for node in nodes)
 
-    # If no chunked data, set preference to False and proceed
+    # If no chunked data, proceed without chunking
     if not has_chunked:
-        plotter.chunk_preference = False
-        operation_callback()
+        operation_callback(use_chunks=False)
         return
 
-    # At this point, we have chunked data and no preference set
+    # At this point, we have chunked data and need to prompt
     # Calculate memory footprint for all nodes
     import h5py
     import numpy as np
@@ -81,14 +71,8 @@ def prompt_for_chunking_preference(app, plotter, nodes, operation_callback):
 
     def on_yes_chunk():
         """User wants chunk-by-chunk processing."""
-        from prompt_toolkit.application import get_app
-
-        plotter.chunk_preference = True
         app.default_focus()
-
-        # Use call_from_executor to safely defer operation_callback
-        # This ensures prompt cleanup completes before execution
-        get_app().loop.call_soon(operation_callback)
+        operation_callback(use_chunks=True)
 
     def on_no_chunk():
         """User wants to load all at once."""
@@ -96,13 +80,8 @@ def prompt_for_chunking_preference(app, plotter, nodes, operation_callback):
 
         def on_yes_load_all():
             """User confirms loading all at once."""
-            from prompt_toolkit.application import get_app
-
-            plotter.chunk_preference = False
             app.default_focus()
-
-            # Use call_from_executor to safely defer operation_callback
-            get_app().loop.call_soon(operation_callback)
+            operation_callback(use_chunks=False)
 
         def on_no_load_all():
             """User wants to abort."""

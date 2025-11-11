@@ -245,13 +245,13 @@ def _init_hist_bindings(app):
             # Set the text in the plotting area
             app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
-        def do_plot():
+        def do_plot(use_chunks):
             """Actually perform the plot after chunking preference is set."""
             # Compute and plot the histogram with wait indicator
             with WaitIndicator(app, "Generating histogram..."):
                 # Compute the histogram
                 app.hist_content.text = app.histogram_plotter.compute_hist(
-                    app.hist_content.text
+                    app.hist_content.text, use_chunks=use_chunks
                 )
 
                 # Get the plot
@@ -266,9 +266,7 @@ def _init_hist_bindings(app):
         nodes = [app.histogram_plotter.plot_params["data"]]
 
         # Prompt for chunking preference if needed, then plot
-        prompt_for_chunking_preference(
-            app, app.histogram_plotter, nodes, do_plot
-        )
+        prompt_for_chunking_preference(app, nodes, do_plot)
 
     @error_handler
     def save_hist(event):
@@ -286,11 +284,11 @@ def _init_hist_bindings(app):
             # Set the text in the plotting area
             app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
-        def do_save():
+        def do_save(use_chunks):
             """Actually save the plot after chunking preference is set."""
             # Compute the histogram
             app.hist_content.text = app.histogram_plotter.compute_hist(
-                app.hist_content.text
+                app.hist_content.text, use_chunks=use_chunks
             )
 
             # Get the plot
@@ -305,9 +303,7 @@ def _init_hist_bindings(app):
         nodes = [app.histogram_plotter.plot_params["data"]]
 
         # Prompt for chunking preference if needed, then save
-        prompt_for_chunking_preference(
-            app, app.histogram_plotter, nodes, do_save
-        )
+        prompt_for_chunking_preference(app, nodes, do_save)
 
     @error_handler
     def reset_hist(event):
