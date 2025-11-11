@@ -714,3 +714,37 @@ class TestDatasetPrompts:
         assert "0.50 GB" in prompt_msg
         # Should not contain chunk count (unknown)
         assert "chunks)" not in prompt_msg
+
+    @patch("h5py.File")
+    def test_prompt_for_chunking_preference_chunks_none(
+        self, mock_h5py_file, mock_app, mock_chunked_node
+    ):
+        """Test chunking preference when dataset.chunks is None."""
+        # Mock the h5py dataset with chunks=None
+        mock_dataset = Mock()
+        mock_dataset.size = 1000000
+        mock_dataset.dtype.itemsize = 8
+        mock_dataset.shape = (1000, 1000)
+        mock_dataset.chunks = None  # No chunks defined
+
+        # Mock h5py.File context manager
+        mock_file = Mock()
+        mock_file.__enter__ = Mock(return_value=mock_file)
+        mock_file.__exit__ = Mock(return_value=False)
+        mock_file.__getitem__ = Mock(return_value=mock_dataset)
+        mock_h5py_file.return_value = mock_file
+
+        # Create a callback to track if it was called
+        callback = MagicMock()
+
+        # Call with a chunked node
+        prompt_for_chunking_preference(mock_app, [mock_chunked_node], callback)
+
+        # Should prompt user without chunk count
+        mock_app.prompt_yn.assert_called_once()
+        prompt_msg = mock_app.prompt_yn.call_args[0][0]
+        # Should contain size but no chunk count (total_chunks is 0)
+        assert "0.01 GB" in prompt_msg
+        # Should not contain "chunks)" since total_chunks is 0
+        # and fails the > 0 check
+        assert "chunks)" not in prompt_msg
