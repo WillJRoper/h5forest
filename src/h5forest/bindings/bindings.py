@@ -31,6 +31,7 @@ from h5forest.bindings.hist_funcs import (
 )
 from h5forest.bindings.jump_funcs import (
     goto_bottom,
+    goto_next,
     goto_parent,
     goto_top,
     jump_to_key,
@@ -262,6 +263,10 @@ class H5KeyBindings:
         self.parent_key = self.config.get_keymap(
             "jump_mode",
             "parent",
+        )
+        self.next_sibling_key = self.config.get_keymap(
+            "jump_mode",
+            "next_sibling",
         )
         self.jump_to_key_key = self.config.get_keymap(
             "jump_mode",
@@ -844,6 +849,11 @@ class H5KeyBindings:
         self.bind_function(
             self.parent_key,
             goto_parent,
+            self.filter_jump_mode,
+        )
+        self.bind_function(
+            self.next_sibling_key,
+            goto_next,
             self.filter_jump_mode,
         )
         self.bind_function(

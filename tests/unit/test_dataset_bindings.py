@@ -6,7 +6,24 @@ import pytest
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.dataset_bindings import _init_dataset_bindings
+from h5forest.bindings.bindings import H5KeyBindings
+
+
+def _init_dataset_bindings(app):
+    """Initialize dataset bindings using H5KeyBindings class."""
+    bindings = H5KeyBindings(app)
+    bindings._init_dataset_bindings()
+
+    # Return list of hotkeys matching old interface
+    return [
+        bindings.view_values_label,
+        bindings.view_range_label,
+        bindings.close_values_label,
+        bindings.min_max_label,
+        bindings.mean_label,
+        bindings.std_label,
+        bindings.exit_mode_label,
+    ]
 
 
 class TestDatasetBindings:
@@ -44,8 +61,12 @@ class TestDatasetBindings:
         """Create a mock event for testing."""
         return MagicMock()
 
-    def test_init_dataset_bindings_returns_hotkeys(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_init_dataset_bindings_returns_hotkeys(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that _init_dataset_bindings returns a list of Labels."""
+        mock_h5forest_class.return_value = mock_app
 
         hot_keys = _init_dataset_bindings(mock_app)
         assert isinstance(hot_keys, list)
@@ -53,8 +74,10 @@ class TestDatasetBindings:
         for item in hot_keys:
             assert isinstance(item, Label)
 
-    def test_show_values(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_show_values(self, mock_h5forest_class, mock_app, mock_event):
         """Test showing dataset values."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -72,8 +95,12 @@ class TestDatasetBindings:
         assert mock_app.flag_values_visible is True
         mock_app.value_title.update_title.assert_called_once()
 
-    def test_show_values_with_group(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_show_values_with_group(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test showing values with group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = True
@@ -88,8 +115,12 @@ class TestDatasetBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    def test_show_values_empty_text(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_show_values_empty_text(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test showing values when text is empty."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -104,8 +135,12 @@ class TestDatasetBindings:
         handler(mock_event)
         assert mock_app.flag_values_visible is False
 
-    def test_show_values_in_range(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_show_values_in_range(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test showing values in a range."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -128,8 +163,12 @@ class TestDatasetBindings:
         )
         assert mock_app.values_content.text == "range values"
 
-    def test_show_values_in_range_invalid_input(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_show_values_in_range_invalid_input(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test showing values in range with invalid input."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -147,8 +186,12 @@ class TestDatasetBindings:
         mock_app.print.assert_called_once()
         mock_app.default_focus.assert_called_once()
 
-    def test_show_values_in_range_with_group(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_show_values_in_range_with_group(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test showing values in range with group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = True
@@ -164,8 +207,12 @@ class TestDatasetBindings:
         mock_app.print.assert_called_once_with("/group is not a Dataset")
         mock_app.input.assert_not_called()
 
-    def test_show_values_in_range_empty_text(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_show_values_in_range_empty_text(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test showing values in range when text is empty."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = False
@@ -188,8 +235,10 @@ class TestDatasetBindings:
         # Should return early without setting flag_values_visible
         assert mock_app.flag_values_visible is False
 
-    def test_close_values(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_close_values(self, mock_h5forest_class, mock_app, mock_event):
         """Test closing value pane."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         mock_app.flag_values_visible = True
         mock_app.values_content.text = "some values"
@@ -204,12 +253,19 @@ class TestDatasetBindings:
         assert mock_app.values_content.text == ""
         mock_app.return_to_normal_mode.assert_called_once()
 
-    @patch("h5forest.bindings.dataset_bindings.prompt_for_dataset_operation")
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.dataset_funcs.prompt_for_dataset_operation")
     @patch("threading.Thread")
     def test_minimum_maximum(
-        self, mock_thread, mock_prompt, mock_app, mock_event
+        self,
+        mock_thread,
+        mock_prompt,
+        mock_h5forest_class,
+        mock_app,
+        mock_event,
     ):
         """Test getting minimum and maximum values."""
+        mock_h5forest_class.return_value = mock_app
         # Make the prompt call the callback immediately
         mock_prompt.side_effect = lambda app, node, callback: callback(
             use_chunks=False
@@ -235,8 +291,12 @@ class TestDatasetBindings:
         thread_func()
         mock_app.app.loop.call_soon_threadsafe.assert_called_once()
 
-    def test_minimum_maximum_with_group(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_minimum_maximum_with_group(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test min/max with group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = True
@@ -251,10 +311,19 @@ class TestDatasetBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    @patch("h5forest.bindings.dataset_bindings.prompt_for_dataset_operation")
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.dataset_funcs.prompt_for_dataset_operation")
     @patch("threading.Thread")
-    def test_mean(self, mock_thread, mock_prompt, mock_app, mock_event):
+    def test_mean(
+        self,
+        mock_thread,
+        mock_prompt,
+        mock_h5forest_class,
+        mock_app,
+        mock_event,
+    ):
         """Test getting mean value."""
+        mock_h5forest_class.return_value = mock_app
         # Make the prompt call the callback immediately
         mock_prompt.side_effect = lambda app, node, callback: callback(
             use_chunks=False
@@ -279,8 +348,10 @@ class TestDatasetBindings:
         thread_func()
         mock_app.app.loop.call_soon_threadsafe.assert_called_once()
 
-    def test_mean_with_group(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_mean_with_group(self, mock_h5forest_class, mock_app, mock_event):
         """Test mean with group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = True
@@ -295,10 +366,19 @@ class TestDatasetBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    @patch("h5forest.bindings.dataset_bindings.prompt_for_dataset_operation")
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.dataset_funcs.prompt_for_dataset_operation")
     @patch("threading.Thread")
-    def test_std(self, mock_thread, mock_prompt, mock_app, mock_event):
+    def test_std(
+        self,
+        mock_thread,
+        mock_prompt,
+        mock_h5forest_class,
+        mock_app,
+        mock_event,
+    ):
         """Test getting standard deviation."""
+        mock_h5forest_class.return_value = mock_app
         # Make the prompt call the callback immediately
         mock_prompt.side_effect = lambda app, node, callback: callback(
             use_chunks=False
@@ -323,8 +403,10 @@ class TestDatasetBindings:
         thread_func()
         mock_app.app.loop.call_soon_threadsafe.assert_called_once()
 
-    def test_std_with_group(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_std_with_group(self, mock_h5forest_class, mock_app, mock_event):
         """Test std with group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         node = MagicMock()
         node.is_group = True
@@ -339,8 +421,10 @@ class TestDatasetBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    def test_all_keys_bound(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_all_keys_bound(self, mock_h5forest_class, mock_app):
         """Test that all expected keys are bound."""
+        mock_h5forest_class.return_value = mock_app
         _init_dataset_bindings(mock_app)
         for key in ["v", "V", "c", "m", "M", "s"]:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]

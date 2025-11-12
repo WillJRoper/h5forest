@@ -1,12 +1,28 @@
 """Tests for goto/jump mode keybindings."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.jump_bindings import _init_goto_bindings
+from h5forest.bindings.bindings import H5KeyBindings
+
+
+def _init_goto_bindings(app):
+    """Initialize jump bindings using H5KeyBindings class."""
+    bindings = H5KeyBindings(app)
+    bindings._init_jump_bindings()
+
+    # Return list of hotkeys matching old interface
+    return [
+        bindings.goto_top_label,
+        bindings.goto_bottom_label,
+        bindings.goto_parent_label,
+        bindings.jump_to_key_label,
+        bindings.exit_mode_label,
+        bindings.exit_label,
+    ]
 
 
 class TestJumpBindings:
@@ -44,8 +60,12 @@ class TestJumpBindings:
         """Create a mock event for testing."""
         return MagicMock()
 
-    def test_init_goto_bindings_returns_hotkeys(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_init_goto_bindings_returns_hotkeys(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that _init_goto_bindings returns a list of Labels."""
+        mock_h5forest_class.return_value = mock_app
 
         hot_keys = _init_goto_bindings(mock_app)
         assert isinstance(hot_keys, list)
@@ -53,8 +73,10 @@ class TestJumpBindings:
         for item in hot_keys:
             assert isinstance(item, Label)
 
-    def test_goto_top(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_top(self, mock_h5forest_class, mock_app, mock_event):
         """Test going to top of tree."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         bindings = [
             b
@@ -68,8 +90,10 @@ class TestJumpBindings:
         )
         mock_app.return_to_normal_mode.assert_called_once()
 
-    def test_goto_top_g_key(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_top_g_key(self, mock_h5forest_class, mock_app, mock_event):
         """Test going to top with 'g' key."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         bindings = [
             b
@@ -80,8 +104,10 @@ class TestJumpBindings:
         handler(mock_event)
         mock_app.set_cursor_position.assert_called_once()
 
-    def test_goto_bottom(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_bottom(self, mock_h5forest_class, mock_app, mock_event):
         """Test going to bottom of tree."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         bindings = [
             b
@@ -94,8 +120,12 @@ class TestJumpBindings:
             mock_app.tree.tree_text, new_cursor_pos=mock_app.tree.length
         )
 
-    def test_goto_bottom_G_key(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_bottom_G_key(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test going to bottom with 'G' key."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         bindings = [
             b
@@ -106,8 +136,10 @@ class TestJumpBindings:
         handler(mock_event)
         mock_app.set_cursor_position.assert_called_once()
 
-    def test_goto_parent(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_parent(self, mock_h5forest_class, mock_app, mock_event):
         """Test going to parent node."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         node = MagicMock()
         parent = MagicMock()
@@ -135,8 +167,12 @@ class TestJumpBindings:
         assert call_args[1] >= 0
         mock_app.return_to_normal_mode.assert_called_once()
 
-    def test_goto_parent_negative_position(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_parent_negative_position(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test goto parent with negative position calculation."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         node = MagicMock()
         parent = MagicMock()
@@ -162,8 +198,12 @@ class TestJumpBindings:
         call_args = mock_app.set_cursor_position.call_args[0]
         assert call_args[1] == 0
 
-    def test_goto_parent_at_root(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_parent_at_root(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test going to parent when at root."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         node = MagicMock()
         node.parent = None
@@ -179,8 +219,10 @@ class TestJumpBindings:
         mock_app.print.assert_called_once_with("/ is a root Group!")
         mock_app.set_cursor_position.assert_not_called()
 
-    def test_goto_next(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_next(self, mock_h5forest_class, mock_app, mock_event):
         """Test going to next node."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         node = MagicMock()
         node.depth = 2
@@ -198,8 +240,10 @@ class TestJumpBindings:
         handler(mock_event)
         mock_app.set_cursor_position.assert_called_once()
 
-    def test_goto_next_at_end(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_next_at_end(self, mock_h5forest_class, mock_app, mock_event):
         """Test going to next when at end of tree."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         mock_app.current_row = mock_app.tree.height - 1
         node = MagicMock()
@@ -215,8 +259,12 @@ class TestJumpBindings:
         mock_app.return_to_normal_mode.assert_called_once()
         mock_app.set_cursor_position.assert_not_called()
 
-    def test_goto_next_not_found(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_goto_next_not_found(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test going to next when next node not found."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         node = MagicMock()
         node.depth = 1
@@ -234,8 +282,10 @@ class TestJumpBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("Next Group can't be found")
 
-    def test_jump_to_key(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_jump_to_key(self, mock_h5forest_class, mock_app, mock_event):
         """Test jumping to key containing user input."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         bindings = [
             b
@@ -259,8 +309,12 @@ class TestJumpBindings:
         mock_app.default_focus.assert_called()
         mock_app.return_to_normal_mode.assert_called()
 
-    def test_jump_to_key_not_found(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_jump_to_key_not_found(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test jumping to key when key not found."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         bindings = [
             b
@@ -278,8 +332,10 @@ class TestJumpBindings:
         callback()
         mock_app.print.assert_called_once_with("Couldn't find matching key!")
 
-    def test_all_keys_bound(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_all_keys_bound(self, mock_h5forest_class, mock_app):
         """Test that all expected keys are bound."""
+        mock_h5forest_class.return_value = mock_app
         _init_goto_bindings(mock_app)
         for key in ["t", "g", "b", "G", "p", "n", "K"]:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
