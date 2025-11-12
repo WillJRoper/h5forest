@@ -218,7 +218,7 @@ class H5Forest:
         self.layout = None
         self._init_layout()
 
-        # Intialise a container for user input
+        # Initialise a container for user input
         self.user_input = None
 
         # With all that done we can set up the application
@@ -390,6 +390,17 @@ class H5Forest:
         return self._flag_search_mode and self.app.layout.has_focus(
             self.search_content
         )
+
+    @property
+    def flag_in_prompt(self):
+        """
+        Return whether we are currently in a yes/no prompt.
+
+        Returns:
+            bool:
+                The flag for being in a yes/no prompt.
+        """
+        return self._flag_in_prompt
 
     def _get_hot_keys(self):
         """
@@ -791,7 +802,7 @@ class H5Forest:
         get_app().invalidate()
 
     def _init_layout(self):
-        """Intialise the layout."""
+        """Initialise the layout."""
         # Get the window size
         rows, columns = get_window_size()
 
