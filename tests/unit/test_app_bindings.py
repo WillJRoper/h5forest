@@ -998,3 +998,343 @@ class TestAppBindings:
             assert isinstance(value, Label), (
                 f"Invalid value type: {type(value)}"
             )
+
+
+class TestGetCurrentHotkeys:
+    """Test the get_current_hotkeys method for different modes."""
+
+    @pytest.fixture
+    def mock_app(self):
+        """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
+        app = MagicMock()
+        add_config_mock(app)
+
+        # Set up default mode flags
+        app.flag_normal_mode = True
+        app._flag_normal_mode = True
+        app._flag_jump_mode = False
+        app._flag_dataset_mode = False
+        app._flag_window_mode = False
+        app._flag_plotting_mode = False
+        app._flag_hist_mode = False
+        app._flag_search_mode = False
+        app.flag_expanded_attrs = False
+        app.flag_dataset_mode = False
+        app.flag_search_mode = False
+        app.flag_window_mode = False
+        app.flag_jump_mode = False
+        app.flag_hist_mode = False
+        app.flag_plotting_mode = False
+
+        # Set up tree
+        app.tree = MagicMock()
+        app.tree_has_focus = True
+        app.dataset_values_has_content = False
+        app.histogram_config_has_focus = False
+        app.plot_config_has_focus = False
+
+        # Set up plotters
+        app.histogram_plotter = MagicMock()
+        app.histogram_plotter.data_assigned = False
+        app.scatter_plotter = MagicMock()
+        app.scatter_plotter.data_assigned = False
+
+        # Set up keybindings
+        app.kb = KeyBindings()
+
+        return app
+
+    def test_get_current_hotkeys_expanded_attrs(self, mock_app):
+        """Test hotkeys when attributes are expanded."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_expanded_attrs = True
+        mock_app.tree_has_focus = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+        # The shrink attrs label should be in the labels list
+        current_labels = (
+            hotkeys.labels() if callable(hotkeys.labels) else hotkeys.labels
+        )
+        assert any("Shrink" in str(label.text) for label in current_labels)
+
+    def test_get_current_hotkeys_dataset_mode(self, mock_app):
+        """Test hotkeys in dataset mode."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_dataset_mode = True
+        mock_app._flag_dataset_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_dataset_mode_with_values(self, mock_app):
+        """Test hotkeys in dataset mode with values shown."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_dataset_mode = True
+        mock_app._flag_dataset_mode = True
+        mock_app.dataset_values_has_content = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_search_mode(self, mock_app):
+        """Test hotkeys in search mode."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_search_mode = True
+        mock_app._flag_search_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_window_mode(self, mock_app):
+        """Test hotkeys in window mode."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_window_mode = True
+        mock_app._flag_window_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_jump_mode(self, mock_app):
+        """Test hotkeys in jump mode."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_jump_mode = True
+        mock_app._flag_jump_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_hist_mode_tree_focused(self, mock_app):
+        """Test hotkeys in histogram mode with tree focused."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_hist_mode = True
+        mock_app._flag_hist_mode = True
+        mock_app.tree_has_focus = True
+        mock_app.histogram_config_has_focus = False
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_hist_mode_hist_focused(self, mock_app):
+        """Test hotkeys in histogram mode with hist focused."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_hist_mode = True
+        mock_app._flag_hist_mode = True
+        mock_app.tree_has_focus = False
+        mock_app.histogram_config_has_focus = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_hist_mode_with_data(self, mock_app):
+        """Test hotkeys in histogram mode with data assigned."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_hist_mode = True
+        mock_app._flag_hist_mode = True
+        mock_app.histogram_plotter.data_assigned = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_plot_mode_tree_focused(self, mock_app):
+        """Test hotkeys in plot mode with tree focused."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_plotting_mode = True
+        mock_app._flag_plotting_mode = True
+        mock_app.tree_has_focus = True
+        mock_app.plot_config_has_focus = False
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_plot_mode_plot_focused(self, mock_app):
+        """Test hotkeys in plot mode with plot focused."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_plotting_mode = True
+        mock_app._flag_plotting_mode = True
+        mock_app.tree_has_focus = False
+        mock_app.plot_config_has_focus = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+    def test_get_current_hotkeys_plot_mode_with_data(self, mock_app):
+        """Test hotkeys in plot mode with data assigned."""
+        from h5forest.utils import DynamicLabelLayout
+
+        mock_app.flag_normal_mode = False
+        mock_app._flag_normal_mode = False
+        mock_app.flag_plotting_mode = True
+        mock_app._flag_plotting_mode = True
+        mock_app.scatter_plotter.data_assigned = True
+
+        bindings = H5KeyBindings(mock_app)
+        hotkeys = bindings.get_current_hotkeys()
+
+        # Should return a DynamicLabelLayout
+        assert isinstance(hotkeys, DynamicLabelLayout)
+
+
+class TestGetModeTitle:
+    """Test the get_mode_title method."""
+
+    @pytest.fixture
+    def mock_app(self):
+        """Create a mock H5Forest application for testing."""
+        from tests.conftest import add_config_mock
+
+        app = MagicMock()
+        add_config_mock(app)
+
+        # Set up default mode flags
+        app.flag_normal_mode = True
+        app.flag_jump_mode = False
+        app.flag_dataset_mode = False
+        app.flag_window_mode = False
+        app.flag_plotting_mode = False
+        app.flag_hist_mode = False
+        app.flag_search_mode = False
+
+        app.kb = KeyBindings()
+
+        return app
+
+    def test_get_mode_title_normal_mode(self, mock_app):
+        """Test mode title in normal mode."""
+        bindings = H5KeyBindings(mock_app)
+        title = bindings.get_mode_title()
+        assert title == "Normal Mode"
+
+    def test_get_mode_title_jump_mode(self, mock_app):
+        """Test mode title in jump mode."""
+        mock_app.flag_normal_mode = False
+        mock_app.flag_jump_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        title = bindings.get_mode_title()
+        assert title == "Goto Mode"
+
+    def test_get_mode_title_dataset_mode(self, mock_app):
+        """Test mode title in dataset mode."""
+        mock_app.flag_normal_mode = False
+        mock_app.flag_dataset_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        title = bindings.get_mode_title()
+        assert title == "Dataset Mode"
+
+    def test_get_mode_title_window_mode(self, mock_app):
+        """Test mode title in window mode."""
+        mock_app.flag_normal_mode = False
+        mock_app.flag_window_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        title = bindings.get_mode_title()
+        assert title == "Window Mode"
+
+    def test_get_mode_title_plotting_mode(self, mock_app):
+        """Test mode title in plotting mode."""
+        mock_app.flag_normal_mode = False
+        mock_app.flag_plotting_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        title = bindings.get_mode_title()
+        assert title == "Plotting Mode"
+
+    def test_get_mode_title_hist_mode(self, mock_app):
+        """Test mode title in histogram mode."""
+        mock_app.flag_normal_mode = False
+        mock_app.flag_hist_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        title = bindings.get_mode_title()
+        assert title == "Histogram Mode"
+
+    def test_get_mode_title_search_mode(self, mock_app):
+        """Test mode title in search mode."""
+        mock_app.flag_normal_mode = False
+        mock_app.flag_search_mode = True
+
+        bindings = H5KeyBindings(mock_app)
+        title = bindings.get_mode_title()
+        assert title == "Search Mode"
+
+    def test_get_mode_title_unknown_mode(self, mock_app):
+        """Test mode title when no mode is active."""
+        mock_app.flag_normal_mode = False
+        mock_app.flag_jump_mode = False
+        mock_app.flag_dataset_mode = False
+        mock_app.flag_window_mode = False
+        mock_app.flag_plotting_mode = False
+        mock_app.flag_hist_mode = False
+        mock_app.flag_search_mode = False
+
+        bindings = H5KeyBindings(mock_app)
+        title = bindings.get_mode_title()
+        assert title == "Unknown Mode"

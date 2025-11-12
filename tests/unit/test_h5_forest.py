@@ -221,6 +221,51 @@ class TestH5ForestProperties:
 
         assert app.current_position == 100
 
+    def test_current_column_property_with_multiline(self, temp_h5_file):
+        """Test current_column property with multiline text.
+
+        Covers lines 266-271.
+        """
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+
+        # Create multiline text and position cursor at a specific column
+        text = "First line here\nSecond line with more text\nThird line"
+        # Position cursor at column 5 of second line
+        # (after "First line here\n")
+        cursor_pos = len("First line here\n") + 5
+        doc = Document(text, cursor_position=cursor_pos)
+        app.tree_buffer.set_document(doc, bypass_readonly=True)
+
+        # Access the property - this should execute lines 266-271
+        column = app.current_column
+
+        # Verify the column is correct
+        assert column == 5
+
+        # Also verify the document was accessed correctly
+        assert app.tree_buffer.document.cursor_position_col == column
+
+    def test_current_position_property_with_multiline(self, temp_h5_file):
+        """Test current_position property to cover line 281."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+
+        # Create multiline text and position cursor
+        text = "Line 1\nLine 2\nLine 3"
+        cursor_pos = len("Line 1\nLine ")
+        doc = Document(text, cursor_position=cursor_pos)
+        app.tree_buffer.set_document(doc, bypass_readonly=True)
+
+        # Access the property - this should execute line 281
+        position = app.current_position
+
+        # Verify the position is correct
+        assert position == cursor_pos
+        assert position == app.tree_buffer.document.cursor_position
+
     def test_flag_normal_mode_property_true(self, temp_h5_file):
         """Test flag_normal_mode property when mini buffer not focused."""
         from h5forest.h5_forest import H5Forest
@@ -1379,3 +1424,96 @@ class TestH5ForestIntegration:
 
             # Metadata should be updated (might be same or different)
             assert app.metadata_content.text is not None
+
+
+class TestH5ForestPropertiesAdditional:
+    """Test H5Forest properties for complete coverage."""
+
+    def test_flag_in_prompt_property(self, temp_h5_file):
+        """Test the flag_in_prompt property."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+
+        # Test default value
+        assert app.flag_in_prompt is False
+
+        # Test setting the value
+        app._flag_in_prompt = True
+        assert app.flag_in_prompt is True
+
+    def test_dataset_values_has_content_property(self, temp_h5_file):
+        """Test the dataset_values_has_content property."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+
+        # Initially has default text "Values here..."
+        assert app.dataset_values_has_content is True
+
+        # Clear the text
+        app.values_content.text = ""
+        assert app.dataset_values_has_content is False
+
+        # Set some text
+        app.values_content.text = "Some dataset values"
+        assert app.dataset_values_has_content is True
+
+    def test_histogram_config_has_focus_property(self, temp_h5_file):
+        """Test the histogram_config_has_focus property."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+
+        # Mock the layout focus check
+        with patch.object(
+            app.app.layout, "has_focus", return_value=False
+        ) as mock_focus:
+            assert app.histogram_config_has_focus is False
+            mock_focus.assert_called_once_with(app.hist_content)
+
+        # Test when it has focus
+        with patch.object(
+            app.app.layout, "has_focus", return_value=True
+        ) as mock_focus:
+            assert app.histogram_config_has_focus is True
+            mock_focus.assert_called_once_with(app.hist_content)
+
+    def test_plot_config_has_focus_property(self, temp_h5_file):
+        """Test the plot_config_has_focus property."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+
+        # Mock the layout focus check
+        with patch.object(
+            app.app.layout, "has_focus", return_value=False
+        ) as mock_focus:
+            assert app.plot_config_has_focus is False
+            mock_focus.assert_called_once_with(app.plot_content)
+
+        # Test when it has focus
+        with patch.object(
+            app.app.layout, "has_focus", return_value=True
+        ) as mock_focus:
+            assert app.plot_config_has_focus is True
+            mock_focus.assert_called_once_with(app.plot_content)
+
+    def test_refresh_method(self, temp_h5_file):
+        """Test the refresh method updates hotkeys and mode title."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+
+        # Mock the methods that should be called
+        with patch.object(
+            app, "update_hotkeys_panel"
+        ) as mock_hotkeys, patch.object(
+            app, "update_mode_title"
+        ) as mock_title:
+            # Call refresh
+            app.refresh(app.app)
+
+            # Verify both methods were called
+            mock_hotkeys.assert_called_once()
+            mock_title.assert_called_once()
