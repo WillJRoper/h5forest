@@ -17,6 +17,13 @@ from h5forest.bindings.dataset_funcs import (
     show_values_in_range,
     std,
 )
+from h5forest.bindings.jump_funcs import (
+    goto_bottom,
+    goto_next,
+    goto_parent,
+    goto_top,
+    jump_to_key,
+)
 from h5forest.bindings.normal_funcs import (
     copy_key,
     dataset_leader_mode,
@@ -211,6 +218,36 @@ class H5KeyBindings:
             "focus_histogram",
         )
 
+        # Go to mode keys
+        self.top_key = self.config.get_keymap(
+            "jump_mode",
+            "top",
+        )
+        self.top_alt_key = self.config.get_keymap(
+            "jump_mode",
+            "top_alt",
+        )
+        self.bottom_key = self.config.get_keymap(
+            "jump_mode",
+            "bottom",
+        )
+        self.bottom_alt_key = self.config.get_keymap(
+            "jump_mode",
+            "bottom_alt",
+        )
+        self.parent_key = self.config.get_keymap(
+            "jump_mode",
+            "parent",
+        )
+        self.next_sibling_key = self.config.get_keymap(
+            "jump_mode",
+            "next_sibling",
+        )
+        self.jump_to_key_key = self.config.get_keymap(
+            "jump_mode",
+            "jump_to_key",
+        )
+
         # ====== Define attributes to hold all the different labels ======
 
         # Normal mode labels
@@ -306,6 +343,25 @@ class H5KeyBindings:
             f"{translate_key_label(self.hist_focus_key)} → Move to Histogram"
         )
 
+        # Go to mode labels
+        self.goto_top_label = Label(
+            f"{translate_key_label(self.top_alt_key)}/"
+            f"{translate_key_label(self.top_key)} → Go to Top"
+        )
+        self.goto_bottom_label = Label(
+            f"{translate_key_label(self.bottom_alt_key)}/"
+            f"{translate_key_label(self.bottom_key)} → Go to Bottom"
+        )
+        self.goto_parent_label = Label(
+            f"{translate_key_label(self.parent_key)} → Go to Parent"
+        )
+        self.goto_next_parent_label = Label(
+            f"{translate_key_label(self.next_sibling_key)} → Next Parent Group"
+        )
+        self.jump_to_key_label = Label(
+            f"{translate_key_label(self.jump_to_key_key)} → Jump to Key"
+        )
+
         # ========== Define all the filters we will need ==========
 
         # Normal mode filters
@@ -313,14 +369,19 @@ class H5KeyBindings:
         self.filter_not_normal_mode = lambda: not app.flag_normal_mode
         self.filter_not_searching = lambda: not app.flag_search_mode
         self.filter_tree_focus = lambda: app.tree_has_focus
-        self.filter_expanded_attrs = lambda: app.flag_expanded_attrs
-        self.filter_not_expanded_attrs = lambda: not app.flag_expanded_attrs
+        self.filter_expanded_attrs = (
+            lambda: app.flag_expanded_attrs and self.filter_tree_focus()
+        )
+        self.filter_not_expanded_attrs = (
+            lambda: not app.flag_expanded_attrs and self.filter_tree_focus()
+        )
         self.filter_dataset_mode = lambda: app.flag_dataset_mode
         self.filter_dataset_values_shown = (
             lambda: app.flag_dataset_mode and app.dataset_values_has_content
         )
         self.filter_search_mode = lambda: app.flag_search_mode
         self.filter_window_mode = lambda: app.flag_window_mode
+        self.filter_jump_mode = lambda: app.flag_jump_mode
 
     def bind_function(self, key, function, filter_lambda):
         """Bind a function to a key with a filter condition.
@@ -577,6 +638,45 @@ class H5KeyBindings:
             self.filter_window_mode,
         )
 
+    def _init_jump_bindings(self):
+        """Initialize jump mode keybindings."""
+        # Bind jump mode keys
+        self.bind_function(
+            self.top_key,
+            goto_top,
+            self.filter_jump_mode,
+        )
+        self.bind_function(
+            self.top_alt_key,
+            goto_top,
+            self.filter_jump_mode,
+        )
+        self.bind_function(
+            self.bottom_key,
+            goto_bottom,
+            self.filter_jump_mode,
+        )
+        self.bind_function(
+            self.bottom_alt_key,
+            goto_bottom,
+            self.filter_jump_mode,
+        )
+        self.bind_function(
+            self.parent_key,
+            goto_parent,
+            self.filter_jump_mode,
+        )
+        self.bind_function(
+            self.next_sibling_key,
+            goto_next,
+            self.filter_jump_mode,
+        )
+        self.bind_function(
+            self.jump_to_key_key,
+            jump_to_key,
+            self.filter_jump_mode,
+        )
+
     def _init_bindings(self):
         """Initialize all keybindings."""
         self._init_normal_mode_bindings()
@@ -623,11 +723,10 @@ class H5KeyBindings:
 
         # Show the expand/shrink attributes key if in normal mode and tree
         # has focus
-        if self.filter_normal_mode():
-            if self.filter_not_expanded_attrs():
-                hotkeys.append(self.expand_attrs_label)
-            else:
-                hotkeys.append(self.shrink_attrs_label)
+        if self.filter_not_expanded_attrs():
+            hotkeys.append(self.expand_attrs_label)
+        elif self.filter_expanded_attrs():
+            hotkeys.append(self.shrink_attrs_label)
 
         # Show the dataset mode keys if in dataset mode
         if self.filter_dataset_mode():
@@ -650,6 +749,14 @@ class H5KeyBindings:
             hotkeys.append(self.focus_values_label)
             hotkeys.append(self.focus_plot_label)
             hotkeys.append(self.focus_hist_label)
+
+        # Show the jump mode keys if in jump mode
+        if self.filter_jump_mode():
+            hotkeys.append(self.goto_top_label)
+            hotkeys.append(self.goto_bottom_label)
+            hotkeys.append(self.goto_parent_label)
+            hotkeys.append(self.goto_next_parent_label)
+            hotkeys.append(self.jump_to_key_label)
 
         # Show the quit key in normal mode
         if self.filter_normal_mode():
