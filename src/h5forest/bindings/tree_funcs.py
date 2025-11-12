@@ -15,13 +15,27 @@ from h5forest.errors import error_handler
 @error_handler
 def move_up_ten(event):
     """Move up ten lines."""
-    event.app.tree_buffer.cursor_up(10)
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Move up ten lines
+    app.tree_buffer.cursor_up(10)
 
 
 @error_handler
 def move_down_ten(event):
     """Move down ten lines."""
-    event.app.tree_buffer.cursor_down(10)
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Move down ten lines
+    app.tree_buffer.cursor_down(10)
 
 
 @error_handler
@@ -56,8 +70,11 @@ def expand_collapse_node(event):
     This uses lazy loading so only the group at the expansion point
     will be loaded.
     """
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Get the current cursor row and position
     current_row = app.current_row
@@ -97,19 +114,23 @@ def expand_collapse_node(event):
 
 def expand_attributes(event):
     """Expand the attributes."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app.flag_expanded_attrs = True
-    app.update_hotkeys_panel()
     event.app.invalidate()
 
 
 def collapse_attributes(event):
     """Collapse the attributes."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app.flag_expanded_attrs = False
-    app.update_hotkeys_panel()
     event.app.invalidate()

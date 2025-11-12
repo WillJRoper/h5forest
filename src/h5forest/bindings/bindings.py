@@ -59,6 +59,7 @@ from h5forest.bindings.window_funcs import (
     move_tree,
     move_values,
 )
+from h5forest.utils import DynamicLabelLayout
 
 
 class H5KeyBindings:
@@ -74,7 +75,7 @@ class H5KeyBindings:
         self.config = app.config
 
         # Is vim mode enabled? This just a friendly pointer to the config
-        self.vim_mode_enabled = self.config.vim_mode_enabled()
+        self.vim_mode_enabled = self.config.is_vim_mode_enabled()
 
         # ========== Define attributes to hold all the keys ==========
 
@@ -127,13 +128,13 @@ class H5KeyBindings:
         )
         self.jump_up_key = self.config.get_keymap(
             "tree_navigation",
-            "jump_up",
+            "jump_up_10",
         )
 
         # Motion keys
         self.jump_down_key = self.config.get_keymap(
             "tree_navigation",
-            "jump_down",
+            "jump_down_10",
         )
         self.move_up_key = self.config.get_keymap(
             "tree_navigation",
@@ -215,7 +216,7 @@ class H5KeyBindings:
         )
         self.hist_focus_key = self.config.get_keymap(
             "window_mode",
-            "focus_histogram",
+            "focus_hist",
         )
 
         # Go to mode keys
@@ -769,6 +770,8 @@ class H5KeyBindings:
         # If not in normal mode, show the exit leader mode key
         else:
             hotkeys.append(self.exit_mode_label)
+
+        return DynamicLabelLayout(hotkeys)
 
     def get_mode_title(self):
         """Get the current mode title based on application state."""

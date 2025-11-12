@@ -21,8 +21,11 @@ def show_values(event):
     This will truncate the value list if the array is large so as not
     to flood memory.
     """
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Get the node under the cursor
     node = app.tree.get_current_node(app.current_row)
@@ -54,8 +57,11 @@ def show_values(event):
 @error_handler
 def show_values_in_range(event):
     """Show the values of a dataset in an index range."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Get the node under the cursor
     node = app.tree.get_current_node(app.current_row)
@@ -118,8 +124,11 @@ def show_values_in_range(event):
 @error_handler
 def close_values(event):
     """Close the value pane."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app.flag_values_visible = False
     app.values_content.text = ""
@@ -131,8 +140,11 @@ def close_values(event):
 @error_handler
 def minimum_maximum(event):
     """Show the minimum and maximum values of a dataset."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Get the node under the cursor
     node = app.tree.get_current_node(app.current_row)
@@ -168,8 +180,11 @@ def minimum_maximum(event):
 @error_handler
 def mean(event):
     """Show the mean of a dataset."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Get the node under the cursor
     node = app.tree.get_current_node(app.current_row)
@@ -205,8 +220,11 @@ def mean(event):
 @error_handler
 def std(event):
     """Show the standard deviation of a dataset."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Get the node under the cursor
     node = app.tree.get_current_node(app.current_row)

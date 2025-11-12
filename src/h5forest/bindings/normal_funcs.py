@@ -21,8 +21,11 @@ def exit_app(event):
 
 def goto_leader_mode(event):
     """Enter goto mode."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app._flag_normal_mode = False
     app._flag_jump_mode = True
@@ -31,8 +34,11 @@ def goto_leader_mode(event):
 
 def dataset_leader_mode(event):
     """Enter dataset mode."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app._flag_normal_mode = False
     app._flag_dataset_mode = True
@@ -41,8 +47,11 @@ def dataset_leader_mode(event):
 
 def window_leader_mode(event):
     """Enter window mode."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app._flag_normal_mode = False
     app._flag_window_mode = True
@@ -51,8 +60,11 @@ def window_leader_mode(event):
 
 def plotting_leader_mode(event):
     """Enter plotting mode."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app._flag_normal_mode = False
     app._flag_plotting_mode = True
@@ -61,8 +73,11 @@ def plotting_leader_mode(event):
 
 def hist_leader_mode(event):
     """Enter hist mode."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app._flag_normal_mode = False
     app._flag_hist_mode = True
@@ -72,8 +87,11 @@ def hist_leader_mode(event):
 @error_handler
 def exit_leader_mode(event):
     """Exit leader mode."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app.return_to_normal_mode()
     app.default_focus()
@@ -83,8 +101,11 @@ def exit_leader_mode(event):
 @error_handler
 def restore_tree_to_initial(event):
     """Restore the tree to initial state (as when app was opened)."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Clear any saved filtering state
     app.tree.original_tree_text = None
@@ -118,8 +139,11 @@ def restore_tree_to_initial(event):
 @error_handler
 def copy_key(event):
     """Copy the HDF5 key of the current node to the clipboard."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Get the current node
     node = app.tree.get_current_node(app.current_row)

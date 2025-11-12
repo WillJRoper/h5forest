@@ -136,7 +136,6 @@ class TestH5ForestInitialization:
         assert app.values_frame is not None
         assert app.plot_frame is not None
         assert app.hist_frame is not None
-        assert app.hotkeys_panel is not None
 
     def test_init_creates_application(self, temp_h5_file):
         """Test that initialization creates Application object."""
