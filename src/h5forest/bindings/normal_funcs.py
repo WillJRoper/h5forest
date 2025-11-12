@@ -29,7 +29,6 @@ def goto_leader_mode(event):
 
     app._flag_normal_mode = False
     app._flag_jump_mode = True
-    app.mode_title.update_title("Goto Mode")
 
 
 def dataset_leader_mode(event):
@@ -42,7 +41,6 @@ def dataset_leader_mode(event):
 
     app._flag_normal_mode = False
     app._flag_dataset_mode = True
-    app.mode_title.update_title("Dataset Mode")
 
 
 def window_leader_mode(event):
@@ -55,7 +53,6 @@ def window_leader_mode(event):
 
     app._flag_normal_mode = False
     app._flag_window_mode = True
-    app.mode_title.update_title("Window Mode")
 
 
 def plotting_leader_mode(event):
@@ -68,7 +65,6 @@ def plotting_leader_mode(event):
 
     app._flag_normal_mode = False
     app._flag_plotting_mode = True
-    app.mode_title.update_title("Plotting Mode")
 
 
 def hist_leader_mode(event):
@@ -81,7 +77,6 @@ def hist_leader_mode(event):
 
     app._flag_normal_mode = False
     app._flag_hist_mode = True
-    app.mode_title.update_title("Histogram Mode")
 
 
 @error_handler
