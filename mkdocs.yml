@@ -73,6 +73,7 @@ nav:
   - The Basics:
       - Installation: installation.md
       - Basic Usage: usage.md
+      - Configuration: configuration.md
   - Mode Reference:
       - Overview: modes/overview.md
       - Normal Mode: modes/normal.md
@@ -91,4 +92,3 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/WillJRoper/h5forest
-

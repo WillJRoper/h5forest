@@ -6,7 +6,7 @@ We welcome contributions to `h5forest`! This guide will help you get started wit
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.9 or higher
 - Git
 - HDF5 libraries (for `h5py`)
 - pre-commit hook installation (see below)
@@ -306,54 +306,6 @@ Then visit `http://localhost:8000` in your browser to view the documentation.
 
 The documentation will automatically rebuild as you make changes to the markdown files.
 
-## Types of Contributions
-
-### Bug Reports
-
-When reporting bugs, please include:
-
-- **Description:** What you expected vs. what happened
-- **Reproduction steps:** How to reproduce the issue
-- **Environment:** Python version, OS, `h5forest` version
-- **Sample file:** If possible, a minimal HDF5 file that triggers the bug
-
-### Feature Requests
-
-When suggesting features, please include:
-
-- **Use case:** Why is this feature needed?
-- **Description:** What should the feature do?
-- **Examples:** How would users interact with it?
-- **Implementation ideas:** Any thoughts on how to implement it
-
-### Code Contributions
-
-We welcome contributions in these areas:
-
-#### Core Functionality
-
-- **Navigation improvements:** Better tree traversal, search functionality
-- **Performance optimizations:** Faster loading, memory efficiency
-- **HDF5 support:** Better support for different HDF5 features
-
-#### User Interface
-
-- **Keybinding enhancements:** More intuitive key mappings
-- **Display improvements:** Better formatting, colors, layout
-- **Accessibility features:** Screen reader support, keyboard navigation
-
-#### Data Analysis
-
-- **Visualization features:** More plot types, interactive plots
-- **Statistical functions:** Data summaries, analysis tools
-- **Export capabilities:** Save data, export visualizations
-
-#### Developer Experience
-
-- **Testing infrastructure:** More test coverage, test utilities
-- **Documentation:** Tutorials, examples, API docs
-- **Development tools:** Better debugging, profiling tools
-
 ## Review Process
 
 ### Pull Request Requirements
@@ -382,7 +334,7 @@ PRs are reviewed for:
 
 All PRs automatically run through CI which checks:
 
-- Tests against Python 3.8, 3.9, 3.10, 3.11, 3.12
+- Tests against Python 3.9, 3.10, 3.11, 3.12
 - Code linting and formatting
 - Test coverage reporting
 - Documentation building (if applicable)
