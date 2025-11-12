@@ -26,8 +26,12 @@ from h5forest.bindings.normal_funcs import (
     hist_leader_mode,
     plotting_leader_mode,
     restore_tree_to_initial,
-    search_leader_mode,
     window_leader_mode,
+)
+from h5forest.bindings.search_funcs import (
+    accept_search_results,
+    exit_search_mode,
+    search_leader_mode,
 )
 from h5forest.bindings.tree_funcs import (
     collapse_attributes,
@@ -164,6 +168,20 @@ class H5KeyBindings:
             "std_dev",
         )
 
+        # Search mode keys
+        self.accept_search_key = self.config.get_keymap(
+            "search_mode",
+            "accept_search",
+        )
+        self.cancel_search_key = self.config.get_keymap(
+            "search_mode",
+            "cancel_search",
+        )
+        self.exit_search_key = self.config.get_keymap(
+            "search_mode",
+            "exit_search",
+        )
+
         # ====== Define attributes to hold all the different labels ======
 
         # Normal mode labels
@@ -233,6 +251,15 @@ class H5KeyBindings:
             f"{translate_key_label(self.std_key)} → Get Standard Deviation"
         )
 
+        # Search mode labels
+        self.accept_search_label = Label(
+            f"{translate_key_label(self.accept_search_key)} → Accept"
+        )
+        self.cancel_search_label = Label(
+            f"{translate_key_label(self.exit_search_key)}/"
+            f"{translate_key_label(self.cancel_search_key)} → Cancel"
+        )
+
         # ========== Define all the filters we will need ==========
 
         # Normal mode filters
@@ -246,6 +273,7 @@ class H5KeyBindings:
         self.filter_dataset_values_shown = (
             lambda: app.flag_dataset_mode and app.dataset_values_has_content
         )
+        self.filter_search_mode = lambda: app.flag_search_mode
 
     def bind_function(self, key, function, filter_lambda):
         """Bind a function to a key with a filter condition.
@@ -454,12 +482,32 @@ class H5KeyBindings:
             self.filter_dataset_mode,
         )
 
+    def _init_search_bindings(self):
+        """Initialize search mode keybindings."""
+        # Bind search mode keys
+        self.bind_function(
+            self.accept_search_key,
+            accept_search_results,
+            self.filter_search_mode,
+        )
+        self.bind_function(
+            self.cancel_search_key,
+            exit_search_mode,
+            self.filter_search_mode,
+        )
+        self.bind_function(
+            self.exit_search_key,
+            exit_search_mode,
+            self.filter_search_mode,
+        )
+
     def _init_bindings(self):
         """Initialize all keybindings."""
         self._init_normal_mode_bindings()
         self._init_motion_bindings()
         self._init_tree_bindings()
         self._init_dataset_bindings()
+        self._init_search_bindings()
 
     def get_current_hotkeys(self):
         """Get the current hotkeys based on application state."""
@@ -496,6 +544,14 @@ class H5KeyBindings:
         if self.filter_normal_mode():
             hotkeys.append(self.copy_key_label)
 
+        # Show the expand/shrink attributes key if in normal mode and tree
+        # has focus
+        if self.filter_normal_mode():
+            if self.filter_not_expanded_attrs():
+                hotkeys.append(self.expand_attrs_label)
+            else:
+                hotkeys.append(self.shrink_attrs_label)
+
         # Show the dataset mode keys if in dataset mode
         if self.filter_dataset_mode():
             hotkeys.append(self.view_values_label)
@@ -506,9 +562,18 @@ class H5KeyBindings:
             hotkeys.append(self.mean_label)
             hotkeys.append(self.std_label)
 
+        # Show the search mode keys if in search mode
+        if self.filter_search_mode():
+            hotkeys.append(self.accept_search_label)
+
         # Show the quit key in normal mode
         if self.filter_normal_mode():
             hotkeys.append(self.exit_label)
+
+        # We have special text for cancelling/exiting search mode
+        elif self.filter_search_mode():
+            hotkeys.append(self.cancel_search_label)
+
         # If not in normal mode, show the exit leader mode key
         else:
             hotkeys.append(self.exit_mode_label)
