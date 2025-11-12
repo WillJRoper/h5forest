@@ -93,3 +93,23 @@ def expand_collapse_node(event):
             ),
             bypass_readonly=True,
         )
+
+
+def expand_attributes(event):
+    """Expand the attributes."""
+    # Access the application instance
+    app = event.app
+
+    app.flag_expanded_attrs = True
+    app.update_hotkeys_panel()
+    event.app.invalidate()
+
+
+def collapse_attributes(event):
+    """Collapse the attributes."""
+    # Access the application instance
+    app = event.app
+
+    app.flag_expanded_attrs = False
+    app.update_hotkeys_panel()
+    event.app.invalidate()
