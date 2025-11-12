@@ -10,12 +10,10 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
 from h5forest.bindings.normal_funcs import (
-    collapse_attributes,
     copy_key,
     dataset_leader_mode,
     exit_app,
     exit_leader_mode,
-    expand_attributes,
     goto_leader_mode,
     hist_leader_mode,
     plotting_leader_mode,
@@ -24,6 +22,8 @@ from h5forest.bindings.normal_funcs import (
     window_leader_mode,
 )
 from h5forest.bindings.tree_funcs import (
+    collapse_attributes,
+    expand_attributes,
     expand_collapse_node,
     move_down,
     move_down_ten,
@@ -103,6 +103,8 @@ class H5KeyBindings:
             "tree_navigation",
             "jump_up",
         )
+
+        # Motion keys
         self.jump_down_key = self.config.get_keymap(
             "tree_navigation",
             "jump_down",
@@ -224,18 +226,6 @@ class H5KeyBindings:
             and app.app.layout.has_focus(app.tree_content.content),
         )
 
-        # Binding the expand/collapse attributes keys
-        self.bind_function(
-            self.toggle_attrs_key,
-            expand_attributes,
-            lambda: app.flag_normal_mode and not app.flag_expanded_attrs,
-        )
-        self.bind_function(
-            self.toggle_attrs_key,
-            collapse_attributes,
-            lambda: app.flag_normal_mode and app.flag_expanded_attrs,
-        )
-
         # Bind the tree restoration key
         self.bind_function(
             self.restore_key,
@@ -337,6 +327,13 @@ class H5KeyBindings:
         # For clarity extract the app instance
         app = self.app
 
+        # Bind expand/collapse attributes key
+        self.bind_function(
+            self.expand_collapse_key,
+            expand_collapse_node,
+            lambda: app.tree_has_focus,
+        )
+
         # Bind jump keys
         self.bind_function(
             self.jump_up_key,
@@ -348,10 +345,17 @@ class H5KeyBindings:
             move_down_ten,
             lambda: app.tree_has_focus,
         )
+
+        # Binding the expand/collapse attributes keys
         self.bind_function(
-            self.expand_collapse_key,
-            expand_collapse_node,
-            lambda: app.tree_has_focus,
+            self.toggle_attrs_key,
+            expand_attributes,
+            lambda: app.flag_normal_mode and not app.flag_expanded_attrs,
+        )
+        self.bind_function(
+            self.toggle_attrs_key,
+            collapse_attributes,
+            lambda: app.flag_normal_mode and app.flag_expanded_attrs,
         )
 
     def _init_bindings(self):

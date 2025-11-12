@@ -1,4 +1,10 @@
-"""A submodule defining the normal mode functions for H5Forest bindings."""
+"""A submodule defining the normal mode functions for H5Forest bindings.
+
+These functions are bound to keys in the H5KeyBindings defined in
+h5forest.bindings. They implement the behavior of normal mode, such as
+exiting the app, entering leader modes, expanding/collapsing attributes,
+searching, restoring the tree, and copying keys to the clipboard.
+"""
 
 import platform
 import subprocess
@@ -73,26 +79,6 @@ def exit_leader_mode(event):
 
     app.return_to_normal_mode()
     app.default_focus()
-    event.app.invalidate()
-
-
-def expand_attributes(event):
-    """Expand the attributes."""
-    # Access the application instance
-    app = event.app
-
-    app.flag_expanded_attrs = True
-    app.update_hotkeys_panel()
-    event.app.invalidate()
-
-
-def collapse_attributes(event):
-    """Collapse the attributes."""
-    # Access the application instance
-    app = event.app
-
-    app.flag_expanded_attrs = False
-    app.update_hotkeys_panel()
     event.app.invalidate()
 
 
