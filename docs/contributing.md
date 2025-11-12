@@ -334,7 +334,8 @@ PRs are reviewed for:
 
 All PRs automatically run through CI which checks:
 
-- Tests against Python 3.9, 3.10, 3.11, 3.12
+- Tests against Python 3.9, 3.10, 3.11, 3.12, 3.13
+- Cross-platform testing on Ubuntu, Windows, and macOS
 - Code linting and formatting
 - Test coverage reporting
 - Documentation building (if applicable)
