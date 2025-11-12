@@ -14,8 +14,13 @@ from h5forest.errors import error_handler
 @error_handler
 def goto_top(event):
     """Go to the top of the tree (vim gg)."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
 
+    # Access the application instance
+    app = H5Forest()
+
+    # Move to the top
     app.set_cursor_position(app.tree.tree_text, new_cursor_pos=0)
 
     # Exit goto mode
@@ -25,7 +30,13 @@ def goto_top(event):
 @error_handler
 def goto_bottom(event):
     """Go to the bottom of the tree."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Move to the end
     app.set_cursor_position(app.tree.tree_text, new_cursor_pos=app.tree.length)
 
     # Exit goto mode
@@ -35,7 +46,12 @@ def goto_bottom(event):
 @error_handler
 def goto_parent(event):
     """Go to the parent of the current node."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
     # Get the current node
     node = app.tree.get_current_node(app.current_row)
 
@@ -73,7 +89,12 @@ def goto_parent(event):
 @error_handler
 def goto_next(event):
     """Go to the next node."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
     # Get the current node
     node = app.tree.get_current_node(app.current_row)
 
@@ -118,7 +139,11 @@ def goto_next(event):
 @error_handler
 def jump_to_key(event):
     """Jump to next key containing user input."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
 
     def jump_to_key_callback():
         """Jump to next key containing user input."""

@@ -20,8 +20,11 @@ from h5forest.utils import WaitIndicator
 @error_handler
 def search_leader_mode(event):
     """Enter search mode."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     app._flag_normal_mode = False
     app._flag_search_mode = True
@@ -87,8 +90,11 @@ def exit_search_mode(event):
 
     Returns to normal mode with the original tree displayed.
     """
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Restore the original tree
     app.tree.restore_tree()
@@ -124,8 +130,11 @@ def accept_search_results(event):
     allowing all other modes (d, g, w, p, H) to work on the
     filtered results.
     """
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
     # Access the application instance
-    app = event.app
+    app = H5Forest()
 
     # Return to normal mode BEFORE clearing buffer
     # This prevents the text change handler from restoring the tree

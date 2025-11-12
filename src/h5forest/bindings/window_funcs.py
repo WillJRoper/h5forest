@@ -11,7 +11,13 @@ from h5forest.errors import error_handler
 @error_handler
 def move_tree(event):
     """Move focus to the tree."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Move focus to the tree
     app.shift_focus(app.tree_content)
     app.return_to_normal_mode()
 
@@ -19,7 +25,13 @@ def move_tree(event):
 @error_handler
 def move_attr(event):
     """Move focus to the attributes."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Move focus to the attributes
     app.shift_focus(app.attributes_content)
     app.return_to_normal_mode()
 
@@ -27,7 +39,13 @@ def move_attr(event):
 @error_handler
 def move_values(event):
     """Move focus to values."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Move focus to the values
     app.shift_focus(app.values_content)
     app.return_to_normal_mode()
 
@@ -35,7 +53,13 @@ def move_values(event):
 @error_handler
 def move_plot(event):
     """Move focus to the plot."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Move focus to the plot
     app.shift_focus(app.plot_content)
 
     # Plotting is special case where we also want to enter plotting
@@ -48,7 +72,13 @@ def move_plot(event):
 @error_handler
 def move_hist(event):
     """Move focus to the plot."""
-    app = event.app
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Move focus to the plot
     app.shift_focus(app.hist_content)
 
     # Plotting is special case where we also want to enter plotting
