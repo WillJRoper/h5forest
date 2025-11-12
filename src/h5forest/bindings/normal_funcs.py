@@ -8,12 +8,10 @@ searching, restoring the tree, and copying keys to the clipboard.
 
 import platform
 import subprocess
-import threading
 
 from prompt_toolkit.document import Document
 
 from h5forest.errors import error_handler
-from h5forest.utils import WaitIndicator
 
 
 def exit_app(event):
@@ -79,68 +77,6 @@ def exit_leader_mode(event):
 
     app.return_to_normal_mode()
     app.default_focus()
-    event.app.invalidate()
-
-
-def search_leader_mode(event):
-    """Enter search mode."""
-    # Access the application instance
-    app = event.app
-
-    app._flag_normal_mode = False
-    app._flag_search_mode = True
-    app.mode_title.update_title("Search Mode")
-    app.search_content.text = ""
-    app.search_content.buffer.cursor_position = 0
-    app.shift_focus(app.search_content)
-
-    # Start building the search index in the background
-    app.tree.get_all_paths()
-
-    # Show wait indicator while index is building
-    def monitor_index_building():
-        """Monitor index building and trigger auto-update when done."""
-        # Create and start the wait indicator
-        indicator = WaitIndicator(app, "Constructing search database...")
-
-        # Only show indicator if index is actually building
-        if app.tree.index_building:
-            indicator.start()
-
-        # Wait for index building to complete
-        if app.tree.unpack_thread:
-            app.tree.unpack_thread.join()
-
-        # Stop the indicator
-        indicator.stop()
-
-        # If user has already typed a query, trigger search update
-        def update_search():
-            # Set mini buffer to show "Search:" prompt
-            app.print("")
-
-            # Ensure focus is back on search content
-            app.shift_focus(app.search_content)
-
-            query = app.search_content.text
-            if query:  # Only update if there's a query
-                filtered_text = app.tree.filter_tree(query)
-                app.tree_buffer.set_document(
-                    Document(
-                        filtered_text,
-                        cursor_position=0,
-                    ),
-                    bypass_readonly=True,
-                )
-                app.app.invalidate()
-
-        app.app.loop.call_soon_threadsafe(update_search)
-
-    # Start monitoring in background thread
-    if app.tree.index_building:
-        thread = threading.Thread(target=monitor_index_building, daemon=True)
-        thread.start()
-
     event.app.invalidate()
 
 
