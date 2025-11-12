@@ -25,11 +25,10 @@ def test_tree_get_all_paths_lazy_start(temp_h5_file):
 
     # Verify thread was started
     assert tree.paths_initialized, "Paths should be initialized"
-    assert tree.index_building, "Should be building index"
     assert tree.unpack_thread is not None, "Should have started thread"
     assert tree.unpack_thread.daemon, "Thread should be daemon"
 
-    # Wait for thread to complete
+    # Wait for thread to complete (may already be done on fast systems)
     tree.unpack_thread.join(timeout=2.0)
 
     # Verify indexing completed
