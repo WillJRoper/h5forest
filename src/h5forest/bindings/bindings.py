@@ -19,7 +19,6 @@ from h5forest.bindings.dataset_funcs import (
 )
 from h5forest.bindings.jump_funcs import (
     goto_bottom,
-    goto_next,
     goto_parent,
     goto_top,
     jump_to_key,
@@ -240,10 +239,6 @@ class H5KeyBindings:
             "jump_mode",
             "parent",
         )
-        self.next_sibling_key = self.config.get_keymap(
-            "jump_mode",
-            "next_sibling",
-        )
         self.jump_to_key_key = self.config.get_keymap(
             "jump_mode",
             "jump_to_key",
@@ -355,9 +350,6 @@ class H5KeyBindings:
         )
         self.goto_parent_label = Label(
             f"{translate_key_label(self.parent_key)} → Go to Parent"
-        )
-        self.goto_next_parent_label = Label(
-            f"{translate_key_label(self.next_sibling_key)} → Next Parent Group"
         )
         self.jump_to_key_label = Label(
             f"{translate_key_label(self.jump_to_key_key)} → Jump to Key"
@@ -668,11 +660,6 @@ class H5KeyBindings:
             self.filter_jump_mode,
         )
         self.bind_function(
-            self.next_sibling_key,
-            goto_next,
-            self.filter_jump_mode,
-        )
-        self.bind_function(
             self.jump_to_key_key,
             jump_to_key,
             self.filter_jump_mode,
@@ -686,6 +673,7 @@ class H5KeyBindings:
         self._init_dataset_bindings()
         self._init_search_bindings()
         self._init_window_bindings()
+        self._init_jump_bindings()
 
     def get_current_hotkeys(self):
         """Get the current hotkeys based on application state."""
@@ -756,7 +744,6 @@ class H5KeyBindings:
             hotkeys.append(self.goto_top_label)
             hotkeys.append(self.goto_bottom_label)
             hotkeys.append(self.goto_parent_label)
-            hotkeys.append(self.goto_next_parent_label)
             hotkeys.append(self.jump_to_key_label)
 
         # Show the quit key in normal mode

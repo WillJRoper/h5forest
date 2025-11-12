@@ -211,6 +211,8 @@ class H5Forest:
         self.bindings._init_bindings()
 
         # Update everything to start in a good state
+        self.update_hotkeys_panel()
+        self.update_mode_title()
         self.app.invalidate()
 
     def run(self):
@@ -404,7 +406,6 @@ class H5Forest:
         self._flag_hist_mode = False
         self._flag_search_mode = False
         self._flag_in_prompt = False  # Track if we're in a prompt_yn dialog
-        self.mode_title.update_title("Normal Mode")
 
     def _init_text_areas(self):
         """Initialise the content for each frame."""
@@ -898,14 +899,13 @@ class H5Forest:
         self.app.layout.focus(focused_area)
 
     def update_hotkeys_panel(self):
-        """Update the hotkeys panel to reflect current focus and state.
-
-        This method reconstructs the hotkeys panel content based on the
-        current mode and focus state. It should be called whenever focus
-        changes or when the displayed hotkeys need to be refreshed.
-        """
+        """Update the hotkeys panel to reflect current focus and state."""
         # Reconstruct the hotkeys panel with fresh label layouts
         self.hotkeys_frame.body = self.bindings.get_current_hotkeys()
+
+    def update_mode_title(self):
+        """Update the mode title based on the current mode."""
+        self.mode_title.update_title(self.bindings.get_mode_title())
 
     def _create_mouse_handler(self, content_area):
         def mouse_handler(mouse_event):
@@ -965,6 +965,7 @@ class H5Forest:
                 The application instance.
         """
         self.update_hotkeys_panel()
+        self.update_mode_title()
 
 
 def main():

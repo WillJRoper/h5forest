@@ -28,7 +28,6 @@ def search_leader_mode(event):
 
     app._flag_normal_mode = False
     app._flag_search_mode = True
-    app.mode_title.update_title("Search Mode")
     app.search_content.text = ""
     app.search_content.buffer.cursor_position = 0
     app.shift_focus(app.search_content)
