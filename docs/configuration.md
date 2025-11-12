@@ -157,22 +157,4 @@ These keys provide vim-style navigation throughout the application. If you try t
 
 ## Extending Keybindings (For Developers)
 
-To integrate configuration-based keybindings in h5forest's code:
-
-```python
-def _init_app_bindings(app):
-    """Set up keybindings using configuration."""
-
-    # Get the configured key for quit action
-    quit_key = app.config.get_keymap("normal_mode", "quit")
-
-    def exit_app(event):
-        """Exit the app."""
-        event.app.exit()
-
-    # Bind using configured key (falls back to default if not set)
-    app.kb.add(
-        quit_key or "q",
-        filter=Condition(lambda: app.flag_normal_mode)
-    )(exit_app)
-```
+To integrate configuration-based keybindings in h5forest's code you can simply add them to the config, define the functions to bind to them and then add them to H5KeyBindings with a binding and a label:

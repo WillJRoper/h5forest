@@ -334,10 +334,205 @@ PRs are reviewed for:
 
 All PRs automatically run through CI which checks:
 
-- Tests against Python 3.9, 3.10, 3.11, 3.12
+- Tests against Python 3.9, 3.10, 3.11, 3.12, 3.13
+- Cross-platform testing on Ubuntu, Windows, and macOS
 - Code linting and formatting
 - Test coverage reporting
 - Documentation building (if applicable)
+
+## Adding New Key Bindings
+
+The key binding system in `h5forest` is centralized in the `H5KeyBindings` class located in `src/h5forest/bindings/bindings.py`. This section explains how to add new key bindings to the application.
+
+### Architecture Overview
+
+The binding system consists of:
+
+- **`H5KeyBindings` class** (`src/h5forest/bindings/bindings.py`): Central class that manages all key bindings
+- **Function modules** (`src/h5forest/bindings/*_funcs.py`): Contain the actual handler functions for each mode
+  - `normal_funcs.py` - Mode switching and core operations
+  - `tree_funcs.py` - Tree navigation operations
+  - `dataset_funcs.py` - Dataset inspection operations
+  - `hist_funcs.py` - Histogram mode operations
+  - `plot_funcs.py` - Scatter plot mode operations
+  - `jump_funcs.py` - Jump/goto operations
+  - `search_funcs.py` - Search operations
+  - `window_funcs.py` - Window focus management
+  - `utils.py` - Utility functions
+
+### Steps to Add a New Binding
+
+#### 1. Create the Handler Function
+
+Add your handler function to the appropriate `*_funcs.py` file. All handlers should:
+
+- Accept an `event` parameter
+- Use the `@error_handler` decorator
+- Get the app instance via the singleton: `app = H5Forest()`
+
+**Example:**
+
+```python
+@error_handler
+def my_new_function(event):
+    """Brief description of what this function does."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Your logic here
+    app.print("My new function executed!")
+```
+
+#### 2. Import the Handler in `bindings.py`
+
+Add your function to the imports at the top of `src/h5forest/bindings/bindings.py`:
+
+```python
+from h5forest.bindings.your_funcs import (
+    my_new_function,
+    # ... other functions
+)
+```
+
+#### 3. Add the Key Configuration
+
+In the `H5KeyBindings.__init__()` method, add a key configuration attribute:
+
+```python
+self.my_new_key = self.config.get_keymap(
+    "your_mode",  # e.g., "hist_mode", "plot_mode", "normal_mode"
+    "your_action",  # e.g., "my_action"
+)
+```
+
+#### 4. Create a Filter (if needed)
+
+If your binding should only work in certain conditions, add a filter lambda in `__init__()`:
+
+```python
+self.filter_my_condition = lambda: app.some_condition
+```
+
+Common filters:
+- `self.filter_normal_mode` - Only in normal mode
+- `self.filter_hist_mode` - Only in histogram mode
+- `self.filter_tree_focus` - Only when tree has focus
+- `self.filter_not_normal_mode` - In any leader mode
+
+#### 5. Create a Label
+
+Add a label for the hotkey display:
+
+```python
+self.my_action_label = Label(
+    translate_key_label(self.my_new_key) + ": Description"
+)
+```
+
+#### 6. Bind the Function
+
+In the appropriate `_init_*_bindings()` method, bind your function:
+
+```python
+def _init_your_mode_bindings(self):
+    """Initialize your mode keybindings."""
+    self.bind_function(
+        self.my_new_key,
+        my_new_function,
+        self.filter_your_mode,  # Or lambda: True for always active
+    )
+```
+
+#### 7. Update Hotkey Display
+
+In the `get_current_hotkeys()` method, add your label to the appropriate mode section:
+
+```python
+if self.filter_your_mode():
+    hotkeys.append(self.my_action_label)
+```
+
+#### 8. Add Configuration Defaults
+
+Update `src/h5forest/data/default_config.yaml` to include the default key mapping:
+
+```yaml
+keymaps:
+  your_mode:
+    your_action: "k"  # Or whatever key you want
+```
+
+#### 9. Write Tests
+
+Add tests in `tests/unit/test_your_mode_bindings.py`:
+
+```python
+@patch('h5forest.h5_forest.H5Forest')
+def test_my_new_function(self, mock_h5forest_class, mock_app, mock_event):
+    """Test my new function."""
+    mock_h5forest_class.return_value = mock_app
+
+    _init_your_mode_bindings(mock_app)
+
+    # Find the binding
+    bindings = [b for b in mock_app.kb.bindings if b.keys == ("k",)]
+    handler = bindings[0].handler
+
+    # Call the handler
+    handler(mock_event)
+
+    # Assert expected behavior
+    mock_app.print.assert_called_once_with("My new function executed!")
+```
+
+### Example: Adding a "Copy Value" Binding to Histogram Mode
+
+**1. Create handler in `hist_funcs.py`:**
+
+```python
+@error_handler
+def copy_hist_value(event):
+    """Copy the current histogram bin value to clipboard."""
+    from h5forest.h5_forest import H5Forest
+    app = H5Forest()
+
+    # Get current bin value logic here
+    value = app.histogram_plotter.get_current_bin_value()
+    # Copy to clipboard logic
+    subprocess.run(["xclip", "-selection", "clipboard"],
+                   input=str(value).encode())
+    app.print(f"Copied value: {value}")
+```
+
+**2. Import in `bindings.py`:**
+
+```python
+from h5forest.bindings.hist_funcs import (
+    ...,
+    copy_hist_value,
+)
+```
+
+**3-7. Add configuration, filter, label, binding, and hotkey display** (as shown above)
+
+**8. Update `default_config.yaml`:**
+
+```yaml
+keymaps:
+  hist_mode:
+    copy_value: "c"
+```
+
+**9. Write tests** (as shown above)
+
+### Testing Your Binding
+
+1. Run unit tests: `pytest tests/unit/test_your_mode_bindings.py`
+2. Test manually: Start `h5forest` and try your new key binding
+3. Check pre-commit hooks: `pre-commit run --all-files`
 
 ## Getting Help
 

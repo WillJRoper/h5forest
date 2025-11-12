@@ -189,6 +189,11 @@ class ScatterPlotter(Plotter):
         self.assigny_thread = None
         self.plot_thread = None
 
+    @property
+    def data_assigned(self):
+        """Return whether data has been assigned."""
+        return "x" in self.plot_params and "y" in self.plot_params
+
     def set_x_key(self, node):
         """
         Set the x-axis key for the plot.
@@ -481,7 +486,7 @@ class HistogramPlotter(Plotter):
         # Define the text for the plotting TextArea
         self.plot_text = self.default_plot_text
 
-        # Initialise containters for minima and maxima
+        # Initialise containers for minima and maxima
         self.x_min = None
         self.x_max = None
 
@@ -497,6 +502,11 @@ class HistogramPlotter(Plotter):
         # Attributes for working with threads
         self.assign_data_thread = None
         self.compute_hist_thread = None
+
+    @property
+    def data_assigned(self):
+        """Return whether data has been assigned."""
+        return "data" in self.plot_params
 
     @error_handler
     def set_data_key(self, node):
@@ -655,13 +665,16 @@ class HistogramPlotter(Plotter):
         return self.plot_text
 
     @error_handler
-    def _plot(self, text):
+    def _plot(self, text, use_chunks=False):
         """
         Plot the histogram.
 
         Args:
             text (str):
                 The text to extract the plot parameters from.
+            use_chunks (bool):
+                Whether to use chunked processing (not used for histogram
+                plotting, but required for interface consistency).
         """
         from h5forest.h5_forest import H5Forest
 

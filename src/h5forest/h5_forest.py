@@ -19,7 +19,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import ConditionalContainer, HSplit, VSplit
-from prompt_toolkit.layout.containers import Window
+from prompt_toolkit.layout.containers import ConditionalContainer, Window
 from prompt_toolkit.layout.controls import BufferControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
@@ -27,26 +27,16 @@ from prompt_toolkit.mouse_events import MouseEventType
 from prompt_toolkit.widgets import Frame, TextArea
 
 from h5forest._version import __version__
-from h5forest.bindings import (
-    _init_app_bindings,
-    _init_dataset_bindings,
-    _init_goto_bindings,
-    _init_hist_bindings,
-    _init_plot_bindings,
-    _init_search_bindings,
-    _init_tree_bindings,
-    _init_window_bindings,
-)
+from h5forest.bindings import H5KeyBindings
 from h5forest.config import ConfigManager
 from h5forest.plotting import HistogramPlotter, ScatterPlotter
 from h5forest.styles import style
 from h5forest.tree import Tree, TreeProcessor
-from h5forest.utils import DynamicLabelLayout, DynamicTitle, get_window_size
+from h5forest.utils import DynamicTitle, get_window_size
 
 
 class H5Forest:
-    """
-    The main application for the HDF5 Forest.
+    """The main application for the HDF5 Forest.
 
     This class is a singleton. Any attempt to create a new instance will
     return the existing instance. This makes the instance available globally.
@@ -65,6 +55,24 @@ class H5Forest:
             A flag to control the dataset mode of the application.
         _flag_window_mode (bool):
             A flag to control the window mode of the application.
+        _flag_plotting_mode (bool):
+            A flag to control the plotting mode of the application.
+        _flag_hist_mode (bool):
+            A flag to control the histogram mode of the application.
+        _flag_search_mode (bool):
+            A flag to control the search mode of the application.
+        config (ConfigManager):
+            The configuration manager for the application.
+        tree_processor (TreeProcessor):
+            The tree processor for rendering the tree.
+        mode_title (DynamicTitle):
+            A dynamic title for the mode hotkeys panel.
+        scatter_plotter (ScatterPlotter):
+            The scatter plotter for hexbin plots.
+        histogram_plotter (HistogramPlotter):
+            The histogram plotter for histogram plots.
+        tree_buffer (Buffer):
+            The buffer for the tree text area.
         jump_keys (VSplit):
             The hotkeys for the jump mode.
         dataset_keys (VSplit):
@@ -87,8 +95,6 @@ class H5Forest:
             The text area for the mini buffer.
         hot_keys (VSplit):
             The hotkeys for the application.
-        hotkeys_panel (HSplit):
-            The panel to display hotkeys.
         prev_row (int):
             The previous row the cursor was on. This means we can avoid
             updating the metadata and attributes when the cursor hasn't moved.
@@ -114,8 +120,7 @@ class H5Forest:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
-        """
-        Create a new instance of the class.
+        """Create a new instance of the class.
 
         This method ensures that only one instance of the class is created.
 
@@ -128,8 +133,7 @@ class H5Forest:
         return cls._instance
 
     def _init(self, hdf5_filepath, use_default_config=False):
-        """
-        Initialise the application.
+        """Initialise the application.
 
         Constructs all the frames necessary for the app, builds the HDF5 tree
         (populating only the root), and populates the Layout.
@@ -171,18 +175,6 @@ class H5Forest:
         # Timer for debouncing search input
         self.search_timer = None
 
-        # Set up the main app and tree bindings. Store the raw label
-        # dicts/lists so we can filter them dynamically using property methods
-        self.kb = KeyBindings()
-        self._app_keys_dict = _init_app_bindings(self)
-        self._tree_keys_dict = _init_tree_bindings(self)
-        self._dataset_keys_list = _init_dataset_bindings(self)
-        self._goto_keys_list = _init_goto_bindings(self)
-        self._window_keys_dict = _init_window_bindings(self)
-        self._plot_keys_dict = _init_plot_bindings(self)
-        self._hist_keys_dict = _init_hist_bindings(self)
-        self._search_keys_list = _init_search_bindings(self)
-
         # Attributes for dynamic titles
         self.value_title = DynamicTitle("Values")
         self.mode_title = DynamicTitle("Normal Mode")
@@ -214,21 +206,33 @@ class H5Forest:
         self.values_frame = None
         self.plot_frame = None
         self.hist_frame = None
-        self.hotkeys_panel = None
         self.layout = None
         self._init_layout()
 
-        # Intialise a container for user input
+        # Initialise a container for user input
         self.user_input = None
 
-        # With all that done we can set up the application
+        # Set up the main application
+        self.kb = KeyBindings()
         self.app = Application(
             layout=self.layout,
             key_bindings=self.kb,
             full_screen=True,
             mouse_support=False,
+            on_invalidate=lambda app: self.refresh(app),
+            refresh_interval=None,
             style=style,
         )
+
+        # Set up the app bindings (this must be done after the app is created
+        # because we need to pass the app instance to the bindings)
+        self.bindings = H5KeyBindings(self)
+        self.bindings._init_bindings()
+
+        # Update everything to start in a good state
+        self.update_hotkeys_panel()
+        self.update_mode_title()
+        self.app.invalidate()
 
     def run(self):
         """Run the application."""
@@ -236,8 +240,7 @@ class H5Forest:
 
     @property
     def current_row(self):
-        """
-        Return the row under the cursor.
+        """Return the row under the cursor.
 
         Returns:
             int:
@@ -253,8 +256,7 @@ class H5Forest:
 
     @property
     def current_column(self):
-        """
-        Return the column under the cursor.
+        """Return the column under the cursor.
 
         Returns:
             int:
@@ -270,8 +272,7 @@ class H5Forest:
 
     @property
     def current_position(self):
-        """
-        Return the current position in the tree.
+        """Return the current position in the tree.
 
         Returns:
             int:
@@ -281,8 +282,7 @@ class H5Forest:
 
     @property
     def flag_normal_mode(self):
-        """
-        Return the normal mode flag.
+        """Return the normal mode flag.
 
         This accounts for whether we are awaiting user input in the mini
         buffer.
@@ -297,8 +297,7 @@ class H5Forest:
 
     @property
     def flag_jump_mode(self):
-        """
-        Return the jump mode flag.
+        """Return the jump mode flag.
 
         This accounts for whether we are awaiting user input in the mini
         buffer.
@@ -313,8 +312,7 @@ class H5Forest:
 
     @property
     def flag_dataset_mode(self):
-        """
-        Return the dataset mode flag.
+        """Return the dataset mode flag.
 
         This accounts for whether we are awaiting user input in the mini
         buffer.
@@ -329,8 +327,7 @@ class H5Forest:
 
     @property
     def flag_window_mode(self):
-        """
-        Return the window mode flag.
+        """Return the window mode flag.
 
         This accounts for whether we are awaiting user input in the mini
         buffer.
@@ -345,8 +342,7 @@ class H5Forest:
 
     @property
     def flag_plotting_mode(self):
-        """
-        Return the plotting mode flag.
+        """Return the plotting mode flag.
 
         This accounts for whether we are awaiting user input in the mini
         buffer.
@@ -361,8 +357,7 @@ class H5Forest:
 
     @property
     def flag_hist_mode(self):
-        """
-        Return the histogram mode flag.
+        """Return the histogram mode flag.
 
         This accounts for whether we are awaiting user input in the mini
         buffer.
@@ -377,8 +372,7 @@ class H5Forest:
 
     @property
     def flag_search_mode(self):
-        """
-        Return the search mode flag.
+        """Return the search mode flag.
 
         This accounts for whether we are in search mode and the search
         buffer has focus.
@@ -391,246 +385,55 @@ class H5Forest:
             self.search_content
         )
 
-    def _get_hot_keys(self):
-        """
-        Get the hot keys for normal mode based on current state.
+    @property
+    def flag_in_prompt(self):
+        """Return whether we are currently in a yes/no prompt.
 
         Returns:
-            list: List of Label widgets.
+            bool:
+                The flag for being in a yes/no prompt.
         """
-        labels = []
-
-        # Always show Enter to open group in normal mode
-        labels.append(self._tree_keys_dict["open_group"])
-
-        # Mode-switching keys
-        labels.append(self._app_keys_dict["dataset_mode"])
-        labels.append(self._app_keys_dict["goto_mode"])
-        labels.append(self._app_keys_dict["hist_mode"])
-        labels.append(self._app_keys_dict["plotting_mode"])
-        labels.append(self._app_keys_dict["window_mode"])
-        labels.append(self._app_keys_dict["search"])
-
-        # Other hot keys
-        labels.append(self._tree_keys_dict["move_ten"])
-
-        if not self.flag_expanded_attrs:
-            labels.append(self._app_keys_dict["expand_attrs"])
-        else:
-            labels.append(self._app_keys_dict["shrink_attrs"])
-
-        labels.append(self._app_keys_dict["copy_key"])
-        labels.append(self._app_keys_dict["restore_tree"])
-        labels.append(self._app_keys_dict["exit"])
-
-        return labels
+        return self._flag_in_prompt
 
     @property
-    def hot_keys(self):
-        """
-        Return the hot keys for normal mode, filtered based on current state.
-
-        This combines app and tree keys and filters based on flags like
-        flag_expanded_attrs and tree focus.
+    def tree_has_focus(self):
+        """Return whether the tree content has focus.
 
         Returns:
-            DynamicLabelLayout: Layout with filtered labels.
+            bool:
+                True if the tree content has focus, False otherwise.
         """
-        return DynamicLabelLayout(self._get_hot_keys)
-
-    def _get_dataset_keys(self):
-        """Get the hot keys for dataset mode."""
-        return self._dataset_keys_list
+        return self.app.layout.has_focus(self.tree_content)
 
     @property
-    def dataset_keys(self):
-        """
-        Return the hot keys for dataset mode.
-
-        No filtering needed for dataset mode.
+    def dataset_values_has_content(self):
+        """Return whether the dataset values content has any text.
 
         Returns:
-            DynamicLabelLayout: Layout with dataset labels.
+            bool:
+                True if the values content has text, False otherwise.
         """
-        return DynamicLabelLayout(self._get_dataset_keys)
-
-    def _get_goto_keys(self):
-        """Get the hot keys for goto mode."""
-        return self._goto_keys_list
+        return len(self.values_content.text) > 0
 
     @property
-    def goto_keys(self):
-        """
-        Return the hot keys for goto mode.
-
-        No filtering needed for goto mode.
+    def histogram_config_has_focus(self):
+        """Return whether the histogram configuration has focus.
 
         Returns:
-            DynamicLabelLayout: Layout with goto labels.
+            bool:
+                True if the histogram configuration has focus, False otherwise.
         """
-        return DynamicLabelLayout(self._get_goto_keys)
-
-    def _get_window_keys(self):
-        """
-        Get the hot keys for window mode based on current state.
-
-        Returns:
-            list: List of Label widgets.
-        """
-        labels = []
-
-        # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
-
-        # Show "move to X" only if not already focused on X
-        if not has_app or not self.app.layout.has_focus(self.tree_content):
-            labels.append(self._window_keys_dict["move_tree"])
-
-        if not has_app or not self.app.layout.has_focus(
-            self.attributes_content
-        ):
-            labels.append(self._window_keys_dict["move_attrs"])
-
-        if self.flag_values_visible and (
-            not has_app or not self.app.layout.has_focus(self.values_content)
-        ):
-            labels.append(self._window_keys_dict["move_values"])
-
-        if not has_app or not self.app.layout.has_focus(self.plot_content):
-            labels.append(self._window_keys_dict["move_plot"])
-
-        if not has_app or not self.app.layout.has_focus(self.hist_content):
-            labels.append(self._window_keys_dict["move_hist"])
-
-        labels.append(self._window_keys_dict["exit"])
-
-        return labels
+        return self.app.layout.has_focus(self.hist_content)
 
     @property
-    def window_keys(self):
-        """
-        Return the hot keys for window mode, filtered based on current state.
-
-        Filters based on focus and flag_values_visible.
+    def plot_config_has_focus(self):
+        """Return whether the plot configuration has focus.
 
         Returns:
-            DynamicLabelLayout: Layout with filtered labels.
+            bool:
+                True if the plot configuration has focus, False otherwise.
         """
-        return DynamicLabelLayout(self._get_window_keys)
-
-    def _get_plot_keys(self):
-        """
-        Get the hot keys for plotting mode, filtered based on current state.
-
-        Returns:
-            list: List of Label widgets for current state.
-        """
-        labels = []
-
-        # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
-
-        # If config panel is focused, show only config-specific keys
-        if has_app and self.app.layout.has_focus(self.plot_content):
-            labels.append(self._plot_keys_dict["edit_tree"])
-            labels.append(self._plot_keys_dict["edit_entry"])
-            labels.append(self._plot_keys_dict["exit_config"])
-            return labels
-
-        # Otherwise show full tree view keys
-        labels.append(self._plot_keys_dict["edit_config"])
-
-        # Show axis selection only if not already set
-        if "x" not in self.scatter_plotter.plot_params:
-            labels.append(self._plot_keys_dict["select_x"])
-
-        if "y" not in self.scatter_plotter.plot_params:
-            labels.append(self._plot_keys_dict["select_y"])
-
-        # Show scale toggles
-        labels.append(self._plot_keys_dict["toggle_x_scale"])
-        labels.append(self._plot_keys_dict["toggle_y_scale"])
-
-        # Always show plot/save options for simplicity
-        labels.append(self._plot_keys_dict["plot"])
-        labels.append(self._plot_keys_dict["save_plot"])
-
-        labels.append(self._plot_keys_dict["reset"])
-        labels.append(self._plot_keys_dict["exit_mode"])
-
-        return labels
-
-    @property
-    def plot_keys(self):
-        """
-        Return the hot keys for plotting mode, filtered based on current state.
-
-        Filters based on plot_params and focus.
-
-        Returns:
-            DynamicLabelLayout: Layout with filtered labels.
-        """
-        return DynamicLabelLayout(self._get_plot_keys)
-
-    def _get_hist_keys(self):
-        """
-        Get the hot keys for histogram mode, filtered on current state.
-
-        Returns:
-            list: List of Label widgets for current state.
-        """
-        labels = []
-
-        # Check if app exists (it won't during initialization)
-        has_app = hasattr(self, "app") and self.app is not None
-
-        # If config panel is focused, show only config-specific keys
-        if has_app and self.app.layout.has_focus(self.hist_content):
-            labels.append(self._hist_keys_dict["edit_tree"])
-            labels.append(self._hist_keys_dict["edit_entry"])
-            labels.append(self._hist_keys_dict["exit_config"])
-            return labels
-
-        # Otherwise show full tree view keys
-        labels.append(self._hist_keys_dict["edit_config"])
-        labels.append(self._hist_keys_dict["select_data"])
-        labels.append(self._hist_keys_dict["edit_bins"])
-        labels.append(self._hist_keys_dict["toggle_x_scale"])
-        labels.append(self._hist_keys_dict["toggle_y_scale"])
-        labels.append(self._hist_keys_dict["show_hist"])
-        labels.append(self._hist_keys_dict["save_hist"])
-        labels.append(self._hist_keys_dict["reset"])
-        labels.append(self._hist_keys_dict["exit_mode"])
-
-        return labels
-
-    @property
-    def hist_keys(self):
-        """
-        Return the hot keys for histogram mode, filtered on current state.
-
-        Filters based on plot_params and focus.
-
-        Returns:
-            DynamicLabelLayout: Layout with filtered labels.
-        """
-        return DynamicLabelLayout(self._get_hist_keys)
-
-    def _get_search_keys(self):
-        """Get the hot keys for search mode."""
-        return self._search_keys_list
-
-    @property
-    def search_keys(self):
-        """
-        Return the hot keys for search mode.
-
-        No filtering needed for search mode.
-
-        Returns:
-            DynamicLabelLayout: Layout with search labels.
-        """
-        return DynamicLabelLayout(self._get_search_keys)
+        return self.app.layout.has_focus(self.plot_content)
 
     def return_to_normal_mode(self):
         """Return to normal mode."""
@@ -642,7 +445,6 @@ class H5Forest:
         self._flag_hist_mode = False
         self._flag_search_mode = False
         self._flag_in_prompt = False  # Track if we're in a prompt_yn dialog
-        self.mode_title.update_title("Normal Mode")
 
     def _init_text_areas(self):
         """Initialise the content for each frame."""
@@ -752,8 +554,7 @@ class H5Forest:
         )
 
     def set_cursor_position(self, text, new_cursor_pos):
-        """
-        Set the cursor position in the tree.
+        """Set the cursor position in the tree.
 
         This is a horrid workaround but seems to be the only way to do it
         in prompt_toolkit. We reset the entire Document with the
@@ -767,8 +568,7 @@ class H5Forest:
         )
 
     def cursor_moved_action(self, event):
-        """
-        Apply changes when the cursor has been moved.
+        """Apply changes when the cursor has been moved.
 
         This will update the metadata and attribute outputs to display
         what is currently under the cursor.
@@ -791,7 +591,7 @@ class H5Forest:
         get_app().invalidate()
 
     def _init_layout(self):
-        """Intialise the layout."""
+        """Initialise the layout."""
         # Get the window size
         rows, columns = get_window_size()
 
@@ -883,51 +683,8 @@ class H5Forest:
             filter=Condition(lambda: self.flag_values_visible),
         )
 
-        # Set up the hotkeys panel
-        self.hotkeys_panel = HSplit(
-            [
-                ConditionalContainer(
-                    content=self.hot_keys,
-                    filter=Condition(lambda: self.flag_normal_mode),
-                ),
-                ConditionalContainer(
-                    content=self.goto_keys,
-                    filter=Condition(lambda: self.flag_jump_mode),
-                ),
-                ConditionalContainer(
-                    content=self.dataset_keys,
-                    filter=Condition(lambda: self.flag_dataset_mode),
-                ),
-                ConditionalContainer(
-                    content=self.window_keys,
-                    filter=Condition(lambda: self.flag_window_mode),
-                ),
-                ConditionalContainer(
-                    content=self.plot_keys,
-                    filter=Condition(lambda: self.flag_plotting_mode),
-                ),
-                ConditionalContainer(
-                    content=self.hist_keys,
-                    filter=Condition(lambda: self.flag_hist_mode),
-                ),
-                ConditionalContainer(
-                    content=self.search_keys,
-                    filter=Condition(lambda: self.flag_search_mode),
-                ),
-            ]
-        )
-        self.hotkeys_frame = ConditionalContainer(
-            Frame(self.hotkeys_panel, title=self.mode_title),
-            filter=Condition(
-                lambda: self.flag_normal_mode
-                or self.flag_jump_mode
-                or self.flag_dataset_mode
-                or self.flag_window_mode
-                or self.flag_plotting_mode
-                or self.flag_hist_mode
-                or self.flag_search_mode
-            ),
-        )
+        # Set up the hotkeys frame
+        self.hotkeys_frame = Frame(HSplit([]), title=self.mode_title)
 
         # Set up the plot frame
         self.plot_frame = ConditionalContainer(
@@ -997,8 +754,7 @@ class H5Forest:
         )
 
     def print(self, *args, timeout=5.0):
-        """
-        Print a single line to the mini buffer.
+        """Print a single line to the mini buffer.
 
         Args:
             *args:
@@ -1034,8 +790,7 @@ class H5Forest:
         self.app.invalidate()
 
     def input(self, prompt, callback, mini_buffer_text=""):
-        """
-        Accept input from the user.
+        """Accept input from the user.
 
         Note, this is pretty hacky! It will store the input into
         self.user_input which will then be processed by the passed
@@ -1101,8 +856,7 @@ class H5Forest:
         get_app().invalidate()
 
     def prompt_yn(self, prompt, on_yes, on_no):
-        """
-        Prompt user for yes/no with single keypress (no Enter needed).
+        """Prompt user for yes/no with single keypress (no Enter needed).
 
         Args:
             prompt (str):
@@ -1175,62 +929,22 @@ class H5Forest:
         self.app.layout.focus(self.tree_content)
 
     def shift_focus(self, focused_area):
-        """
-        Shift the focus to a different area.
+        """Shift the focus to a different area.
 
         Args:
             focused_area (TextArea):
                 The text area to focus on.
         """
         self.app.layout.focus(focused_area)
-        self.update_hotkeys_panel()
 
     def update_hotkeys_panel(self):
-        """
-        Update the hotkeys panel to reflect current focus and state.
-
-        This method reconstructs the hotkeys panel content based on the
-        current mode and focus state. It should be called whenever focus
-        changes or when the displayed hotkeys need to be refreshed.
-        """
+        """Update the hotkeys panel to reflect current focus and state."""
         # Reconstruct the hotkeys panel with fresh label layouts
-        from prompt_toolkit.filters import Condition
-        from prompt_toolkit.layout.containers import ConditionalContainer
+        self.hotkeys_frame.body = self.bindings.get_current_hotkeys()
 
-        self.hotkeys_panel.children = [
-            ConditionalContainer(
-                content=DynamicLabelLayout(self._get_hot_keys),
-                filter=Condition(lambda: self.flag_normal_mode),
-            ),
-            ConditionalContainer(
-                content=DynamicLabelLayout(self._get_goto_keys),
-                filter=Condition(lambda: self.flag_jump_mode),
-            ),
-            ConditionalContainer(
-                content=DynamicLabelLayout(self._get_dataset_keys),
-                filter=Condition(lambda: self.flag_dataset_mode),
-            ),
-            ConditionalContainer(
-                content=DynamicLabelLayout(self._get_window_keys),
-                filter=Condition(lambda: self.flag_window_mode),
-            ),
-            ConditionalContainer(
-                content=DynamicLabelLayout(self._get_plot_keys),
-                filter=Condition(lambda: self.flag_plotting_mode),
-            ),
-            ConditionalContainer(
-                content=DynamicLabelLayout(self._get_hist_keys),
-                filter=Condition(lambda: self.flag_hist_mode),
-            ),
-            ConditionalContainer(
-                content=DynamicLabelLayout(self._get_search_keys),
-                filter=Condition(lambda: self.flag_search_mode),
-            ),
-        ]
-
-        # Force a redraw of the interface to reflect updated hotkeys
-        if hasattr(self, "app") and self.app is not None:
-            self.app.invalidate()
+    def update_mode_title(self):
+        """Update the mode title based on the current mode."""
+        self.mode_title.update_title(self.bindings.get_mode_title())
 
     def _create_mouse_handler(self, content_area):
         def mouse_handler(mouse_event):
@@ -1240,8 +954,7 @@ class H5Forest:
         return mouse_handler
 
     def _on_search_text_changed(self, event):
-        """
-        Handle search text changes for real-time filtering with debouncing.
+        """Handle search text changes for real-time filtering with debouncing.
 
         This is called whenever the user types in the search buffer.
         It debounces the search to avoid excessive filtering while typing.
@@ -1279,6 +992,19 @@ class H5Forest:
             bypass_readonly=True,
         )
         get_app().invalidate()
+
+    def refresh(self, app):
+        """Refresh the application display.
+
+        This method is called whenever app.invalidate() is invoked.
+        It can be used to perform periodic updates or redraws.
+
+        Args:
+            app (Application):
+                The application instance.
+        """
+        self.update_hotkeys_panel()
+        self.update_mode_title()
 
 
 def main():

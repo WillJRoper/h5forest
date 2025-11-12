@@ -1,5 +1,6 @@
 """Unit tests for h5forest.tree module - corrected version."""
 
+import os
 from unittest.mock import Mock
 
 import pytest
@@ -26,7 +27,7 @@ class TestTreeInitialization:
         tree = Tree(simple_h5_file)
 
         expected_name = (
-            simple_h5_file.split("/")[-1]
+            os.path.basename(simple_h5_file)
             .replace(".h5", "")
             .replace(".hdf5", "")
         )
