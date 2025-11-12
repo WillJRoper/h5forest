@@ -1,0 +1,397 @@
+"""A submodule defining the histogram mode functions for H5Forest bindings.
+
+These functions are bound to keys in the H5KeyBindings defined in
+h5forest.bindings. They implement the behavior of histogram mode, such as
+selecting datasets, editing histogram parameters, plotting, saving, and
+resetting histograms.
+"""
+
+from prompt_toolkit.document import Document
+
+from h5forest.dataset_prompts import prompt_for_chunking_preference
+from h5forest.errors import error_handler
+from h5forest.utils import WaitIndicator
+
+
+@error_handler
+def select_data(event):
+    """Select the dataset for the histogram."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Get the node under the cursor
+    node = app.tree.get_current_node(app.current_row)
+
+    # Exit if the node is not a Dataset
+    if node.is_group:
+        app.print(f"{node.path} is not a Dataset")
+        return
+
+    # Set the text in the histogram area directly (no prompt here)
+    app.hist_content.text = app.histogram_plotter.set_data_key(node)
+
+
+@error_handler
+def edit_bins(event):
+    """Edit the number of bins."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Wait for data assignment thread to finish if it's running
+    if app.histogram_plotter.assign_data_thread is not None:
+        with WaitIndicator(app, "Computing data range..."):
+            app.histogram_plotter.assign_data_thread.join()
+        app.histogram_plotter.assign_data_thread = None
+
+    # Check if x_min/x_max are available (needed to compute histogram)
+    if (
+        app.histogram_plotter.x_min is None
+        or app.histogram_plotter.x_max is None
+    ):
+        app.print(
+            "Cannot edit bins: data range not yet computed. "
+            "Please select a dataset first (Enter)"
+        )
+        return
+
+    # Get the current text
+    split_text = app.hist_content.text.split("\n")
+
+    # Get the current bins value
+    current_bins = split_text[1].split(": ")[1].strip()
+
+    def edit_bins_callback():
+        """Update the bins value."""
+        # Strip the user input
+        user_input = app.user_input.strip()
+
+        # Update the text
+        split_text[1] = f"nbins:       {user_input}"
+        app.hist_content.text = "\n".join(split_text)
+        app.histogram_plotter.plot_text = app.hist_content.text
+
+        # Return to tree focus
+        app.shift_focus(app.tree_content)
+
+    # Get the modified entry from the user
+    app.input(
+        "Number of bins", edit_bins_callback, mini_buffer_text=current_bins
+    )
+
+
+@error_handler
+def toggle_x_scale(event):
+    """Toggle the x-axis scale between linear and log."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Wait for data assignment thread to finish if it's running
+    if app.histogram_plotter.assign_data_thread is not None:
+        with WaitIndicator(app, "Computing data range..."):
+            app.histogram_plotter.assign_data_thread.join()
+        app.histogram_plotter.assign_data_thread = None
+
+    # Check if x_min/x_max are available
+    if (
+        app.histogram_plotter.x_min is None
+        or app.histogram_plotter.x_max is None
+    ):
+        app.print(
+            "Cannot toggle x-scale: data range not yet computed. "
+            "Please select a dataset first (Enter)"
+        )
+        return
+
+    # Get the current text
+    split_text = app.hist_content.text.split("\n")
+
+    # Get the current x-scale
+    current_scale = split_text[3].split(": ")[1].strip()
+
+    # Toggle the scale
+    new_scale = "log" if current_scale == "linear" else "linear"
+
+    # If toggling to log, validate data is compatible
+    if new_scale == "log":
+        if app.histogram_plotter.x_min <= 0:
+            value_type = (
+                "zero" if app.histogram_plotter.x_min == 0 else "negative"
+            )
+            app.print(
+                f"Cannot use log scale on x-axis: data contains "
+                f"{value_type} values "
+                f"(min = {app.histogram_plotter.x_min})"
+            )
+            return
+
+    split_text[3] = f"x-scale:     {new_scale}"
+
+    # Update the text
+    app.hist_content.text = "\n".join(split_text)
+    app.histogram_plotter.plot_text = app.hist_content.text
+
+    app.app.invalidate()
+
+
+@error_handler
+def toggle_y_scale(event):
+    """Toggle the y-axis scale between linear and log."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Wait for data assignment thread to finish if it's running
+    if app.histogram_plotter.assign_data_thread is not None:
+        with WaitIndicator(app, "Computing data range..."):
+            app.histogram_plotter.assign_data_thread.join()
+        app.histogram_plotter.assign_data_thread = None
+
+    # Check if x_min/x_max are available (needed to compute histogram)
+    if (
+        app.histogram_plotter.x_min is None
+        or app.histogram_plotter.x_max is None
+    ):
+        app.print(
+            "Cannot toggle y-scale: data range not yet computed. "
+            "Please select a dataset first (Enter)"
+        )
+        return
+
+    # Get the current text
+    split_text = app.hist_content.text.split("\n")
+
+    # Get the current y-scale
+    current_scale = split_text[4].split(": ")[1].strip()
+
+    # Toggle the scale
+    new_scale = "log" if current_scale == "linear" else "linear"
+
+    # Note: We can't validate y-scale until histogram is computed
+    # (y-scale applies to histogram counts, not data values)
+    # Validation will happen when the histogram is plotted
+
+    split_text[4] = f"y-scale:     {new_scale}"
+
+    # Update the text
+    app.hist_content.text = "\n".join(split_text)
+    app.histogram_plotter.plot_text = app.hist_content.text
+
+    app.app.invalidate()
+
+
+@error_handler
+def edit_hist_entry(event):
+    """Edit histogram param under cursor."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Get the current position and row in the plot content
+    current_row = app.hist_content.document.cursor_position_row
+    current_pos = app.hist_content.document.cursor_position
+
+    # Get the current row text  in the plot content split into
+    # key and value
+    split_line = app.histogram_plotter.get_row(current_row).split(": ")
+
+    # Split the current plot content into lines
+    split_text = app.hist_content.text.split("\n")
+
+    # If we're on a toggle option (i.e. scaling is linear or log) lets
+    # toggle it rather than edit it
+    if "scale" in split_line[0]:
+        if split_line[1].strip() == "linear":
+            split_text[current_row] = f"{split_line[0]}:  ".ljust(13) + "log"
+        else:
+            split_text[current_row] = (
+                f"{split_line[0]}:  ".ljust(13) + "linear"
+            )
+
+        app.hist_content.text = "\n".join(split_text)
+
+        # And put the cursor back where it was
+        app.hist_content.document = Document(
+            text=app.hist_content.text, cursor_position=current_pos
+        )
+        app.histogram_plotter.plot_text = app.hist_content.text
+
+        app.app.invalidate()
+
+        return
+
+    def edit_hist_entry_callback():
+        """Edit the plot param under cursor."""
+        # Strip the user input
+        user_input = app.user_input.strip()
+
+        # And set the text here
+        split_text[current_row] = (
+            f"{split_line[0]}:  ".ljust(13) + f"{user_input}"
+        )
+
+        # And display the new text
+        app.hist_content.text = "\n".join(split_text)
+        app.histogram_plotter.plot_text = app.hist_content.text
+
+        # And shift focus back to the plot content
+        app.shift_focus(app.hist_content)
+
+        # And put the cursor back where it was
+        app.hist_content.document = Document(
+            text=app.hist_content.text, cursor_position=current_pos
+        )
+
+    # Get the modified entry from the user
+    app.input(split_line[0], edit_hist_entry_callback)
+
+
+@error_handler
+def plot_hist(event):
+    """Plot the histogram."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Don't update if we already have everything
+    if len(app.histogram_plotter.plot_params) == 0:
+        # Get the node under the cursor
+        node = app.tree.get_current_node(app.current_row)
+
+        # Exit if the node is not a Dataset
+        if node.is_group:
+            app.print(f"{node.path} is not a Dataset")
+            return
+
+        # Set the text in the plotting area
+        app.hist_content.text = app.histogram_plotter.set_data_key(node)
+
+    def do_plot(use_chunks):
+        """Actually perform the plot after chunking preference is set."""
+        # Compute and plot the histogram with wait indicator
+        with WaitIndicator(app, "Generating histogram..."):
+            # Compute the histogram
+            app.hist_content.text = app.histogram_plotter.compute_hist(
+                app.hist_content.text, use_chunks=use_chunks
+            )
+
+            # Get the plot
+            app.histogram_plotter.plot_and_show(
+                app.hist_content.text, use_chunks=use_chunks
+            )
+
+    # Check if we have data selected
+    if "data" not in app.histogram_plotter.plot_params:
+        app.print("Please select a dataset first (Enter)")
+        return
+
+    # Get the node to check for chunking
+    nodes = [app.histogram_plotter.plot_params["data"]]
+
+    # Prompt for chunking preference if needed, then plot
+    prompt_for_chunking_preference(app, nodes, do_plot)
+
+
+@error_handler
+def save_hist(event):
+    """Plot the histogram."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Don't update if we already have everything
+    if len(app.histogram_plotter.plot_params) == 0:
+        # Get the node under the cursor
+        node = app.tree.get_current_node(app.current_row)
+
+        # Exit if the node is not a Dataset
+        if node.is_group:
+            app.print(f"{node.path} is not a Dataset")
+            return
+
+        # Set the text in the plotting area
+        app.hist_content.text = app.histogram_plotter.set_data_key(node)
+
+    def do_save(use_chunks):
+        """Actually save the plot after chunking preference is set."""
+        # Compute the histogram
+        app.hist_content.text = app.histogram_plotter.compute_hist(
+            app.hist_content.text, use_chunks=use_chunks
+        )
+
+        # Get the plot
+        app.histogram_plotter.plot_and_save(
+            app.hist_content.text, use_chunks=use_chunks
+        )
+
+    # Check if we have data selected
+    if "data" not in app.histogram_plotter.plot_params:
+        app.print("Please select a dataset first (Enter)")
+        return
+
+    # Get the node to check for chunking
+    nodes = [app.histogram_plotter.plot_params["data"]]
+
+    # Prompt for chunking preference if needed, then save
+    prompt_for_chunking_preference(app, nodes, do_save)
+
+
+@error_handler
+def reset_hist(event):
+    """Reset the histogram content."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Close any open plots and reset the content
+    app.histogram_plotter.close()
+    app.hist_content.text = app.histogram_plotter.reset()
+    app.return_to_normal_mode()
+    app.default_focus()
+
+
+@error_handler
+def edit_hist(event):
+    """Edit the histogram configuration."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    # Toggle focus between tree and histogram config for editing
+    if app.app.layout.has_focus(app.hist_content):
+        # Already in config, jump back to tree
+        app.shift_focus(app.tree_content)
+    else:
+        # In tree, jump to config
+        app.shift_focus(app.hist_content)
+
+
+def exit_edit_hist(event):
+    """Exit the edit mode."""
+    # Avoid circular imports
+    from h5forest.h5_forest import H5Forest
+
+    # Access the application instance
+    app = H5Forest()
+
+    app.shift_focus(app.tree_content)
