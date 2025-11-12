@@ -6,7 +6,30 @@ import pytest
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.plot_bindings import _init_plot_bindings, error_handler
+from h5forest.bindings.bindings import H5KeyBindings
+
+
+def _init_plot_bindings(app):
+    """Initialize plot bindings using H5KeyBindings class."""
+    bindings = H5KeyBindings(app)
+    bindings._init_plot_bindings()
+    bindings._init_normal_mode_bindings()  # For q key to exit mode
+
+    # Return dict of hotkeys matching old interface
+    return {
+        "edit_plot_config": bindings.edit_plot_config_label,
+        "exit_plot_edit": bindings.exit_plot_edit_label,
+        "edit_plot_entry": bindings.edit_plot_entry_label,
+        "select_x_data": bindings.select_x_data_label,
+        "select_y_data": bindings.select_y_data_label,
+        "toggle_x_log_scale": bindings.toggle_x_log_scale_label,
+        "toggle_y_log_scale": bindings.toggle_y_log_scale_label,
+        "reset_plot": bindings.reset_plot_label,
+        "show_plot": bindings.show_plot_label,
+        "save_plot": bindings.save_plot_label,
+        "exit_mode": bindings.exit_mode_label,
+        "exit": bindings.exit_label,
+    }
 
 
 class TestPlotBindings:
@@ -89,8 +112,12 @@ class TestPlotBindings:
         event = MagicMock()
         return event
 
-    def test_init_plot_bindings_returns_hotkeys(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_init_plot_bindings_returns_hotkeys(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that _init_plot_bindings returns a dict of Labels."""
+        mock_h5forest_class.return_value = mock_app
 
         hot_keys = _init_plot_bindings(mock_app)
         assert isinstance(hot_keys, dict)
@@ -99,8 +126,12 @@ class TestPlotBindings:
             assert isinstance(key, str)
             assert isinstance(value, Label)
 
-    def test_select_x_with_dataset(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_select_x_with_dataset(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test selecting x-axis with a dataset node."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Create a dataset node
@@ -125,8 +156,12 @@ class TestPlotBindings:
         # Verify plot content was updated
         assert mock_app.plot_content.text == "x-axis text"
 
-    def test_select_x_with_group(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_select_x_with_group(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test selecting x-axis with a group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Create a group node
@@ -149,8 +184,12 @@ class TestPlotBindings:
         # Verify set_x_key was NOT called
         mock_app.scatter_plotter.set_x_key.assert_not_called()
 
-    def test_select_y_with_dataset(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_select_y_with_dataset(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test selecting y-axis with a dataset node."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Create a dataset node
@@ -175,8 +214,12 @@ class TestPlotBindings:
         # Verify plot content was updated
         assert mock_app.plot_content.text == "y-axis text"
 
-    def test_select_y_with_group(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_select_y_with_group(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test selecting y-axis with a group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Create a group node
@@ -201,8 +244,12 @@ class TestPlotBindings:
         # Verify set_y_key was NOT called
         mock_app.scatter_plotter.set_y_key.assert_not_called()
 
-    def test_edit_plot_entry_toggle_linear_to_log(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_plot_entry_toggle_linear_to_log(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling scale from linear to log."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set up plot content with linear scale
@@ -225,8 +272,12 @@ class TestPlotBindings:
         assert mock_app.scatter_plotter.plot_text == mock_app.plot_content.text
         mock_app.app.invalidate.assert_called_once()
 
-    def test_edit_plot_entry_toggle_log_to_linear(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_plot_entry_toggle_log_to_linear(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling scale from log to linear."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set up plot content with log scale
@@ -245,8 +296,12 @@ class TestPlotBindings:
         assert "linear" in mock_app.plot_content.text
         mock_app.app.invalidate.assert_called_once()
 
-    def test_edit_plot_entry_callback(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_plot_entry_callback(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test editing a non-scale parameter with callback."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set up plot content with non-scale parameter
@@ -278,9 +333,13 @@ class TestPlotBindings:
         assert "New Title" in mock_app.plot_content.text
         mock_app.shift_focus.assert_called_once_with(mock_app.plot_content)
 
-    @patch("h5forest.bindings.plot_bindings.prompt_for_chunking_preference")
-    def test_plot_scatter(self, mock_prompt, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.plot_funcs.prompt_for_chunking_preference")
+    def test_plot_scatter(
+        self, mock_prompt, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test plotting and showing scatter plot."""
+        mock_h5forest_class.return_value = mock_app
         # Make the prompt call the callback immediately
         mock_prompt.side_effect = lambda app, nodes, callback: callback(
             use_chunks=False
@@ -303,9 +362,13 @@ class TestPlotBindings:
             mock_app.plot_content.text, use_chunks=False
         )
 
-    @patch("h5forest.bindings.plot_bindings.prompt_for_chunking_preference")
-    def test_save_scatter(self, mock_prompt, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.plot_funcs.prompt_for_chunking_preference")
+    def test_save_scatter(
+        self, mock_prompt, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test saving scatter plot."""
+        mock_h5forest_class.return_value = mock_app
         # Make the prompt call the callback immediately
         mock_prompt.side_effect = lambda app, nodes, callback: callback(
             use_chunks=False
@@ -328,8 +391,12 @@ class TestPlotBindings:
             mock_app.plot_content.text, use_chunks=False
         )
 
-    def test_plot_scatter_missing_x_axis(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_plot_scatter_missing_x_axis(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test plotting without x-axis selected."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set plot_params with only y
@@ -351,8 +418,12 @@ class TestPlotBindings:
         # Should not call plot_and_show
         mock_app.scatter_plotter.plot_and_show.assert_not_called()
 
-    def test_plot_scatter_missing_y_axis(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_plot_scatter_missing_y_axis(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test plotting without y-axis selected."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set plot_params with only x
@@ -374,8 +445,12 @@ class TestPlotBindings:
         # Should not call plot_and_show
         mock_app.scatter_plotter.plot_and_show.assert_not_called()
 
-    def test_plot_scatter_missing_both_axes(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_plot_scatter_missing_both_axes(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test plotting without any axes selected."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set plot_params empty
@@ -397,8 +472,12 @@ class TestPlotBindings:
         # Should not call plot_and_show
         mock_app.scatter_plotter.plot_and_show.assert_not_called()
 
-    def test_save_scatter_missing_x_axis(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_save_scatter_missing_x_axis(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test saving without x-axis selected."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set plot_params with only y
@@ -420,8 +499,12 @@ class TestPlotBindings:
         # Should not call plot_and_save
         mock_app.scatter_plotter.plot_and_save.assert_not_called()
 
-    def test_save_scatter_missing_y_axis(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_save_scatter_missing_y_axis(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test saving without y-axis selected."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set plot_params with only x
@@ -443,12 +526,19 @@ class TestPlotBindings:
         # Should not call plot_and_save
         mock_app.scatter_plotter.plot_and_save.assert_not_called()
 
-    @patch("h5forest.bindings.plot_bindings.WaitIndicator")
-    @patch("h5forest.bindings.plot_bindings.prompt_for_chunking_preference")
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.plot_funcs.WaitIndicator")
+    @patch("h5forest.bindings.plot_funcs.prompt_for_chunking_preference")
     def test_plot_scatter_calls_default_focus(
-        self, mock_prompt, mock_wait_indicator, mock_app, mock_event
+        self,
+        mock_prompt,
+        mock_wait_indicator,
+        mock_h5forest_class,
+        mock_app,
+        mock_event,
     ):
         """Test that plot_scatter calls default_focus after plotting."""
+        mock_h5forest_class.return_value = mock_app
         # Mock WaitIndicator context manager
         mock_wait_indicator.return_value.__enter__ = MagicMock()
         mock_wait_indicator.return_value.__exit__ = MagicMock()
@@ -471,8 +561,10 @@ class TestPlotBindings:
         # Verify default_focus was called
         mock_app.default_focus.assert_called_once()
 
-    def test_reset(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_reset(self, mock_h5forest_class, mock_app, mock_event):
         """Test resetting plot content."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         bindings = [
@@ -494,8 +586,10 @@ class TestPlotBindings:
         # Verify UI was updated
         mock_app.app.invalidate.assert_called_once()
 
-    def test_edit_plot(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_plot(self, mock_h5forest_class, mock_app, mock_event):
         """Test entering edit plot mode."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         bindings = [
@@ -511,26 +605,36 @@ class TestPlotBindings:
         # Verify focus shifted to plot content
         mock_app.shift_focus.assert_called_once_with(mock_app.plot_content)
 
-    def test_exit_edit_plot(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_exit_edit_plot(self, mock_h5forest_class, mock_app, mock_event):
         """Test exiting edit plot mode."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.app.layout.has_focus = MagicMock(return_value=True)
 
         _init_plot_bindings(mock_app)
 
-        # Find the 'q' binding for exiting edit mode
-        bindings = [b for b in mock_app.kb.bindings if b.keys == ("q",)]
-        # Should have a q binding with has_focus filter
+        # Find the 'e' binding for exiting edit mode (edit_config
+        # key exits when in config)
+        bindings = [b for b in mock_app.kb.bindings if b.keys == ("e",)]
+        # Should have an e binding with has_focus filter
         assert len(bindings) > 0
 
-        # Get the exit_edit_plot handler (no error_handler wrapper)
-        handler = bindings[-1].handler
+        # Get the exit_edit_plot handler (bound when plot config has focus)
+        # There are two 'e' bindings: one for entering, one for exiting
+        handler = (
+            bindings[-1].handler if len(bindings) > 1 else bindings[0].handler
+        )
         handler(mock_event)
 
         # Verify focus shifted back to tree
         mock_app.shift_focus.assert_called_with(mock_app.tree_content)
 
-    def test_toggle_x_scale_linear_to_log(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_x_scale_linear_to_log(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling x scale from linear to log."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Find the X binding (capital X for toggle)
@@ -548,8 +652,12 @@ class TestPlotBindings:
         assert "log" in mock_app.plot_content.text
         mock_app.app.invalidate.assert_called()
 
-    def test_toggle_x_scale_log_to_linear(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_x_scale_log_to_linear(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling x scale from log to linear."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set initial state to log
@@ -574,8 +682,12 @@ class TestPlotBindings:
         # Verify x-scale was toggled back to linear
         assert "x-scale:     linear" in mock_app.plot_content.text
 
-    def test_toggle_y_scale_linear_to_log(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_y_scale_linear_to_log(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling y scale from linear to log."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Find the Y binding (capital Y for toggle)
@@ -593,8 +705,12 @@ class TestPlotBindings:
         assert "y-scale:     log" in mock_app.plot_content.text
         mock_app.app.invalidate.assert_called()
 
-    def test_toggle_y_scale_log_to_linear(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_y_scale_log_to_linear(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling y scale from log to linear."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         # Set initial state to log
@@ -619,8 +735,12 @@ class TestPlotBindings:
         # Verify y-scale was toggled back to linear
         assert "y-scale:     linear" in mock_app.plot_content.text
 
-    def test_toggle_x_scale_with_none_x_min(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_x_scale_with_none_x_min(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling x scale when x_min is None."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.scatter_plotter.x_min = None
         mock_app.scatter_plotter.x_max = None
         _init_plot_bindings(mock_app)
@@ -638,10 +758,12 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.plot_content.text
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_toggle_x_scale_to_log_with_zero_values(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test toggling x scale to log when x_min is 0."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.scatter_plotter.x_min = 0
         _init_plot_bindings(mock_app)
         bindings = [
@@ -659,10 +781,12 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.plot_content.text
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_toggle_x_scale_to_log_with_negative_values(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test toggling x scale to log when x_min is negative."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.scatter_plotter.x_min = -5.0
         _init_plot_bindings(mock_app)
         bindings = [
@@ -680,8 +804,12 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.plot_content.text
 
-    def test_toggle_y_scale_with_none_y_min(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_y_scale_with_none_y_min(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling y scale when y_min is None."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.scatter_plotter.y_min = None
         mock_app.scatter_plotter.y_max = None
         _init_plot_bindings(mock_app)
@@ -699,10 +827,12 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "y-scale:     linear" in mock_app.plot_content.text
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_toggle_y_scale_to_log_with_zero_values(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test toggling y scale to log when y_min is 0."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.scatter_plotter.y_min = 0
         _init_plot_bindings(mock_app)
         bindings = [
@@ -720,10 +850,12 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "y-scale:     linear" in mock_app.plot_content.text
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_toggle_y_scale_to_log_with_negative_values(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test toggling y scale to log when y_min is negative."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.scatter_plotter.y_min = -5.0
         _init_plot_bindings(mock_app)
         bindings = [
@@ -741,8 +873,12 @@ class TestPlotBindings:
         # Verify scale was NOT changed
         assert "y-scale:     linear" in mock_app.plot_content.text
 
-    def test_toggle_x_scale_with_running_thread(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_x_scale_with_running_thread(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling x scale with a running assignx_thread."""
+        mock_h5forest_class.return_value = mock_app
 
         # Create a mock thread
         mock_thread = MagicMock()
@@ -760,8 +896,12 @@ class TestPlotBindings:
         # Verify scale was toggled
         assert "x-scale:     log" in mock_app.plot_content.text
 
-    def test_toggle_y_scale_with_running_thread(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_y_scale_with_running_thread(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling y scale with a running assigny_thread."""
+        mock_h5forest_class.return_value = mock_app
 
         # Create a mock thread
         mock_thread = MagicMock()
@@ -779,8 +919,12 @@ class TestPlotBindings:
         # Verify scale was toggled
         assert "y-scale:     log" in mock_app.plot_content.text
 
-    def test_reset_closes_figure(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_reset_closes_figure(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test that reset closes any open figures."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         bindings = [
@@ -795,8 +939,10 @@ class TestPlotBindings:
         mock_app.scatter_plotter.close.assert_called_once()
         mock_app.scatter_plotter.reset.assert_called_once()
 
-    def test_all_keys_bound(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_all_keys_bound(self, mock_h5forest_class, mock_app):
         """Test that all expected keys are bound."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
 
         expected_keys = [
@@ -816,16 +962,22 @@ class TestPlotBindings:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
             assert len(bindings) > 0, f"Key '{key}' not bound"
 
-    @patch("h5forest.bindings.plot_bindings.error_handler")
+    @patch("h5forest.h5_forest.H5Forest")
     def test_handlers_wrapped_with_error_handler(
-        self, mock_error_handler, mock_app
+        self, mock_h5forest_class, mock_app
     ):
-        """Test that most handlers are wrapped with error_handler."""
+        """Test that the bindings class is properly initialized."""
+        mock_h5forest_class.return_value = mock_app
+        # With the refactored binding system, error handling is built
+        # into the class
+        bindings = H5KeyBindings(mock_app)
+        assert bindings is not None
+        assert hasattr(bindings, "bind_function")
 
-        assert callable(error_handler)
-
-    def test_hotkeys_structure(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_hotkeys_structure(self, mock_h5forest_class, mock_app):
         """Test that hotkeys dict has correct structure."""
+        mock_h5forest_class.return_value = mock_app
         hot_keys = _init_plot_bindings(mock_app)
 
         # Should be a dict with Label values
@@ -837,8 +989,12 @@ class TestPlotBindings:
             assert isinstance(key, str)
             assert isinstance(value, Label)
 
-    def test_jump_to_config_when_in_tree(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_jump_to_config_when_in_tree(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test jumping to config from tree."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
         # Focus is not on plot_content (i.e., we're in tree)
         mock_app.app.layout.has_focus = MagicMock(return_value=False)
@@ -852,8 +1008,12 @@ class TestPlotBindings:
         # Should jump to plot_content
         mock_app.shift_focus.assert_called_once_with(mock_app.plot_content)
 
-    def test_jump_to_config_when_already_in_config(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_jump_to_config_when_already_in_config(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test jumping from config back to tree."""
+        mock_h5forest_class.return_value = mock_app
         _init_plot_bindings(mock_app)
         # Set focus to be on plot_content
         mock_app.app.layout.has_focus = MagicMock(

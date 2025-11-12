@@ -8,7 +8,20 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.tree_bindings import _init_tree_bindings, error_handler
+from h5forest.bindings.bindings import H5KeyBindings
+
+
+def _init_tree_bindings(app):
+    """Initialize tree bindings using H5KeyBindings class."""
+    bindings = H5KeyBindings(app)
+    bindings._init_tree_bindings()
+    bindings._init_motion_bindings()  # For arrow key and vim key bindings
+
+    # Return dict of hotkeys matching old interface
+    return {
+        "open_group": bindings.expand_collapse_label,
+        "move_ten": bindings.move_ten_label,
+    }
 
 
 class TestTreeBindings:
@@ -63,15 +76,23 @@ class TestTreeBindings:
         event.app.key_processor.feed = MagicMock()
         return event
 
-    def test_init_tree_bindings_returns_hotkeys(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_init_tree_bindings_returns_hotkeys(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that _init_tree_bindings returns a dict of hotkeys."""
+        mock_h5forest_class.return_value = mock_app
         hot_keys = _init_tree_bindings(mock_app)
         assert isinstance(hot_keys, dict)
         # 2 keys: open_group, move_ten
         assert len(hot_keys) == 2
 
-    def test_move_up_ten_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_up_ten_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_up_ten handler."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Find the move_up_ten handler (bound to '{')
@@ -84,8 +105,12 @@ class TestTreeBindings:
         # Verify cursor moved up 10 lines
         mock_app.tree_buffer.cursor_up.assert_called_once_with(10)
 
-    def test_move_down_ten_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_down_ten_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_down_ten handler."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Find the move_down_ten handler (bound to '}')
@@ -98,8 +123,12 @@ class TestTreeBindings:
         # Verify cursor moved down 10 lines
         mock_app.tree_buffer.cursor_down.assert_called_once_with(10)
 
-    def test_move_left_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_left_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_left handler (vim h)."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Find the move_left handler (bound to 'h')
@@ -114,8 +143,12 @@ class TestTreeBindings:
         call_args = mock_event.app.key_processor.feed.call_args[0]
         assert call_args[0].key == Keys.Left
 
-    def test_move_down_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_down_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_down handler (vim j)."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Find the move_down handler (bound to 'j')
@@ -130,8 +163,10 @@ class TestTreeBindings:
         call_args = mock_event.app.key_processor.feed.call_args[0]
         assert call_args[0].key == Keys.Down
 
-    def test_move_up_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_up_handler(self, mock_h5forest_class, mock_app, mock_event):
         """Test the move_up handler (vim k)."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Find the move_up handler (bound to 'k')
@@ -146,8 +181,12 @@ class TestTreeBindings:
         call_args = mock_event.app.key_processor.feed.call_args[0]
         assert call_args[0].key == Keys.Up
 
-    def test_move_right_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_right_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_right handler (vim l)."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Find the move_right handler (bound to 'l')
@@ -163,8 +202,12 @@ class TestTreeBindings:
         call_args = mock_event.app.key_processor.feed.call_args[0]
         assert call_args[0].key == Keys.Right
 
-    def test_expand_collapse_node_with_dataset(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_expand_collapse_node_with_dataset(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test expand_collapse_node does nothing for datasets."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Create a mock dataset node
@@ -187,8 +230,12 @@ class TestTreeBindings:
         # Verify tree was not modified
         mock_app.tree_buffer.set_document.assert_not_called()
 
-    def test_expand_collapse_node_with_no_children(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_expand_collapse_node_with_no_children(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test expand_collapse_node for groups with no children."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Create a mock group node with no children
@@ -208,10 +255,12 @@ class TestTreeBindings:
         # Verify tree was not modified
         mock_app.tree_buffer.set_document.assert_not_called()
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_expand_collapse_node_closes_expanded_node(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test expand_collapse_node closes an already expanded node."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Create a mock expanded group node
@@ -243,10 +292,12 @@ class TestTreeBindings:
         assert doc.cursor_position == 10
         assert call_args[1]["bypass_readonly"] is True
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_expand_collapse_node_opens_collapsed_node(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test expand_collapse_node opens a collapsed node."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Create a mock collapsed group node
@@ -280,8 +331,10 @@ class TestTreeBindings:
         assert doc.cursor_position == 10
         assert call_args[1]["bypass_readonly"] is True
 
-    def test_all_keys_bound_correctly(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_all_keys_bound_correctly(self, mock_h5forest_class, mock_app):
         """Test that all expected keys are bound."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         # Expected keys
@@ -299,8 +352,12 @@ class TestTreeBindings:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
             assert len(bindings) > 0, f"Key '{key}' not bound"
 
-    def test_brace_keys_have_tree_focus_filter(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_brace_keys_have_tree_focus_filter(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that { and } keys require tree focus."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         for key in ["{", "}"]:
@@ -308,16 +365,24 @@ class TestTreeBindings:
             assert len(bindings) > 0
             assert bindings[0].filter is not None
 
-    def test_enter_key_has_tree_focus_filter(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_enter_key_has_tree_focus_filter(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that enter key requires tree focus."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         bindings = [b for b in mock_app.kb.bindings if "c-m" in str(b.keys)]
         assert len(bindings) > 0
         assert bindings[0].filter is not None
 
-    def test_vim_keys_have_not_search_mode_filter(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_vim_keys_have_not_search_mode_filter(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that vim keys (hjkl) exclude search mode."""
+        mock_h5forest_class.return_value = mock_app
         _init_tree_bindings(mock_app)
 
         for key in ["h", "j", "k", "l"]:
@@ -325,16 +390,22 @@ class TestTreeBindings:
             assert len(bindings) > 0
             assert bindings[0].filter is not None
 
-    @patch("h5forest.bindings.tree_bindings.error_handler")
+    @patch("h5forest.h5_forest.H5Forest")
     def test_handlers_wrapped_with_error_handler(
-        self, mock_error_handler, mock_app
+        self, mock_h5forest_class, mock_app
     ):
-        """Test that handlers are wrapped with error_handler decorator."""
+        """Test that the bindings class is properly initialized."""
+        mock_h5forest_class.return_value = mock_app
+        # With the refactored binding system, error handling is built
+        # into the class
+        bindings = H5KeyBindings(mock_app)
+        assert bindings is not None
+        assert hasattr(bindings, "bind_function")
 
-        assert callable(error_handler)
-
-    def test_hotkeys_structure(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_hotkeys_structure(self, mock_h5forest_class, mock_app):
         """Test that hotkeys dict has correct structure."""
+        mock_h5forest_class.return_value = mock_app
         hot_keys = _init_tree_bindings(mock_app)
 
         # Should be a dict with Label values
@@ -344,7 +415,8 @@ class TestTreeBindings:
             assert isinstance(key, str)
             assert isinstance(value, Label)
 
-    def test_custom_movement_keys(self, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_custom_movement_keys(self, mock_h5forest_class, mock_event):
         """Test that custom movement keys (not vim or arrows) get bound."""
         from tests.conftest import add_config_mock
 
@@ -361,7 +433,13 @@ class TestTreeBindings:
         # Add config mock with custom movement keys
         add_config_mock(mock_app)
 
+        # Set the return value after creating mock_app
+        mock_h5forest_class.return_value = mock_app
+
         # Override the config to return custom keys (not vim or arrows)
+        # But fall back to original config for non-tree-navigation keys
+        original_get_keymap = mock_app.config.get_keymap
+
         def custom_get_keymap(mode, action):
             custom_keymaps = {
                 ("tree_navigation", "move_up"): "w",  # Not 'k' or 'up'
@@ -376,9 +454,8 @@ class TestTreeBindings:
             key = (mode, action)
             if key in custom_keymaps:
                 return custom_keymaps[key]
-            raise KeyError(
-                f"Keymap for mode '{mode}' action '{action}' not found"
-            )
+            # Fall back to original config for other keys
+            return original_get_keymap(mode, action)
 
         mock_app.config.get_keymap = MagicMock(side_effect=custom_get_keymap)
         mock_app.config.is_vim_mode_enabled.return_value = False

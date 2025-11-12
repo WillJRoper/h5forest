@@ -290,7 +290,9 @@ def plot_hist(event):
             )
 
             # Get the plot
-            app.histogram_plotter.plot_and_show(app.hist_content.text)
+            app.histogram_plotter.plot_and_show(
+                app.hist_content.text, use_chunks=use_chunks
+            )
 
     # Check if we have data selected
     if "data" not in app.histogram_plotter.plot_params:
@@ -334,7 +336,9 @@ def save_hist(event):
         )
 
         # Get the plot
-        app.histogram_plotter.plot_and_save(app.hist_content.text)
+        app.histogram_plotter.plot_and_save(
+            app.hist_content.text, use_chunks=use_chunks
+        )
 
     # Check if we have data selected
     if "data" not in app.histogram_plotter.plot_params:
