@@ -51,8 +51,8 @@ from h5forest.bindings.plot_funcs import (
     edit_plot_entry,
     exit_edit_plot,
     plot_scatter,
-    plot_toggle_x_log_scale,
-    plot_toggle_y_log_scale,
+    plot_toggle_x_scale,
+    plot_toggle_y_scale,
     reset_plot,
     save_scatter,
     select_x,
@@ -317,19 +317,19 @@ class H5KeyBindings:
         )
         self.select_x_data_key = self.config.get_keymap(
             "plot_mode",
-            "select_x_data",
+            "select_x",
         )
         self.select_y_data_key = self.config.get_keymap(
             "plot_mode",
-            "select_y_data",
+            "select_y",
         )
         self.toggle_x_log_scale_key = self.config.get_keymap(
             "plot_mode",
-            "toggle_x_log_scale",
+            "toggle_x_scale",
         )
         self.toggle_y_log_scale_key = self.config.get_keymap(
             "plot_mode",
-            "toggle_y_log_scale",
+            "toggle_y_scale",
         )
         self.reset_plot_key = self.config.get_keymap(
             "plot_mode",
@@ -559,7 +559,8 @@ class H5KeyBindings:
             lambda: app.flag_plotting_mode and app.plot_config_has_focus
         )
         self.filter_have_plot_data = (
-            lambda: app.flag_plotting_mode and app.plotter.data_assigned
+            lambda: app.flag_plotting_mode
+            and app.scatter_plotter.data_assigned
         )
 
     def bind_function(self, key, function, filter_lambda):
@@ -930,12 +931,12 @@ class H5KeyBindings:
         )
         self.bind_function(
             self.toggle_x_log_scale_key,
-            plot_toggle_x_log_scale,
+            plot_toggle_x_scale,
             self.filter_plot_mode,
         )
         self.bind_function(
             self.toggle_y_log_scale_key,
-            plot_toggle_y_log_scale,
+            plot_toggle_y_scale,
             self.filter_plot_mode,
         )
         self.bind_function(
