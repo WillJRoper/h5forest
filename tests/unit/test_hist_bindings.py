@@ -6,7 +6,30 @@ import pytest
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.hist_bindings import _init_hist_bindings
+from h5forest.bindings.bindings import H5KeyBindings
+
+
+def _init_hist_bindings(app):
+    """Initialize histogram bindings using H5KeyBindings class."""
+    bindings = H5KeyBindings(app)
+    bindings._init_histogram_bindings()
+    bindings._init_normal_mode_bindings()  # For q key to exit mode
+
+    # Return dict of hotkeys matching old interface
+    return {
+        "edit_config": bindings.edit_config_label,
+        "exit_edit": bindings.exit_edit_label,
+        "edit_entry": bindings.edit_entry_label,
+        "select_data": bindings.select_data_label,
+        "edit_bins": bindings.edit_bins_label,
+        "toggle_x_scale": bindings.toggle_x_scale_label,
+        "toggle_y_scale": bindings.toggle_y_scale_label,
+        "reset_hist": bindings.reset_hist_label,
+        "show_hist": bindings.show_hist_label,
+        "save_hist": bindings.save_hist_label,
+        "exit_mode": bindings.exit_mode_label,
+        "exit": bindings.exit_label,
+    }
 
 
 class TestHistBindings:
@@ -19,6 +42,9 @@ class TestHistBindings:
 
         app = MagicMock()
         app.flag_hist_mode = True
+        app.flag_normal_mode = False  # Not in normal mode when in hist mode
+        app.tree_has_focus = True
+        app.histogram_config_has_focus = False
         app.tree = MagicMock()
         app.current_row = 0
         app.histogram_plotter = MagicMock()
@@ -69,8 +95,12 @@ class TestHistBindings:
         """Create a mock event for testing."""
         return MagicMock()
 
-    def test_init_hist_bindings_returns_hotkeys(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_init_hist_bindings_returns_hotkeys(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that _init_hist_bindings returns a dict of Labels."""
+        mock_h5forest_class.return_value = mock_app
 
         hot_keys = _init_hist_bindings(mock_app)
         assert isinstance(hot_keys, dict)
@@ -79,10 +109,15 @@ class TestHistBindings:
             assert isinstance(key, str)
             assert isinstance(value, Label)
 
-    def test_edit_hist_entry_toggle_linear_to_log(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_hist_entry_toggle_linear_to_log(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling scale from linear to log."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         mock_app.app.layout.has_focus = MagicMock(return_value=True)
+        mock_app.histogram_config_has_focus = True  # Hist config has focus
         mock_app.hist_content.text = "x-scale:     linear"
         mock_app.histogram_plotter.get_row = MagicMock(
             return_value="x-scale: linear"
@@ -101,10 +136,15 @@ class TestHistBindings:
             assert "log" in mock_app.hist_content.text
             mock_app.app.invalidate.assert_called_once()
 
-    def test_edit_hist_entry_toggle_log_to_linear(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_hist_entry_toggle_log_to_linear(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling scale from log to linear."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         mock_app.app.layout.has_focus = MagicMock(return_value=True)
+        mock_app.histogram_config_has_focus = True  # Hist config has focus
         mock_app.hist_content.text = "x-scale:     log"
         mock_app.histogram_plotter.get_row = MagicMock(
             return_value="x-scale: log"
@@ -119,10 +159,15 @@ class TestHistBindings:
             handler(mock_event)
             assert "linear" in mock_app.hist_content.text
 
-    def test_edit_hist_entry_callback(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_hist_entry_callback(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test editing a non-scale parameter with callback."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         mock_app.app.layout.has_focus = MagicMock(return_value=True)
+        mock_app.histogram_config_has_focus = True  # Hist config has focus
         mock_app.hist_content.text = "title:       My Hist"
         mock_app.histogram_plotter.get_row = MagicMock(
             return_value="title: My Hist"
@@ -142,11 +187,13 @@ class TestHistBindings:
             assert "New Title" in mock_app.hist_content.text
             mock_app.shift_focus.assert_called_with(mock_app.hist_content)
 
-    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.hist_funcs.prompt_for_chunking_preference")
     def test_plot_hist_with_empty_params(
-        self, mock_prompt, mock_app, mock_event
+        self, mock_prompt, mock_h5forest_class, mock_app, mock_event
     ):
         """Test plotting histogram when params are empty."""
+        mock_h5forest_class.return_value = mock_app
         # Make the prompt call the callback immediately
         mock_prompt.side_effect = lambda app, nodes, callback: callback(
             use_chunks=False
@@ -178,12 +225,19 @@ class TestHistBindings:
         mock_app.histogram_plotter.compute_hist.assert_called_once()
         mock_app.histogram_plotter.plot_and_show.assert_called_once()
 
-    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
-    @patch("h5forest.bindings.hist_bindings.WaitIndicator")
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.hist_funcs.prompt_for_chunking_preference")
+    @patch("h5forest.bindings.hist_funcs.WaitIndicator")
     def test_plot_hist_with_existing_params(
-        self, mock_wait_indicator, mock_prompt, mock_app, mock_event
+        self,
+        mock_wait_indicator,
+        mock_prompt,
+        mock_h5forest_class,
+        mock_app,
+        mock_event,
     ):
         """Test plotting histogram with existing params."""
+        mock_h5forest_class.return_value = mock_app
         # Mock WaitIndicator context manager
         mock_wait_indicator.return_value.__enter__ = MagicMock()
         mock_wait_indicator.return_value.__exit__ = MagicMock()
@@ -207,8 +261,12 @@ class TestHistBindings:
         mock_app.histogram_plotter.set_data_key.assert_not_called()
         mock_app.histogram_plotter.compute_hist.assert_called_once()
 
-    def test_plot_hist_with_group_node(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_plot_hist_with_group_node(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test plotting histogram with group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         mock_app.histogram_plotter.plot_params = {}
         node = MagicMock()
@@ -224,12 +282,19 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
-    @patch("h5forest.bindings.hist_bindings.WaitIndicator")
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.hist_funcs.prompt_for_chunking_preference")
+    @patch("h5forest.bindings.hist_funcs.WaitIndicator")
     def test_save_hist(
-        self, mock_wait_indicator, mock_prompt, mock_app, mock_event
+        self,
+        mock_wait_indicator,
+        mock_prompt,
+        mock_h5forest_class,
+        mock_app,
+        mock_event,
     ):
         """Test saving histogram."""
+        mock_h5forest_class.return_value = mock_app
         # Mock WaitIndicator context manager
         mock_wait_indicator.return_value.__enter__ = MagicMock()
         mock_wait_indicator.return_value.__exit__ = MagicMock()
@@ -252,8 +317,12 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.histogram_plotter.plot_and_save.assert_called_once()
 
-    def test_save_hist_with_group_node(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_save_hist_with_group_node(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test saving histogram with group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         mock_app.histogram_plotter.plot_params = {}
         node = MagicMock()
@@ -269,11 +338,13 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    @patch("h5forest.bindings.hist_bindings.prompt_for_chunking_preference")
+    @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.hist_funcs.prompt_for_chunking_preference")
     def test_save_hist_with_empty_params(
-        self, mock_prompt, mock_app, mock_event
+        self, mock_prompt, mock_h5forest_class, mock_app, mock_event
     ):
         """Test saving histogram with empty params and dataset."""
+        mock_h5forest_class.return_value = mock_app
         # Make the prompt call the callback immediately
         mock_prompt.side_effect = lambda app, nodes, callback: callback(
             use_chunks=False
@@ -308,8 +379,10 @@ class TestHistBindings:
         mock_app.histogram_plotter.compute_hist.assert_called_once()
         mock_app.histogram_plotter.plot_and_save.assert_called_once()
 
-    def test_reset_hist(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_reset_hist(self, mock_h5forest_class, mock_app, mock_event):
         """Test resetting histogram."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -323,8 +396,10 @@ class TestHistBindings:
         assert mock_app.hist_content.text == "reset text"
         mock_app.return_to_normal_mode.assert_called_once()
 
-    def test_jump_to_config(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_jump_to_config(self, mock_h5forest_class, mock_app, mock_event):
         """Test jumping to config mode."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -335,8 +410,12 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.shift_focus.assert_called_once_with(mock_app.hist_content)
 
-    def test_jump_to_config_when_already_in_config(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_jump_to_config_when_already_in_config(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test jumping from config back to tree."""
+        mock_h5forest_class.return_value = mock_app
         # Set focus to be on hist_content
         mock_app.app.layout.has_focus = MagicMock(
             side_effect=lambda content: content == mock_app.hist_content
@@ -352,17 +431,29 @@ class TestHistBindings:
         # Should jump back to tree when already in config
         mock_app.shift_focus.assert_called_once_with(mock_app.tree_content)
 
-    def test_exit_edit_hist(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_exit_edit_hist(self, mock_h5forest_class, mock_app, mock_event):
         """Test exiting edit histogram mode."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.app.layout.has_focus = MagicMock(return_value=True)
         _init_hist_bindings(mock_app)
-        bindings = [b for b in mock_app.kb.bindings if b.keys == ("q",)]
-        handler = bindings[-1].handler
+        # Find the 'e' binding for exiting edit mode (edit_config
+        # key exits when in config)
+        bindings = [b for b in mock_app.kb.bindings if b.keys == ("e",)]
+        # Get the exit_edit_hist handler (bound when hist config has focus)
+        handler = (
+            bindings[-1].handler if len(bindings) > 1 else bindings[0].handler
+        )
         handler(mock_event)
         mock_app.shift_focus.assert_called_with(mock_app.tree_content)
 
-    def test_select_data(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_select_data(self, mock_h5forest_class, mock_app, mock_event):
         """Test selecting data for histogram."""
+        mock_h5forest_class.return_value = mock_app
+
+        # Set up focus mock to return False (tree has focus, not hist config)
+        mock_app.app.layout.has_focus = MagicMock(return_value=False)
 
         _init_hist_bindings(mock_app)
         node = MagicMock()
@@ -379,14 +470,20 @@ class TestHistBindings:
             if binding.filter() and not mock_app.app.layout.has_focus():
                 handler = binding.handler
                 break
-        if handler:
-            handler(mock_event)
-            mock_app.histogram_plotter.set_data_key.assert_called_once_with(
-                node
-            )
+        assert handler is not None, "Could not find appropriate enter binding"
+        handler(mock_event)
+        mock_app.histogram_plotter.set_data_key.assert_called_once_with(node)
 
-    def test_select_data_with_group(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_select_data_with_group(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test selecting data with group node (should fail)."""
+        mock_h5forest_class.return_value = mock_app
+
+        # Set up focus mock to return False (tree has focus, not hist config)
+        mock_app.app.layout.has_focus = MagicMock(return_value=False)
+
         _init_hist_bindings(mock_app)
         node = MagicMock()
         node.is_group = True
@@ -402,12 +499,14 @@ class TestHistBindings:
             if binding.filter() and not mock_app.app.layout.has_focus():
                 handler = binding.handler
                 break
-        if handler:
-            handler(mock_event)
-            mock_app.print.assert_called_once_with("/group is not a Dataset")
+        assert handler is not None, "Could not find appropriate enter binding"
+        handler(mock_event)
+        mock_app.print.assert_called_once_with("/group is not a Dataset")
 
-    def test_edit_bins(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_bins(self, mock_h5forest_class, mock_app, mock_event):
         """Test editing bins."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -418,8 +517,12 @@ class TestHistBindings:
         handler(mock_event)
         mock_app.input.assert_called_once()
 
-    def test_edit_bins_callback(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_bins_callback(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test editing bins callback updates the value."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -440,8 +543,12 @@ class TestHistBindings:
         assert "nbins:       100" in mock_app.hist_content.text
         mock_app.shift_focus.assert_called_with(mock_app.tree_content)
 
-    def test_toggle_x_scale_linear_to_log(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_x_scale_linear_to_log(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling x scale from linear to log."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -453,8 +560,12 @@ class TestHistBindings:
         assert "x-scale:     log" in mock_app.hist_content.text
         mock_app.app.invalidate.assert_called()
 
-    def test_toggle_x_scale_log_to_linear(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_x_scale_log_to_linear(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling x scale from log to linear."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
 
         # Set initial state to log
@@ -476,8 +587,12 @@ class TestHistBindings:
         assert "x-scale:     linear" in mock_app.hist_content.text
         mock_app.app.invalidate.assert_called()
 
-    def test_toggle_y_scale_linear_to_log(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_y_scale_linear_to_log(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling y scale from linear to log."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -489,8 +604,12 @@ class TestHistBindings:
         assert "y-scale:     log" in mock_app.hist_content.text
         mock_app.app.invalidate.assert_called()
 
-    def test_toggle_y_scale_log_to_linear(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_y_scale_log_to_linear(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling y scale from log to linear."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
 
         # Set initial state to log
@@ -512,8 +631,12 @@ class TestHistBindings:
         assert "y-scale:     linear" in mock_app.hist_content.text
         mock_app.app.invalidate.assert_called()
 
-    def test_toggle_x_scale_with_none_x_min(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_x_scale_with_none_x_min(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling x scale when x_min is None."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.histogram_plotter.x_min = None
         mock_app.histogram_plotter.x_max = None
         _init_hist_bindings(mock_app)
@@ -531,10 +654,12 @@ class TestHistBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.hist_content.text
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_toggle_x_scale_to_log_with_zero_values(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test toggling x scale to log when x_min is 0."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.histogram_plotter.x_min = 0
         _init_hist_bindings(mock_app)
         bindings = [
@@ -552,10 +677,12 @@ class TestHistBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.hist_content.text
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_toggle_x_scale_to_log_with_negative_values(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test toggling x scale to log when x_min is negative."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.histogram_plotter.x_min = -5.0
         _init_hist_bindings(mock_app)
         bindings = [
@@ -573,8 +700,12 @@ class TestHistBindings:
         # Verify scale was NOT changed
         assert "x-scale:     linear" in mock_app.hist_content.text
 
-    def test_toggle_y_scale_with_none_x_min(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_y_scale_with_none_x_min(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling y scale when x_min is None."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.histogram_plotter.x_min = None
         mock_app.histogram_plotter.x_max = None
         _init_hist_bindings(mock_app)
@@ -592,8 +723,12 @@ class TestHistBindings:
         # Verify scale was NOT changed
         assert "y-scale:     linear" in mock_app.hist_content.text
 
-    def test_edit_bins_with_none_x_min(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_bins_with_none_x_min(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test editing bins when x_min is None."""
+        mock_h5forest_class.return_value = mock_app
         mock_app.histogram_plotter.x_min = None
         mock_app.histogram_plotter.x_max = None
         _init_hist_bindings(mock_app)
@@ -611,8 +746,12 @@ class TestHistBindings:
         # Verify input was NOT called
         mock_app.input.assert_not_called()
 
-    def test_toggle_x_scale_with_running_thread(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_x_scale_with_running_thread(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling x scale with a running assign_data_thread."""
+        mock_h5forest_class.return_value = mock_app
 
         # Create a mock thread
         mock_thread = MagicMock()
@@ -630,8 +769,12 @@ class TestHistBindings:
         # Verify scale was toggled
         assert "x-scale:     log" in mock_app.hist_content.text
 
-    def test_edit_bins_with_running_thread(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_edit_bins_with_running_thread(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test editing bins with a running assign_data_thread."""
+        mock_h5forest_class.return_value = mock_app
 
         # Create a mock thread
         mock_thread = MagicMock()
@@ -649,8 +792,12 @@ class TestHistBindings:
         # Verify input was called (since x_min/x_max are valid)
         mock_app.input.assert_called_once()
 
-    def test_toggle_y_scale_with_running_thread(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_toggle_y_scale_with_running_thread(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test toggling y scale with a running assign_data_thread."""
+        mock_h5forest_class.return_value = mock_app
 
         # Create a mock thread
         mock_thread = MagicMock()
@@ -668,8 +815,10 @@ class TestHistBindings:
         # Verify scale was toggled
         assert "y-scale:     log" in mock_app.hist_content.text
 
-    def test_exit_hist_mode(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_exit_hist_mode(self, mock_h5forest_class, mock_app, mock_event):
         """Test exiting histogram mode."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         bindings = [
             b
@@ -684,19 +833,27 @@ class TestHistBindings:
                 break
         if handler:
             handler(mock_event)
-            mock_app.histogram_plotter.close.assert_called_once()
-            mock_app.histogram_plotter.reset.assert_called_once()
+            # In the refactored system, 'q' just exits the mode
+            # (exit_leader_mode). It doesn't close/reset the plotter -
+            # that's what 'r' (reset_hist) does
             mock_app.return_to_normal_mode.assert_called_once()
+            mock_app.default_focus.assert_called_once()
 
-    def test_all_keys_bound(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_all_keys_bound(self, mock_h5forest_class, mock_app):
         """Test that all expected keys are bound."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
         for key in ["c-m", "b", "x", "y", "h", "H", "r", "e", "q"]:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
             assert len(bindings) > 0, f"Key '{key}' not bound"
 
-    def test_plot_hist_missing_data(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_plot_hist_missing_data(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test plotting histogram without data selected."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
 
         # Set plot_params with other keys but not "data"
@@ -719,8 +876,12 @@ class TestHistBindings:
         # Should not call compute_hist
         mock_app.histogram_plotter.compute_hist.assert_not_called()
 
-    def test_save_hist_missing_data(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_save_hist_missing_data(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test saving histogram without data selected."""
+        mock_h5forest_class.return_value = mock_app
         _init_hist_bindings(mock_app)
 
         # Set plot_params with other keys but not "data"

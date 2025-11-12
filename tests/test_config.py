@@ -885,7 +885,7 @@ class TestTranslateKeyLabel:
 
     def test_control_keys(self):
         """Test control key translation."""
-        from h5forest.config import translate_key_label
+        from h5forest.bindings.utils import translate_key_label
 
         assert translate_key_label("c-c") == "Ctrl+C"
         assert translate_key_label("c-a") == "Ctrl+A"
@@ -893,7 +893,7 @@ class TestTranslateKeyLabel:
 
     def test_alt_keys(self):
         """Test alt key translation."""
-        from h5forest.config import translate_key_label
+        from h5forest.bindings.utils import translate_key_label
 
         assert translate_key_label("a-x") == "Alt+X"
         assert translate_key_label("m-x") == "Alt+X"  # m- is also alt
@@ -901,14 +901,14 @@ class TestTranslateKeyLabel:
 
     def test_shift_keys(self):
         """Test shift key translation."""
-        from h5forest.config import translate_key_label
+        from h5forest.bindings.utils import translate_key_label
 
         assert translate_key_label("s-a") == "Shift+A"
         assert translate_key_label("s-x") == "Shift+X"
 
     def test_capitalize_fallback(self):
         """Test capitalize fallback for unknown keys."""
-        from h5forest.config import translate_key_label
+        from h5forest.bindings.utils import translate_key_label
 
         # Test fallback for keys not in the translation map
         assert translate_key_label("insert") == "Insert"

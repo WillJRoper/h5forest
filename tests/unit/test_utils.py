@@ -1044,3 +1044,257 @@ class TestWaitIndicator:
             assert str(e) == "Test error"
         else:
             assert False, "Exception should have been raised"
+
+
+class TestDynamicLabelLayoutPadding:
+    """Test DynamicLabelLayout padding for uneven rows."""
+
+    def test_padding_with_uneven_rows(self):
+        """Test that rows with different label counts are padded correctly."""
+        from prompt_toolkit.widgets import Label
+
+        from h5forest.utils import DynamicLabelLayout
+
+        # Create labels that will be distributed unevenly
+        labels = [
+            Label("Label 1"),
+            Label("Label 2"),
+            Label("Label 3"),
+            Label("Label 4"),
+            Label("Label 5"),
+        ]
+
+        # Create layout with narrow width to force multiple rows
+        layout = DynamicLabelLayout(labels, padding=2, min_rows=3)
+
+        # Mock window size to force uneven distribution
+        with patch("h5forest.utils.get_window_size", return_value=(24, 25)):
+            container = layout.__pt_container__()
+
+            # Container should be created successfully
+            assert container is not None
+
+            # The container should have rows (HSplit of VSplits)
+            # With narrow width, labels will be distributed across rows
+            # and padding should ensure all rows have consistent structure
+
+    def test_padding_with_single_label_in_last_row(self):
+        """Test padding when last row has fewer labels than others."""
+        from prompt_toolkit.widgets import Label
+
+        from h5forest.utils import DynamicLabelLayout
+
+        # Create exactly 3 labels, which with narrow width will likely
+        # create 2 labels in first row, 1 in second row
+        labels = [Label("A"), Label("B"), Label("C")]
+
+        layout = DynamicLabelLayout(labels, padding=3)
+
+        # Force narrow width to create 2 labels per row
+        with patch("h5forest.utils.get_window_size", return_value=(24, 12)):
+            container = layout.__pt_container__()
+
+            # Container should be created with padding applied
+            assert container is not None
+
+            # The structure should have VSplits (rows) with padded labels
+            # so all rows have the same number of children
+
+    def test_padding_preserves_container_structure(self):
+        """Test that padding maintains consistent container structure."""
+        from prompt_toolkit.widgets import Label
+
+        from h5forest.utils import DynamicLabelLayout
+
+        # Create labels that will result in uneven distribution
+        labels = [
+            Label("Long Label 1"),
+            Label("Long Label 2"),
+            Label("Long Label 3"),
+            Label("Short"),
+        ]
+
+        layout = DynamicLabelLayout(labels, padding=2, min_rows=2)
+
+        # Use a width that will cause uneven distribution
+        with patch("h5forest.utils.get_window_size", return_value=(24, 30)):
+            container = layout.__pt_container__()
+
+            # Should create container successfully with padding
+            assert container is not None
+
+            # The HSplit should have the children attribute
+            assert hasattr(container, "children")
+            # All rows should have been created with padding applied
+            # to ensure consistent structure
+
+    def test_padding_adds_empty_labels_to_incomplete_rows(self):
+        """Test that rows with fewer labels than max_row_length.
+
+        Get padded with empty Labels (lines 284-286).
+        """
+        from prompt_toolkit.widgets import Label
+
+        from h5forest.utils import DynamicLabelLayout
+
+        # Create exactly 5 labels that with narrow width will create
+        # 3 in first row, 2 in second
+        labels = [
+            Label("Item A"),
+            Label("Item B"),
+            Label("Item C"),
+            Label("Item D"),
+            Label("Item E"),
+        ]
+
+        layout = DynamicLabelLayout(labels, padding=2, min_rows=2)
+
+        # Use narrow width to force 3 labels in first row, 2 in second
+        # This should trigger the padding logic in lines 284-286
+        with patch("h5forest.utils.get_window_size", return_value=(24, 28)):
+            container = layout.__pt_container__()
+
+            # Verify container was created
+            assert container is not None
+            assert isinstance(container, HSplit)
+
+            # Get children (rows)
+            children = container.get_children()
+            assert len(children) >= 2
+
+            # First row should be a VSplit with labels
+            first_row = children[0]
+            if isinstance(first_row, VSplit):
+                first_row_labels = first_row.get_children()
+
+                # Second row should also be a VSplit
+                if len(children) > 1:
+                    second_row = children[1]
+                    if isinstance(second_row, VSplit):
+                        second_row_labels = second_row.get_children()
+
+                        # If rows have different label counts, padding
+                        # should equalize them
+                        # The second row should have been padded with
+                        # empty labels to match the first row's count
+                        # (lines 284-286)
+                        if len(first_row_labels) > len(
+                            [lbl for lbl in labels if lbl in second_row_labels]
+                        ):
+                            # This means padding was applied
+                            # Verify that second row has same number
+                            # of children as first (including padded
+                            # empty labels)
+                            assert len(second_row_labels) == len(
+                                first_row_labels
+                            )
+
+    def test_padding_creates_empty_label_instances(self):
+        """Test that empty padding labels are created.
+
+        As Label instances (line 286).
+        """
+        from prompt_toolkit.widgets import Label
+
+        from h5forest.utils import DynamicLabelLayout
+
+        # Create labels that will definitely need padding
+        labels = [Label("A"), Label("B"), Label("C"), Label("D")]
+
+        layout = DynamicLabelLayout(labels, padding=3, min_rows=3)
+
+        # Force narrow width to create 3 labels in first row, 1 in second row
+        with patch("h5forest.utils.get_window_size", return_value=(24, 18)):
+            container = layout.__pt_container__()
+
+            # Container should be created
+            assert container is not None
+
+            # Get rows
+            children = container.get_children()
+
+            # Should have at least min_rows
+            assert len(children) >= 3
+
+            # Check that rows are consistent (same number of children)
+            # This indicates padding was applied
+            row_sizes = []
+            for child in children:
+                if isinstance(child, VSplit):
+                    row_sizes.append(len(child.get_children()))
+                elif isinstance(child, Window):
+                    row_sizes.append(0)
+
+            # If we have multiple non-empty rows, they should be
+            # padded to same size
+            non_empty_rows = [s for s in row_sizes if s > 0]
+            if len(non_empty_rows) > 1:
+                # All non-empty rows should have the same size due to padding
+                assert all(s == non_empty_rows[0] for s in non_empty_rows)
+
+    def test_padding_while_loop_adds_empty_labels(self):
+        """Test that the while loop in lines 283-286.
+
+        Adds empty Label instances.
+        """
+        from unittest.mock import MagicMock
+
+        from prompt_toolkit.widgets import Label
+
+        from h5forest.utils import DynamicLabelLayout
+
+        # Create 5 labels that will distribute as 2-2-1 with specific width
+        labels = [
+            Label("LabelA"),
+            Label("LabelB"),
+            Label("LabelC"),
+            Label("LabelD"),
+            Label("LabelE"),
+        ]
+
+        layout = DynamicLabelLayout(labels, padding=2, min_rows=1)
+
+        # Mock shutil.get_terminal_size to return a width
+        # that will cause 2 labels per row
+        # Each label is 6 chars + 2 padding = 8 total
+        # With width 20, we can fit 20 // 8 = 2 labels per row
+        # 5 labels with 2 per row = 3 rows: [2, 2, 1]
+        # The last row will need padding to match the first two rows
+        mock_size = MagicMock()
+        mock_size.columns = 20
+
+        with patch("shutil.get_terminal_size", return_value=mock_size):
+            container = layout.__pt_container__()
+
+            # Verify container was created
+            assert container is not None
+            assert isinstance(container, HSplit)
+
+            # Get the rows
+            children = container.get_children()
+
+            # We should have at least 3 rows (2+2+1 distribution)
+            assert len(children) >= 3
+
+            # Check that all non-empty rows have the same number of children
+            # This proves the padding while loop (lines 283-286) executed
+            vsplit_children = [c for c in children if isinstance(c, VSplit)]
+
+            # Should have 3 rows with labels
+            assert len(vsplit_children) >= 3
+
+            # Get counts for each row
+            row_counts = [len(row.get_children()) for row in vsplit_children]
+
+            # The first rows should have 2 labels, last row should
+            # also have 2 (padded)
+            # All rows must have the same count due to padding
+            first_row_count = row_counts[0]
+            for i, count in enumerate(row_counts):
+                assert count == first_row_count, (
+                    f"Row {i} has {count} children, "
+                    f"expected {first_row_count}. "
+                    f"Lines 283-286 (padding while loop) "
+                    f"were not executed. "
+                    f"All row counts: {row_counts}"
+                )

@@ -7,10 +7,19 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.search_bindings import (
-    _init_search_bindings,
-    error_handler,
-)
+from h5forest.bindings.bindings import H5KeyBindings
+
+
+def _init_search_bindings(app):
+    """Initialize search bindings using H5KeyBindings class."""
+    bindings = H5KeyBindings(app)
+    bindings._init_search_bindings()
+
+    # Return list of hotkeys matching old interface
+    return [
+        bindings.accept_search_label,
+        bindings.cancel_search_label,
+    ]
 
 
 class TestSearchBindings:
@@ -61,8 +70,12 @@ class TestSearchBindings:
         event.app.invalidate = MagicMock()
         return event
 
-    def test_init_search_bindings_returns_hotkeys(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_init_search_bindings_returns_hotkeys(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that _init_search_bindings returns a list of Labels."""
+        mock_h5forest_class.return_value = mock_app
 
         hot_keys = _init_search_bindings(mock_app)
 
@@ -71,8 +84,12 @@ class TestSearchBindings:
         for item in hot_keys:
             assert isinstance(item, Label)
 
-    def test_exit_search_mode_restores_tree(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_exit_search_mode_restores_tree(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test that exit_search_mode restores the original tree."""
+        mock_h5forest_class.return_value = mock_app
         # Initialize bindings to register the keybindings
         _init_search_bindings(mock_app)
 
@@ -114,8 +131,12 @@ class TestSearchBindings:
         # Verify invalidate was called
         mock_event.app.invalidate.assert_called_once()
 
-    def test_exit_search_mode_bound_to_escape(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_exit_search_mode_bound_to_escape(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that exit_search_mode is bound to escape key."""
+        mock_h5forest_class.return_value = mock_app
         _init_search_bindings(mock_app)
 
         # Check that escape key is bound
@@ -124,8 +145,12 @@ class TestSearchBindings:
         ]
         assert len(escape_bindings) > 0
 
-    def test_exit_search_mode_bound_to_ctrl_c(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_exit_search_mode_bound_to_ctrl_c(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that exit_search_mode is bound to Ctrl-C."""
+        mock_h5forest_class.return_value = mock_app
         _init_search_bindings(mock_app)
 
         # Check that c-c key is bound
@@ -134,10 +159,12 @@ class TestSearchBindings:
         ]
         assert len(ctrl_c_bindings) > 0
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_accept_search_results_keeps_filtered_tree(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test that accept_search_results keeps the filtered tree."""
+        mock_h5forest_class.return_value = mock_app
         # Initialize bindings
         _init_search_bindings(mock_app)
 
@@ -176,8 +203,12 @@ class TestSearchBindings:
         # Verify invalidate was called
         mock_event.app.invalidate.assert_called_once()
 
-    def test_accept_search_results_bound_to_enter(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_accept_search_results_bound_to_enter(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that accept_search_results is bound to enter key."""
+        mock_h5forest_class.return_value = mock_app
         _init_search_bindings(mock_app)
 
         # Check that enter key (c-m) is bound
@@ -186,8 +217,12 @@ class TestSearchBindings:
         ]
         assert len(enter_bindings) > 0
 
-    def test_exit_vs_accept_behavior_difference(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_exit_vs_accept_behavior_difference(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the key difference between exit and accept."""
+        mock_h5forest_class.return_value = mock_app
         _init_search_bindings(mock_app)
 
         # Test exit_search_mode
@@ -218,23 +253,22 @@ class TestSearchBindings:
         # Accept should NOT call restore_tree
         assert not mock_app.tree.restore_tree.called
 
-    @patch("h5forest.bindings.search_bindings.error_handler")
+    @patch("h5forest.h5_forest.H5Forest")
     def test_handlers_wrapped_with_error_handler(
-        self, mock_error_handler, mock_app
+        self, mock_h5forest_class, mock_app
     ):
-        """Test that handlers are wrapped with error_handler decorator."""
-        # The error_handler decorator should wrap the functions
-        # We can verify this by checking that error_handler was used
-        # as a decorator
+        """Test that the bindings class is properly initialized."""
+        mock_h5forest_class.return_value = mock_app
+        # With the refactored binding system, error handling is built
+        # into the class
+        bindings = H5KeyBindings(mock_app)
+        assert bindings is not None
+        assert hasattr(bindings, "bind_function")
 
-        # Since error_handler is a decorator, we just verify it's
-        # imported and used. The actual error handling logic is
-        # tested in test_errors.py
-
-        assert callable(error_handler)
-
-    def test_hotkeys_display_content(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_hotkeys_display_content(self, mock_h5forest_class, mock_app):
         """Test that hotkeys list contains correct labels."""
+        mock_h5forest_class.return_value = mock_app
         hot_keys = _init_search_bindings(mock_app)
 
         # Should be a list of Labels
@@ -247,16 +281,22 @@ class TestSearchBindings:
             assert hasattr(item, "text")
             assert item.text is not None
 
-    def test_search_mode_filter_condition(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_search_mode_filter_condition(self, mock_h5forest_class, mock_app):
         """Test that bindings are only active when flag_search_mode is True."""
+        mock_h5forest_class.return_value = mock_app
         _init_search_bindings(mock_app)
 
         # All bindings should have a filter condition
         for binding in mock_app.kb.bindings:
             assert binding.filter is not None
 
-    def test_exit_search_mode_clears_buffer_text(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_exit_search_mode_clears_buffer_text(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test that exit_search_mode clears the search buffer text."""
+        mock_h5forest_class.return_value = mock_app
         # Set initial search text
         mock_app.search_content.text = "some search query"
 
@@ -272,10 +312,12 @@ class TestSearchBindings:
         # Verify text was cleared
         assert mock_app.search_content.text == ""
 
+    @patch("h5forest.h5_forest.H5Forest")
     def test_accept_search_results_clears_buffer_text(
-        self, mock_app, mock_event
+        self, mock_h5forest_class, mock_app, mock_event
     ):
         """Test that accept_search_results clears the search buffer text."""
+        mock_h5forest_class.return_value = mock_app
         # Set initial search text
         mock_app.search_content.text = "some search query"
 
@@ -291,8 +333,12 @@ class TestSearchBindings:
         # Verify text was cleared
         assert mock_app.search_content.text == ""
 
-    def test_both_handlers_call_invalidate(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_both_handlers_call_invalidate(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test that both handlers call event.app.invalidate()."""
+        mock_h5forest_class.return_value = mock_app
         _init_search_bindings(mock_app)
 
         # Test exit handler
