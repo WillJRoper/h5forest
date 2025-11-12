@@ -17,6 +17,18 @@ from h5forest.bindings.dataset_funcs import (
     show_values_in_range,
     std,
 )
+from h5forest.bindings.hist_funcs import (
+    edit_bins,
+    edit_hist,
+    edit_hist_entry,
+    exit_edit_hist,
+    plot_hist,
+    reset_hist,
+    save_hist,
+    select_data,
+    toggle_x_scale,
+    toggle_y_scale,
+)
 from h5forest.bindings.jump_funcs import (
     goto_bottom,
     goto_parent,
@@ -33,6 +45,18 @@ from h5forest.bindings.normal_funcs import (
     plotting_leader_mode,
     restore_tree_to_initial,
     window_leader_mode,
+)
+from h5forest.bindings.plot_funcs import (
+    edit_plot,
+    edit_plot_entry,
+    exit_edit_plot,
+    plot_scatter,
+    plot_toggle_x_log_scale,
+    plot_toggle_y_log_scale,
+    reset_plot,
+    save_scatter,
+    select_x,
+    select_y,
 )
 from h5forest.bindings.search_funcs import (
     accept_search_results,
@@ -244,6 +268,82 @@ class H5KeyBindings:
             "jump_to_key",
         )
 
+        # Histogram mode keys
+        self.edit_config_key = self.config.get_keymap(
+            "hist_mode",
+            "edit_config",
+        )
+        self.edit_entry_key = self.config.get_keymap(
+            "hist_mode",
+            "edit_entry",
+        )
+        self.select_data_key = self.config.get_keymap(
+            "hist_mode",
+            "select_data",
+        )
+        self.edit_bins_key = self.config.get_keymap(
+            "hist_mode",
+            "edit_bins",
+        )
+        self.toggle_x_scale_key = self.config.get_keymap(
+            "hist_mode",
+            "toggle_x_scale",
+        )
+        self.toggle_y_scale_key = self.config.get_keymap(
+            "hist_mode",
+            "toggle_y_scale",
+        )
+        self.reset_hist_key = self.config.get_keymap(
+            "hist_mode",
+            "reset",
+        )
+        self.show_hist_key = self.config.get_keymap(
+            "hist_mode",
+            "show_hist",
+        )
+        self.save_hist_key = self.config.get_keymap(
+            "hist_mode",
+            "save_hist",
+        )
+
+        # Plot mode keys
+        self.edit_plot_config_key = self.config.get_keymap(
+            "plot_mode",
+            "edit_config",
+        )
+        self.edit_plot_entry_key = self.config.get_keymap(
+            "plot_mode",
+            "edit_entry",
+        )
+        self.select_x_data_key = self.config.get_keymap(
+            "plot_mode",
+            "select_x_data",
+        )
+        self.select_y_data_key = self.config.get_keymap(
+            "plot_mode",
+            "select_y_data",
+        )
+        self.toggle_x_log_scale_key = self.config.get_keymap(
+            "plot_mode",
+            "toggle_x_log_scale",
+        )
+        self.toggle_y_log_scale_key = self.config.get_keymap(
+            "plot_mode",
+            "toggle_y_log_scale",
+        )
+        self.reset_plot_key = self.config.get_keymap(
+            "plot_mode",
+            "reset",
+        )
+        self.show_plot_key = self.config.get_keymap(
+            "plot_mode",
+            "show_plot",
+        )
+        self.save_plot_key = self.config.get_keymap(
+            "plot_mode",
+            "save_plot",
+        )
+
         # ====== Define attributes to hold all the different labels ======
 
         # Normal mode labels
@@ -355,6 +455,72 @@ class H5KeyBindings:
             f"{translate_key_label(self.jump_to_key_key)} → Jump to Key"
         )
 
+        # Histogram mode labels
+        self.edit_config_label = Label(
+            f"{translate_key_label(self.edit_config_key)} → Edit Config"
+        )
+        self.exit_edit_label = Label(
+            f"{translate_key_label(self.edit_config_key)} → Back to Tree"
+        )
+        self.edit_entry_label = Label(
+            f"{translate_key_label(self.edit_entry_key)} → Edit Entry"
+        )
+        self.select_data_label = Label(
+            f"{translate_key_label(self.select_data_key)} → Select Data"
+        )
+        self.edit_bins_label = Label(
+            f"{translate_key_label(self.edit_bins_key)} → Edit Bins"
+        )
+        self.toggle_x_scale_label = Label(
+            f"{translate_key_label(self.toggle_x_scale_key)} → Toggle x Scale"
+        )
+        self.toggle_y_scale_label = Label(
+            f"{translate_key_label(self.toggle_y_scale_key)} → Toggle y Scale"
+        )
+        self.reset_hist_label = Label(
+            f"{translate_key_label(self.reset_hist_key)} → Reset"
+        )
+        self.show_hist_label = Label(
+            f"{translate_key_label(self.show_hist_key)} → Show Histogram"
+        )
+        self.save_hist_label = Label(
+            f"{translate_key_label(self.save_hist_key)} → Save Histogram"
+        )
+
+        # Plot mode labels
+        self.edit_plot_config_label = Label(
+            f"{translate_key_label(self.edit_plot_config_key)} → Edit Config"
+        )
+        self.exit_plot_edit_label = Label(
+            f"{translate_key_label(self.edit_plot_config_key)} → Back to Tree"
+        )
+        self.edit_plot_entry_label = Label(
+            f"{translate_key_label(self.edit_plot_entry_key)} → Edit Entry"
+        )
+        self.select_x_data_label = Label(
+            f"{translate_key_label(self.select_x_data_key)} → Select x-axis"
+        )
+        self.select_y_data_label = Label(
+            f"{translate_key_label(self.select_y_data_key)} → Select y-axis"
+        )
+        self.toggle_x_log_scale_label = Label(
+            f"{translate_key_label(self.toggle_x_log_scale_key)} → "
+            "Toggle x Scale"
+        )
+        self.toggle_y_log_scale_label = Label(
+            f"{translate_key_label(self.toggle_y_log_scale_key)} → "
+            "Toggle y Scale"
+        )
+        self.reset_plot_label = Label(
+            f"{translate_key_label(self.reset_plot_key)} → Reset"
+        )
+        self.show_plot_label = Label(
+            f"{translate_key_label(self.show_plot_key)} → Show Plot"
+        )
+        self.save_plot_label = Label(
+            f"{translate_key_label(self.save_plot_key)} → Save Plot"
+        )
+
         # ========== Define all the filters we will need ==========
 
         # Normal mode filters
@@ -375,6 +541,26 @@ class H5KeyBindings:
         self.filter_search_mode = lambda: app.flag_search_mode
         self.filter_window_mode = lambda: app.flag_window_mode
         self.filter_jump_mode = lambda: app.flag_jump_mode
+        self.filter_hist_mode = lambda: app.flag_hist_mode
+        self.filter_hist_mode_tree_focused = (
+            lambda: app.flag_hist_mode and self.filter_tree_focus()
+        )
+        self.filter_hist_mode_hist_focused = (
+            lambda: app.flag_hist_mode and app.histogram_config_has_focus
+        )
+        self.filter_have_hist_data = (
+            lambda: app.flag_hist_mode and app.histogram_plotter.data_assigned
+        )
+        self.filter_plot_mode = lambda: app.flag_plotting_mode
+        self.filter_plot_mode_tree_focused = (
+            lambda: app.flag_plotting_mode and self.filter_tree_focus()
+        )
+        self.filter_plot_mode_plot_focused = (
+            lambda: app.flag_plotting_mode and app.plot_config_has_focus
+        )
+        self.filter_have_plot_data = (
+            lambda: app.flag_plotting_mode and app.plotter.data_assigned
+        )
 
     def bind_function(self, key, function, filter_lambda):
         """Bind a function to a key with a filter condition.
@@ -665,6 +851,114 @@ class H5KeyBindings:
             self.filter_jump_mode,
         )
 
+    def _init_histogram_bindings(self):
+        """Initialize histogram mode keybindings."""
+        # Bind histogram mode keys
+        self.bind_function(
+            self.edit_config_key,
+            edit_hist,
+            self.filter_hist_mode_tree_focused,
+        )
+        self.bind_function(
+            self.edit_entry_key,
+            edit_hist_entry,
+            self.filter_hist_mode_hist_focused,
+        )
+        self.bind_function(
+            self.select_data_key,
+            select_data,
+            self.filter_hist_mode_tree_focused,
+        )
+        self.bind_function(
+            self.edit_bins_key,
+            edit_bins,
+            self.filter_hist_mode,
+        )
+        self.bind_function(
+            self.toggle_x_scale_key,
+            toggle_x_scale,
+            self.filter_hist_mode,
+        )
+        self.bind_function(
+            self.toggle_y_scale_key,
+            toggle_y_scale,
+            self.filter_hist_mode,
+        )
+        self.bind_function(
+            self.reset_hist_key,
+            reset_hist,
+            self.filter_hist_mode,
+        )
+        self.bind_function(
+            self.show_hist_key,
+            plot_hist,
+            self.filter_have_hist_data,
+        )
+        self.bind_function(
+            self.save_hist_key,
+            save_hist,
+            self.filter_have_hist_data,
+        )
+        self.bind_function(
+            self.edit_config_key,
+            exit_edit_hist,
+            self.filter_hist_mode_hist_focused,
+        )
+
+    def _init_plot_bindings(self):
+        """Initialize plot mode keybindings."""
+        # Bind plot mode keys
+        self.bind_function(
+            self.edit_plot_config_key,
+            edit_plot,
+            self.filter_plot_mode_tree_focused,
+        )
+        self.bind_function(
+            self.edit_plot_entry_key,
+            edit_plot_entry,
+            self.filter_plot_mode_plot_focused,
+        )
+        self.bind_function(
+            self.select_x_data_key,
+            select_x,
+            self.filter_plot_mode_tree_focused,
+        )
+        self.bind_function(
+            self.select_y_data_key,
+            select_y,
+            self.filter_plot_mode_tree_focused,
+        )
+        self.bind_function(
+            self.toggle_x_log_scale_key,
+            plot_toggle_x_log_scale,
+            self.filter_plot_mode,
+        )
+        self.bind_function(
+            self.toggle_y_log_scale_key,
+            plot_toggle_y_log_scale,
+            self.filter_plot_mode,
+        )
+        self.bind_function(
+            self.reset_plot_key,
+            reset_plot,
+            self.filter_plot_mode,
+        )
+        self.bind_function(
+            self.show_plot_key,
+            plot_scatter,
+            self.filter_have_plot_data,
+        )
+        self.bind_function(
+            self.save_plot_key,
+            save_scatter,
+            self.filter_have_plot_data,
+        )
+        self.bind_function(
+            self.edit_plot_config_key,
+            exit_edit_plot,
+            self.filter_plot_mode_plot_focused,
+        )
+
     def _init_bindings(self):
         """Initialize all keybindings."""
         self._init_normal_mode_bindings()
@@ -674,6 +968,8 @@ class H5KeyBindings:
         self._init_search_bindings()
         self._init_window_bindings()
         self._init_jump_bindings()
+        self._init_histogram_bindings()
+        self._init_plot_bindings()
 
     def get_current_hotkeys(self):
         """Get the current hotkeys based on application state."""
@@ -745,6 +1041,38 @@ class H5KeyBindings:
             hotkeys.append(self.goto_bottom_label)
             hotkeys.append(self.goto_parent_label)
             hotkeys.append(self.jump_to_key_label)
+
+        # Show the histogram mode keys if in histogram mode
+        if self.filter_hist_mode():
+            if self.filter_hist_mode_tree_focused():
+                hotkeys.append(self.edit_config_label)
+                hotkeys.append(self.select_data_label)
+            if self.filter_hist_mode_hist_focused():
+                hotkeys.append(self.edit_entry_label)
+                hotkeys.append(self.exit_edit_label)
+            hotkeys.append(self.edit_bins_label)
+            hotkeys.append(self.toggle_x_scale_label)
+            hotkeys.append(self.toggle_y_scale_label)
+            hotkeys.append(self.reset_hist_label)
+            if self.filter_have_hist_data():
+                hotkeys.append(self.show_hist_label)
+                hotkeys.append(self.save_hist_label)
+
+        # Show the plot mode keys if in plot mode
+        if self.filter_plot_mode():
+            if self.filter_plot_mode_tree_focused():
+                hotkeys.append(self.edit_plot_config_label)
+                hotkeys.append(self.select_x_data_label)
+                hotkeys.append(self.select_y_data_label)
+            if self.filter_plot_mode_plot_focused():
+                hotkeys.append(self.edit_plot_entry_label)
+                hotkeys.append(self.exit_plot_edit_label)
+            hotkeys.append(self.toggle_x_log_scale_label)
+            hotkeys.append(self.toggle_y_log_scale_label)
+            hotkeys.append(self.reset_plot_label)
+            if self.filter_have_plot_data():
+                hotkeys.append(self.show_plot_label)
+                hotkeys.append(self.save_plot_label)
 
         # Show the quit key in normal mode
         if self.filter_normal_mode():

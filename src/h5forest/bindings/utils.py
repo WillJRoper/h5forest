@@ -13,7 +13,7 @@ def translate_key_label(key: str) -> str:
 
     Returns:
         str: A nicely formatted label for display (e.g., "Enter", "ESC",
-            "Ctrl+C").
+            "Ctrl+C")
 
     Examples:
         >>> translate_key_label("a")

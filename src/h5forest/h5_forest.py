@@ -55,6 +55,24 @@ class H5Forest:
             A flag to control the dataset mode of the application.
         _flag_window_mode (bool):
             A flag to control the window mode of the application.
+        _flag_plotting_mode (bool):
+            A flag to control the plotting mode of the application.
+        _flag_hist_mode (bool):
+            A flag to control the histogram mode of the application.
+        _flag_search_mode (bool):
+            A flag to control the search mode of the application.
+        config (ConfigManager):
+            The configuration manager for the application.
+        tree_processor (TreeProcessor):
+            The tree processor for rendering the tree.
+        mode_title (DynamicTitle):
+            A dynamic title for the mode hotkeys panel.
+        scatter_plotter (ScatterPlotter):
+            The scatter plotter for hexbin plots.
+        histogram_plotter (HistogramPlotter):
+            The histogram plotter for histogram plots.
+        tree_buffer (Buffer):
+            The buffer for the tree text area.
         jump_keys (VSplit):
             The hotkeys for the jump mode.
         dataset_keys (VSplit):
@@ -206,7 +224,8 @@ class H5Forest:
             style=style,
         )
 
-        # Set up the app bindings
+        # Set up the app bindings (this must be done after the app is created
+        # because we need to pass the app instance to the bindings)
         self.bindings = H5KeyBindings(self)
         self.bindings._init_bindings()
 
@@ -395,6 +414,26 @@ class H5Forest:
                 True if the values content has text, False otherwise.
         """
         return len(self.values_content.text) > 0
+
+    @property
+    def histogram_config_has_focus(self):
+        """Return whether the histogram configuration has focus.
+
+        Returns:
+            bool:
+                True if the histogram configuration has focus, False otherwise.
+        """
+        return self.app.layout.has_focus(self.hist_content)
+
+    @property
+    def plot_config_has_focus(self):
+        """Return whether the plot configuration has focus.
+
+        Returns:
+            bool:
+                True if the plot configuration has focus, False otherwise.
+        """
+        return self.app.layout.has_focus(self.plot_content)
 
     def return_to_normal_mode(self):
         """Return to normal mode."""
