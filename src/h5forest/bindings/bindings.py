@@ -6,256 +6,33 @@ module should not be called directly, but are intended to be used by the main
 application.
 """
 
-import platform
-import subprocess
-import threading
-
-from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.bindings.normal_funcs import (
+    collapse_attributes,
+    copy_key,
+    dataset_leader_mode,
+    exit_app,
+    exit_leader_mode,
+    expand_attributes,
+    goto_leader_mode,
+    hist_leader_mode,
+    plotting_leader_mode,
+    restore_tree_to_initial,
+    search_leader_mode,
+    window_leader_mode,
+)
+from h5forest.bindings.tree_funcs import (
+    expand_collapse_node,
+    move_down,
+    move_down_ten,
+    move_left,
+    move_right,
+    move_up,
+    move_up_ten,
+)
 from h5forest.bindings.utils import translate_key_label
-from h5forest.errors import error_handler
-from h5forest.utils import WaitIndicator
-
-
-def exit_app(event):
-    """Exit the app."""
-    event.app.exit()
-
-
-def goto_leader_mode(event):
-    """Enter goto mode."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app._flag_normal_mode = False
-    app._flag_jump_mode = True
-    app.mode_title.update_title("Goto Mode")
-
-
-def dataset_leader_mode(event):
-    """Enter dataset mode."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app._flag_normal_mode = False
-    app._flag_dataset_mode = True
-    app.mode_title.update_title("Dataset Mode")
-
-
-def window_leader_mode(event):
-    """Enter window mode."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app._flag_normal_mode = False
-    app._flag_window_mode = True
-    app.mode_title.update_title("Window Mode")
-
-
-def plotting_leader_mode(event):
-    """Enter plotting mode."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app._flag_normal_mode = False
-    app._flag_plotting_mode = True
-    app.mode_title.update_title("Plotting Mode")
-
-
-def hist_leader_mode(event):
-    """Enter hist mode."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app._flag_normal_mode = False
-    app._flag_hist_mode = True
-    app.mode_title.update_title("Histogram Mode")
-
-
-@error_handler
-def exit_leader_mode(event):
-    """Exit leader mode."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app.return_to_normal_mode()
-    app.default_focus()
-    event.app.invalidate()
-
-
-def expand_attributes(event):
-    """Expand the attributes."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app.flag_expanded_attrs = True
-    app.update_hotkeys_panel()
-    event.app.invalidate()
-
-
-def collapse_attributes(event):
-    """Collapse the attributes."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app.flag_expanded_attrs = False
-    app.update_hotkeys_panel()
-    event.app.invalidate()
-
-
-def search_leader_mode(event):
-    """Enter search mode."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    app._flag_normal_mode = False
-    app._flag_search_mode = True
-    app.mode_title.update_title("Search Mode")
-    app.search_content.text = ""
-    app.search_content.buffer.cursor_position = 0
-    app.shift_focus(app.search_content)
-
-    # Start building the search index in the background
-    app.tree.get_all_paths()
-
-    # Show wait indicator while index is building
-    def monitor_index_building():
-        """Monitor index building and trigger auto-update when done."""
-        # Create and start the wait indicator
-        indicator = WaitIndicator(app, "Constructing search database...")
-
-        # Only show indicator if index is actually building
-        if app.tree.index_building:
-            indicator.start()
-
-        # Wait for index building to complete
-        if app.tree.unpack_thread:
-            app.tree.unpack_thread.join()
-
-        # Stop the indicator
-        indicator.stop()
-
-        # If user has already typed a query, trigger search update
-        def update_search():
-            # Set mini buffer to show "Search:" prompt
-            app.print("")
-
-            # Ensure focus is back on search content
-            app.shift_focus(app.search_content)
-
-            query = app.search_content.text
-            if query:  # Only update if there's a query
-                filtered_text = app.tree.filter_tree(query)
-                app.tree_buffer.set_document(
-                    Document(
-                        filtered_text,
-                        cursor_position=0,
-                    ),
-                    bypass_readonly=True,
-                )
-                app.app.invalidate()
-
-        app.app.loop.call_soon_threadsafe(update_search)
-
-    # Start monitoring in background thread
-    if app.tree.index_building:
-        thread = threading.Thread(target=monitor_index_building, daemon=True)
-        thread.start()
-
-    event.app.invalidate()
-
-
-@error_handler
-def restore_tree_to_initial(event):
-    """Restore the tree to initial state (as when app was opened)."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    # Clear any saved filtering state
-    app.tree.original_tree_text = None
-    app.tree.original_tree_text_split = None
-    app.tree.original_nodes_by_row = None
-    app.tree.filtered_node_rows = []
-
-    # Close all children of the root to collapse everything
-    for child in app.tree.root.children:
-        child.close_node()
-
-    # Clear the root's children list
-    app.tree.root.children = []
-
-    # Reopen just the root level to restore initial state
-    app.tree.root.open_node()
-
-    # Rebuild tree from root - shows tree as when first opened
-    tree_text = app.tree.get_tree_text()
-
-    # Update the display
-    app.tree_buffer.set_document(
-        Document(text=tree_text, cursor_position=0),
-        bypass_readonly=True,
-    )
-
-    # Invalidate to refresh display
-    event.app.invalidate()
-
-
-@error_handler
-def copy_key(event):
-    """Copy the HDF5 key of the current node to the clipboard."""
-    # Access the application instance
-    app = event.app.h5forest_app
-
-    # Get the current node
-    node = app.tree.get_current_node(app.current_row)
-
-    # Get the HDF5 key path (without filename and leading slashes)
-    hdf5_key = node.path.lstrip("/")
-
-    # Copy to clipboard using platform-specific command
-    try:
-        system = platform.system()
-        if system == "Darwin":  # macOS
-            process = subprocess.Popen(
-                ["pbcopy"],
-                stdin=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-        elif system == "Windows":
-            process = subprocess.Popen(
-                ["clip"],
-                stdin=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-        else:  # Linux and others
-            process = subprocess.Popen(
-                ["xclip", "-selection", "clipboard"],
-                stdin=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-
-        # Write the path to clipboard
-        process.communicate(input=hdf5_key.encode("utf-8"))
-
-        if process.returncode == 0:
-            app.print(f"Copied {hdf5_key} into the clipboard")
-        else:
-            app.print("Error: Failed to copy to clipboard")
-
-    except FileNotFoundError:
-        # Clipboard tool not found
-        if system == "Linux":
-            app.print(
-                "Error: xclip not found. Install with: apt install xclip"
-            )
-        else:
-            app.print("Error: Clipboard tool not available")
-    except Exception as e:
-        app.print(f"Error copying to clipboard: {e}")
-
-    event.app.invalidate()
 
 
 class H5KeyBindings:
@@ -270,7 +47,12 @@ class H5KeyBindings:
         # Attach the config instance
         self.config = app.config
 
-        # Define attributes to hold all the keys
+        # Is vim mode enabled? This just a friendly pointer to the config
+        self.vim_mode_enabled = self.config.vim_mode_enabled()
+
+        # ========== Define attributes to hold all the keys ==========
+
+        # Normal mode keys
         self.dataset_leader_key = self.config.get_keymap(
             "dataset_mode",
             "leader",
@@ -312,7 +94,43 @@ class H5KeyBindings:
             "expand_attributes",
         )
 
-        # Define attributes to hold all the different labels
+        # Tree keys
+        self.expand_collapse_key = self.config.get_keymap(
+            "tree_navigation",
+            "expand/collapse",
+        )
+        self.jump_up_key = self.config.get_keymap(
+            "tree_navigation",
+            "jump_up",
+        )
+        self.jump_down_key = self.config.get_keymap(
+            "tree_navigation",
+            "jump_down",
+        )
+        self.move_up_key = self.config.get_keymap(
+            "tree_navigation",
+            "move_up",
+        )
+        self.move_down_key = self.config.get_keymap(
+            "tree_navigation",
+            "move_down",
+        )
+        self.move_left_key = self.config.get_keymap(
+            "tree_navigation",
+            "move_left",
+        )
+        self.move_right_key = self.config.get_keymap(
+            "tree_navigation",
+            "move_right",
+        )
+        self.vim_move_up_key = "k"  # Fixed vim key
+        self.vim_move_down_key = "j"  # Fixed vim key
+        self.vim_move_left_key = "h"  # Fixed vim key
+        self.vim_move_right_key = "l"  # Fixed vim key
+
+        # ====== Define attributes to hold all the different labels ======
+
+        # Normal mode labels
         self.dataset_mode_label = Label(
             f"{translate_key_label(self.dataset_leader_key)} → Dataset Mode"
         )
@@ -345,6 +163,16 @@ class H5KeyBindings:
             f"{translate_key_label(self.toggle_attrs_key)} → Shrink Attributes"
         )
 
+        # Tree labels
+        self.expand_collapse_label = Label(
+            f"{translate_key_label(self.expand_collapse_key)} → "
+            "Open/Close Group"
+        )
+        self.move_ten_label = Label(
+            f"{translate_key_label(self.jump_up_key)}/"
+            f"{translate_key_label(self.jump_down_key)} → Up/Down 10"
+        )
+
     def bind_function(self, key, function, filter_lambda):
         """Bind a function to a key with a filter condition.
 
@@ -357,7 +185,7 @@ class H5KeyBindings:
         self.app.kb.add(key, filter=Condition(filter_lambda))(function)
 
     def _init_normal_mode_bindings(self):
-        """Initialize normal mode keybindings."""
+        """Initialise normal mode keybindings."""
         # For clarity extract the app instance
         app = self.app
 
@@ -436,13 +264,104 @@ class H5KeyBindings:
             lambda: not app.flag_normal_mode,
         )
 
+    def _init_motion_bindings(self):
+        """Initialise motion keybindings."""
+        # For clarity extract the app instance
+        app = self.app
+
+        # Bind vim motions if vim mode is enabled (these work everywhere
+        # regardless of focus but need to ignore when typing is done in search)
+        if self.vim_mode_enabled:
+            self.bind_function(
+                self.vim_move_left_key,
+                move_left,
+                lambda: not app.flag_search_mode,
+            )
+            self.bind_function(
+                self.vim_move_down_key,
+                move_down,
+                lambda: not app.flag_search_mode,
+            )
+            self.bind_function(
+                self.vim_move_up_key,
+                move_up,
+                lambda: not app.flag_search_mode,
+            )
+            self.bind_function(
+                self.vim_move_right_key,
+                move_right,
+                lambda: not app.flag_search_mode,
+            )
+
+        # The user can also add their own movement keys via the config but
+        # we only need to bind these if they are not up/down/left/right or
+        # the vim keys (assuming vim mode is enabled)
+        if self.move_up_key != "up" and not (
+            self.vim_mode_enabled and self.move_up_key == self.vim_move_up_key
+        ):
+            self.bind_function(
+                self.move_up_key,
+                move_up,
+                lambda: not app.flag_search_mode,
+            )
+        if self.move_down_key != "down" and not (
+            self.vim_mode_enabled
+            and self.move_down_key == self.vim_move_down_key
+        ):
+            self.bind_function(
+                self.move_down_key,
+                move_down,
+                lambda: not app.flag_search_mode,
+            )
+        if self.move_left_key != "left" and not (
+            self.vim_mode_enabled
+            and self.move_left_key == self.vim_move_left_key
+        ):
+            self.bind_function(
+                self.move_left_key,
+                move_left,
+                lambda: not app.flag_search_mode,
+            )
+        if self.move_right_key != "right" and not (
+            self.vim_mode_enabled
+            and self.move_right_key == self.vim_move_right_key
+        ):
+            self.bind_function(
+                self.move_right_key,
+                move_right,
+                lambda: not app.flag_search_mode,
+            )
+
+    def _init_tree_bindings(self):
+        """Initialise tree navigation keybindings."""
+        # For clarity extract the app instance
+        app = self.app
+
+        # Bind jump keys
+        self.bind_function(
+            self.jump_up_key,
+            move_up_ten,
+            lambda: app.tree_has_focus,
+        )
+        self.bind_function(
+            self.jump_down_key,
+            move_down_ten,
+            lambda: app.tree_has_focus,
+        )
+        self.bind_function(
+            self.expand_collapse_key,
+            expand_collapse_node,
+            lambda: app.tree_has_focus,
+        )
+
     def _init_bindings(self):
         """Initialize all keybindings."""
-
         self._init_normal_mode_bindings()
+        self._init_motion_bindings()
+        self._init_tree_bindings()
 
-    def _get_normal_labels(self):
-        """Get the labels that are always shown in normal mode."""
+    def _get_normal_tree_labels(self):
+        """Get the normal mode labels when the tree has focus."""
         # Show expand/collapse attributes key based on current state
         if self.app.flag_expanded_attrs:
             toggle_attr_label = self.shrink_attrs_label
@@ -450,11 +369,13 @@ class H5KeyBindings:
             toggle_attr_label = self.expand_attrs_label
 
         labels = [
+            self.expand_collapse_label,
             self.goto_mode_label,
             self.dataset_mode_label,
             self.window_mode_label,
             self.hist_mode_label,
             self.plotting_mode_label,
+            self.move_ten_label,
             self.search_label,
             self.copy_key_label,
             toggle_attr_label,
@@ -463,6 +384,19 @@ class H5KeyBindings:
         ]
 
         return labels
+
+    def _get_normal_labels_no_tree_focus(self):
+        """Get the normal mode labels when the tree does not have focus."""
+        return [
+            self.goto_mode_label,
+            self.dataset_mode_label,
+            self.window_mode_label,
+            self.hist_mode_label,
+            self.plotting_mode_label,
+            self.search_label,
+            self.restore_tree_label,
+            self.exit_label,
+        ]
 
     def get_current_hotkeys(self):
         """Get the current hotkeys based on application state."""
@@ -474,7 +408,10 @@ class H5KeyBindings:
         # hotkeys are shown in the UI
         hotkeys = []
 
-        # Are we in normal mode?
-        if app.flag_normal_mode:
-            # Yes - show normal mode hotkeys
-            hotkeys.extend(self._get_normal_labels())
+        # Are we in normal mode with tree focus?
+        if app.flag_normal_mode and app.tree_has_focus:
+            hotkeys.extend(self._get_normal_tree_labels())
+
+        # Are we in normal mode without tree focus?
+        elif app.flag_normal_mode and not app.tree_has_focus:
+            hotkeys.extend(self._get_normal_labels_no_tree_focus())

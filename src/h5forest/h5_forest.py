@@ -402,6 +402,17 @@ class H5Forest:
         """
         return self._flag_in_prompt
 
+    @property
+    def tree_has_focus(self):
+        """
+        Return whether the tree content has focus.
+
+        Returns:
+            bool:
+                True if the tree content has focus, False otherwise.
+        """
+        return self.app.layout.has_focus(self.tree_content)
+
     def _get_hot_keys(self):
         """
         Get the hot keys for normal mode based on current state.
