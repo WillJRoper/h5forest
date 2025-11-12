@@ -165,11 +165,13 @@ h5forest can compute statistics efficiently even for very large datasets:
 
 ### Chunked Processing
 
-For large datasets, statistics are computed in chunks with a progress bar:
+For large datasets, statistics can be computed in chunks with a progress bar:
 
 ```
 Min/Max ████████████████████████████████ 100%
 ```
+
+`h5forest` will prompt you and ask whether chunking should be used. If you want to avoid this prompt you can set `configuration:always_chunk: true` in your config file.
 
 This approach:
 

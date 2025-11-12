@@ -50,13 +50,13 @@ If you're familiar with Vim, you can enable Vim-style navigation keys (`h`, `j`,
 
 ```yaml
 configuration:
-  vim_mode: true  # Enable hjkl navigation
-  always_chunk: false
+  vim_mode: true # Enable hjkl navigation
 ```
 
 3. Save and restart `h5forest`
 
 When Vim mode is enabled:
+
 - **`h`** - Move left (collapse group)
 - **`j`** - Move down
 - **`k`** - Move up
@@ -64,7 +64,7 @@ When Vim mode is enabled:
 - Arrow keys continue to work alongside Vim keys
 
 !!! note "Reserved Keys in Vim Mode"
-    When Vim mode is enabled, the keys `h`, `j`, `k`, `l`, `g`, and `G` are reserved for navigation and cannot be remapped to other functions.
+When Vim mode is enabled, the keys `h`, `j`, `k`, and `l` are reserved for navigation and cannot be remapped to other functions.
 
 ### Customizing Key Bindings
 
@@ -73,7 +73,7 @@ You can customize any key binding in the config file. For example, to change the
 ```yaml
 keymaps:
   normal_mode:
-    quit: Q  # Change from default 'q' to 'Q'
+    quit: Q # Change from default 'q' to 'Q'
 ```
 
 See the config file comments for a complete list of customizable key bindings. For more details on configuration options, see the [Configuration Guide](faq.md#configuration).
@@ -201,7 +201,7 @@ Press **`q`** to exit any mode and return to Normal Mode. The hotkeys panel at t
 ## Tips for Success
 
 !!! tip "Vim Users"
-    If you're familiar with Vim, you'll feel right at home with the modal interface. Enable [Vim mode](#enabling-vim-motions) to use `hjkl` navigation keys!
+If you're familiar with Vim, you'll feel right at home with the modal interface. Enable [Vim mode](#enabling-vim-motions) to use `hjkl` navigation keys!
 
 !!! warning "Terminal Compatibility"
 For the best experience, use a modern terminal emulator with Unicode and 256-color support.
