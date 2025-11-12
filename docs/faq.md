@@ -41,6 +41,14 @@ pip install --upgrade h5forest
 - **Font issues:** Use a monospace font with good Unicode coverage
 - **Color support:** Enable 256-color support in your terminal
 
+### Q: How do I activate vim motions?
+
+**A:** Enable vim mode in the configuration file:
+
+1. Ensure you have run `h5forest` at least once to generate the config file at `~/.h5forest/config.yaml`.
+2. Open `~/.h5forest/config.yaml` in a text editor.
+3. Set `vim_mode: true` under the `configuration` section.
+
 ## File Compatibility
 
 ### Q: "Permission denied" or "File not found" errors
@@ -84,8 +92,6 @@ h5dump -H /path/to/your/file.h5
 ### Q: Large files are slow to open
 
 **A:** For now, if you have a large number of Groups at the root level this is expected behavior. We do plan to introduce asynchronous tree construction in a future release to address this.
-
-
 
 ## Navigation and Interface
 

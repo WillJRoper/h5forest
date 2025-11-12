@@ -16,8 +16,10 @@
 - **Statistical Analysis**: Compute statistics (min/max, mean, standard deviation) on the fly
 - **Data Visualization**: Generate quick scatter plots and histograms
 - **Asynchronous Operations**: Responsive interface that doesn't block during heavy computations
+- **Fuzzy Search**: Quickly find datasets and groups with real-time filtering
+- **Fully customisable**: Tailor the interface and functionality using a simple configuration file
 
-## Quick Start
+## Basic Installation And Usage
 
 Install `h5forest` via pip:
 
@@ -50,6 +52,7 @@ Use keyboard shortcuts to switch between modes and perform actions. Press `q` to
 - **[Getting Started](installation.md)**: Installation and basic setup
 - **[Quick Start](quickstart.md)**: Get up and running in minutes
 - **[Mode Reference](modes/overview.md)**: Detailed guide to all interaction modes
+- **[Configuration](configuration.md)**: Customizing h5forest to your needs
 - **[Contributing](contributing.md)**: Development setup and contribution guidelines
 - **[FAQ](faq.md)**: Common questions and troubleshooting
 
