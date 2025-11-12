@@ -413,6 +413,17 @@ class H5Forest:
         """
         return self.app.layout.has_focus(self.tree_content)
 
+    @property
+    def dataset_values_has_content(self):
+        """
+        Return whether the dataset values content has any text.
+
+        Returns:
+            bool:
+                True if the values content has text, False otherwise.
+        """
+        return len(self.values_content.text) > 0
+
     def _get_hot_keys(self):
         """
         Get the hot keys for normal mode based on current state.

@@ -9,6 +9,14 @@ application.
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.widgets import Label
 
+from h5forest.bindings.dataset_funcs import (
+    close_values,
+    mean,
+    minimum_maximum,
+    show_values,
+    show_values_in_range,
+    std,
+)
 from h5forest.bindings.normal_funcs import (
     copy_key,
     dataset_leader_mode,
@@ -130,6 +138,32 @@ class H5KeyBindings:
         self.vim_move_left_key = "h"  # Fixed vim key
         self.vim_move_right_key = "l"  # Fixed vim key
 
+        # Dataset mode keys
+        self.view_values_key = self.config.get_keymap(
+            "dataset_mode",
+            "view_values",
+        )
+        self.view_range_key = self.config.get_keymap(
+            "dataset_mode",
+            "view_values_range",
+        )
+        self.close_values_key = self.config.get_keymap(
+            "dataset_mode",
+            "close_values",
+        )
+        self.min_max_key = self.config.get_keymap(
+            "dataset_mode",
+            "min_max",
+        )
+        self.mean_key = self.config.get_keymap(
+            "dataset_mode",
+            "mean",
+        )
+        self.std_key = self.config.get_keymap(
+            "dataset_mode",
+            "std_dev",
+        )
+
         # ====== Define attributes to hold all the different labels ======
 
         # Normal mode labels
@@ -158,6 +192,9 @@ class H5KeyBindings:
             f"{translate_key_label(self.copy_key_binding)} → Copy Key"
         )
         self.exit_label = Label(f"{translate_key_label(self.quit_key)} → Exit")
+        self.exit_mode_label = Label(
+            f"{translate_key_label(self.quit_key)} → Exit Mode"
+        )
         self.expand_attrs_label = Label(
             f"{translate_key_label(self.toggle_attrs_key)} → Expand Attributes"
         )
@@ -175,6 +212,41 @@ class H5KeyBindings:
             f"{translate_key_label(self.jump_down_key)} → Up/Down 10"
         )
 
+        # Dataset mode labels
+        self.view_values_label = Label(
+            f"{translate_key_label(self.view_values_key)} → Show Values"
+        )
+        self.view_range_label = Label(
+            f"{translate_key_label(self.view_range_key)} "
+            "→ Show Values In Range"
+        )
+        self.close_values_label = Label(
+            f"{translate_key_label(self.close_values_key)} → Close Value View"
+        )
+        self.min_max_label = Label(
+            f"{translate_key_label(self.min_max_key)} → Get Minima and Maxima"
+        )
+        self.mean_label = Label(
+            f"{translate_key_label(self.mean_key)} → Get Mean"
+        )
+        self.std_label = Label(
+            f"{translate_key_label(self.std_key)} → Get Standard Deviation"
+        )
+
+        # ========== Define all the filters we will need ==========
+
+        # Normal mode filters
+        self.filter_normal_mode = lambda: app.flag_normal_mode
+        self.filter_not_normal_mode = lambda: not app.flag_normal_mode
+        self.filter_not_searching = lambda: not app.flag_search_mode
+        self.filter_tree_focus = lambda: app.tree_has_focus
+        self.filter_expanded_attrs = lambda: app.flag_expanded_attrs
+        self.filter_not_expanded_attrs = lambda: not app.flag_expanded_attrs
+        self.filter_dataset_mode = lambda: app.flag_dataset_mode
+        self.filter_dataset_values_shown = (
+            lambda: app.flag_dataset_mode and app.dataset_values_has_content
+        )
+
     def bind_function(self, key, function, filter_lambda):
         """Bind a function to a key with a filter condition.
 
@@ -188,99 +260,92 @@ class H5KeyBindings:
 
     def _init_normal_mode_bindings(self):
         """Initialise normal mode keybindings."""
-        # For clarity extract the app instance
-        app = self.app
-
         # Bind mode leader keys
         self.bind_function(
             self.goto_leader_key,
             goto_leader_mode,
-            lambda: app.flag_normal_mode,
+            self.filter_normal_mode,
         )
         self.bind_function(
             self.dataset_leader_key,
             dataset_leader_mode,
-            lambda: app.flag_normal_mode,
+            self.filter_normal_mode,
         )
         self.bind_function(
             self.window_leader_key,
             window_leader_mode,
-            lambda: app.flag_normal_mode,
+            self.filter_normal_mode,
         )
         self.bind_function(
             self.hist_leader_key,
             hist_leader_mode,
-            lambda: app.flag_normal_mode,
+            self.filter_normal_mode,
         )
         self.bind_function(
             self.plot_leader_key,
             plotting_leader_mode,
-            lambda: app.flag_normal_mode,
+            self.filter_normal_mode,
         )
 
         # Bind the search leader key but only if tree has focus
         self.bind_function(
             self.search_leader_key,
             search_leader_mode,
-            lambda: app.flag_normal_mode
-            and app.app.layout.has_focus(app.tree_content.content),
+            self.filter_normal_mode,
         )
 
         # Bind the tree restoration key
         self.bind_function(
             self.restore_key,
             restore_tree_to_initial,
-            lambda: app.flag_normal_mode,
+            self.filter_normal_mode,
         )
 
         # Bind the copy key
         self.bind_function(
             self.copy_key_binding,
             copy_key,
-            lambda: app.flag_normal_mode,
+            self.filter_normal_mode,
         )
 
         # Binding the quitting machinery
         self.bind_function(
             self.quit_key,
             exit_app,
-            lambda: app.flag_normal_mode,
+            self.filter_normal_mode,
         )
 
         # Bind exiting a leader mode
         self.bind_function(
             self.quit_key,
             exit_leader_mode,
-            lambda: not app.flag_normal_mode,
+            self.filter_not_normal_mode,
         )
 
     def _init_motion_bindings(self):
         """Initialise motion keybindings."""
-        # For clarity extract the app instance
-        app = self.app
-
         # Bind vim motions if vim mode is enabled (these work everywhere
         # regardless of focus but need to ignore when typing is done in search)
         if self.vim_mode_enabled:
             self.bind_function(
                 self.vim_move_left_key,
                 move_left,
-                lambda: not app.flag_search_mode,
+                self.filter_not_searching,
             )
             self.bind_function(
                 self.vim_move_down_key,
                 move_down,
-                lambda: not app.flag_search_mode,
+                self.filter_not_searching,
             )
             self.bind_function(
                 self.vim_move_up_key,
                 move_up,
-                lambda: not app.flag_search_mode,
+                self.filter_not_searching,
             )
             self.bind_function(
                 self.vim_move_right_key,
                 move_right,
-                lambda: not app.flag_search_mode,
+                self.filter_not_searching,
             )
 
         # The user can also add their own movement keys via the config but
@@ -292,7 +357,7 @@ class H5KeyBindings:
             self.bind_function(
                 self.move_up_key,
                 move_up,
-                lambda: not app.flag_search_mode,
+                self.filter_not_searching,
             )
         if self.move_down_key != "down" and not (
             self.vim_mode_enabled
@@ -301,7 +366,7 @@ class H5KeyBindings:
             self.bind_function(
                 self.move_down_key,
                 move_down,
-                lambda: not app.flag_search_mode,
+                self.filter_not_searching,
             )
         if self.move_left_key != "left" and not (
             self.vim_mode_enabled
@@ -310,7 +375,7 @@ class H5KeyBindings:
             self.bind_function(
                 self.move_left_key,
                 move_left,
-                lambda: not app.flag_search_mode,
+                self.filter_not_searching,
             )
         if self.move_right_key != "right" and not (
             self.vim_mode_enabled
@@ -319,43 +384,74 @@ class H5KeyBindings:
             self.bind_function(
                 self.move_right_key,
                 move_right,
-                lambda: not app.flag_search_mode,
+                self.filter_not_searching,
             )
 
     def _init_tree_bindings(self):
         """Initialise tree navigation keybindings."""
-        # For clarity extract the app instance
-        app = self.app
-
         # Bind expand/collapse attributes key
         self.bind_function(
             self.expand_collapse_key,
             expand_collapse_node,
-            lambda: app.tree_has_focus,
+            self.filter_tree_focus,
         )
 
         # Bind jump keys
         self.bind_function(
             self.jump_up_key,
             move_up_ten,
-            lambda: app.tree_has_focus,
+            self.filter_tree_focus,
         )
         self.bind_function(
             self.jump_down_key,
             move_down_ten,
-            lambda: app.tree_has_focus,
+            self.filter_tree_focus,
         )
 
         # Binding the expand/collapse attributes keys
         self.bind_function(
             self.toggle_attrs_key,
             expand_attributes,
-            lambda: app.flag_normal_mode and not app.flag_expanded_attrs,
+            self.filter_not_expanded_attrs,
         )
         self.bind_function(
             self.toggle_attrs_key,
             collapse_attributes,
-            lambda: app.flag_normal_mode and app.flag_expanded_attrs,
+            self.filter_expanded_attrs,
+        )
+
+    def _init_dataset_bindings(self):
+        """Initialize dataset mode keybindings."""
+        # Bind dataset mode keys
+        self.bind_function(
+            self.view_values_key,
+            show_values,
+            self.filter_dataset_mode,
+        )
+        self.bind_function(
+            self.view_range_key,
+            show_values_in_range,
+            self.filter_dataset_mode,
+        )
+        self.bind_function(
+            self.close_values_key,
+            close_values,
+            self.filter_dataset_values_shown,
+        )
+        self.bind_function(
+            self.min_max_key,
+            minimum_maximum,
+            self.filter_dataset_mode,
+        )
+        self.bind_function(
+            self.mean_key,
+            mean,
+            self.filter_dataset_mode,
+        )
+        self.bind_function(
+            self.std_key,
+            std,
+            self.filter_dataset_mode,
         )
 
     def _init_bindings(self):
@@ -363,59 +459,79 @@ class H5KeyBindings:
         self._init_normal_mode_bindings()
         self._init_motion_bindings()
         self._init_tree_bindings()
-
-    def _get_normal_tree_labels(self):
-        """Get the normal mode labels when the tree has focus."""
-        # Show expand/collapse attributes key based on current state
-        if self.app.flag_expanded_attrs:
-            toggle_attr_label = self.shrink_attrs_label
-        else:
-            toggle_attr_label = self.expand_attrs_label
-
-        labels = [
-            self.expand_collapse_label,
-            self.goto_mode_label,
-            self.dataset_mode_label,
-            self.window_mode_label,
-            self.hist_mode_label,
-            self.plotting_mode_label,
-            self.move_ten_label,
-            self.search_label,
-            self.copy_key_label,
-            toggle_attr_label,
-            self.restore_tree_label,
-            self.exit_label,
-        ]
-
-        return labels
-
-    def _get_normal_labels_no_tree_focus(self):
-        """Get the normal mode labels when the tree does not have focus."""
-        return [
-            self.goto_mode_label,
-            self.dataset_mode_label,
-            self.window_mode_label,
-            self.hist_mode_label,
-            self.plotting_mode_label,
-            self.search_label,
-            self.restore_tree_label,
-            self.exit_label,
-        ]
+        self._init_dataset_bindings()
 
     def get_current_hotkeys(self):
         """Get the current hotkeys based on application state."""
-        # Get the application instance for clarity
-        app = self.app
-
         # Initialise a list in which we will store the hotkey labels to show
         # Note that order matters here as it defines the order in which the
         # hotkeys are shown in the UI
         hotkeys = []
 
-        # Are we in normal mode with tree focus?
-        if app.flag_normal_mode and app.tree_has_focus:
-            hotkeys.extend(self._get_normal_tree_labels())
+        # Opening and closing nodes if tree has focus
+        if self.filter_tree_focus():
+            hotkeys.append(self.expand_collapse_label)
 
-        # Are we in normal mode without tree focus?
-        elif app.flag_normal_mode and not app.tree_has_focus:
-            hotkeys.extend(self._get_normal_labels_no_tree_focus())
+        # Show mode leaders in normal mode
+        if self.filter_normal_mode():
+            hotkeys.append(self.goto_mode_label)
+            hotkeys.append(self.dataset_mode_label)
+            hotkeys.append(self.window_mode_label)
+            hotkeys.append(self.hist_mode_label)
+            hotkeys.append(self.plotting_mode_label)
+
+        # If tree has focus, show jump 10 keys
+        if self.filter_tree_focus():
+            hotkeys.append(self.move_ten_label)
+
+        # Show the search key if in normal mode
+        if self.filter_normal_mode():
+            hotkeys.append(self.search_label)
+
+        # Show the tree restoration key if in normal mode
+        if self.filter_normal_mode():
+            hotkeys.append(self.restore_tree_label)
+
+        # Show the copy key if in normal mode
+        if self.filter_normal_mode():
+            hotkeys.append(self.copy_key_label)
+
+        # Show the dataset mode keys if in dataset mode
+        if self.filter_dataset_mode():
+            hotkeys.append(self.view_values_label)
+            hotkeys.append(self.view_range_label)
+            if self.filter_dataset_values_shown():
+                hotkeys.append(self.close_values_label)
+            hotkeys.append(self.min_max_label)
+            hotkeys.append(self.mean_label)
+            hotkeys.append(self.std_label)
+
+        # Show the quit key in normal mode
+        if self.filter_normal_mode():
+            hotkeys.append(self.exit_label)
+        # If not in normal mode, show the exit leader mode key
+        else:
+            hotkeys.append(self.exit_mode_label)
+
+    def get_mode_title(self):
+        """Get the current mode title based on application state."""
+        # Get the application instance for clarity
+        app = self.app
+
+        # Determine the current mode and return the appropriate title
+        if app.flag_normal_mode:
+            return "Normal Mode"
+        elif app.flag_jump_mode:
+            return "Goto Mode"
+        elif app.flag_dataset_mode:
+            return "Dataset Mode"
+        elif app.flag_window_mode:
+            return "Window Mode"
+        elif app.flag_plotting_mode:
+            return "Plotting Mode"
+        elif app.flag_hist_mode:
+            return "Histogram Mode"
+        elif app.flag_search_mode:
+            return "Search Mode"
+        else:
+            return "Unknown Mode"
