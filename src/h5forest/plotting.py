@@ -665,13 +665,16 @@ class HistogramPlotter(Plotter):
         return self.plot_text
 
     @error_handler
-    def _plot(self, text):
+    def _plot(self, text, use_chunks=False):
         """
         Plot the histogram.
 
         Args:
             text (str):
                 The text to extract the plot parameters from.
+            use_chunks (bool):
+                Whether to use chunked processing (not used for histogram
+                plotting, but required for interface consistency).
         """
         from h5forest.h5_forest import H5Forest
 

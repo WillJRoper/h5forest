@@ -86,18 +86,15 @@ class TestH5ForestInitialization:
 
     def test_init_creates_keybindings(self, temp_h5_file):
         """Test that initialization creates KeyBindings."""
+        from h5forest.bindings.bindings import H5KeyBindings
         from h5forest.h5_forest import H5Forest
 
         app = H5Forest(temp_h5_file)
 
         assert isinstance(app.kb, KeyBindings)
-        assert app.hot_keys is not None
-        assert app.dataset_keys is not None
-        assert app.goto_keys is not None
-        assert app.window_keys is not None
-        assert app.plot_keys is not None
-        assert app.hist_keys is not None
-        assert app.search_keys is not None
+        assert hasattr(app, "bindings")
+        assert isinstance(app.bindings, H5KeyBindings)
+        assert app.bindings.get_current_hotkeys() is not None
 
     def test_init_creates_plotters(self, temp_h5_file):
         """Test that initialization creates plotter objects."""

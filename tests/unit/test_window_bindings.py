@@ -6,10 +6,24 @@ import pytest
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.widgets import Label
 
-from h5forest.bindings.window_bindings import (
-    _init_window_bindings,
-    error_handler,
-)
+from h5forest.bindings.bindings import H5KeyBindings
+
+
+def _init_window_bindings(app):
+    """Initialize window bindings using H5KeyBindings class."""
+    bindings = H5KeyBindings(app)
+    bindings._init_window_bindings()
+    bindings._init_normal_mode_bindings()  # For escape key to return to normal
+
+    # Return dict of hotkeys matching old interface
+    return {
+        "move_tree": bindings.focus_tree_label,
+        "move_attrs": bindings.focus_attrs_label,
+        "move_values": bindings.focus_values_label,
+        "move_plot": bindings.focus_plot_label,
+        "move_hist": bindings.focus_hist_label,
+        "exit": bindings.exit_mode_label,
+    }
 
 
 class TestWindowBindings:
@@ -61,8 +75,12 @@ class TestWindowBindings:
         event = MagicMock()
         return event
 
-    def test_init_window_bindings_returns_hotkeys(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_init_window_bindings_returns_hotkeys(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that _init_window_bindings returns a dict of Labels."""
+        mock_h5forest_class.return_value = mock_app
 
         hot_keys = _init_window_bindings(mock_app)
         assert isinstance(hot_keys, dict)
@@ -71,8 +89,12 @@ class TestWindowBindings:
             assert isinstance(key, str)
             assert isinstance(value, Label)
 
-    def test_move_tree_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_tree_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_tree handler."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         # Find the move_tree handler (bound to 't')
@@ -88,8 +110,12 @@ class TestWindowBindings:
         # Verify returned to normal mode
         mock_app.return_to_normal_mode.assert_called_once()
 
-    def test_move_attr_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_attr_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_attr handler."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         # Find the move_attr handler (bound to 'a')
@@ -107,8 +133,12 @@ class TestWindowBindings:
         # Verify returned to normal mode
         mock_app.return_to_normal_mode.assert_called_once()
 
-    def test_move_values_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_values_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_values handler."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         # Find the move_values handler (bound to 'v')
@@ -124,8 +154,12 @@ class TestWindowBindings:
         # Verify returned to normal mode
         mock_app.return_to_normal_mode.assert_called_once()
 
-    def test_move_plot_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_plot_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_plot handler."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         # Find the move_plot handler (bound to 'p')
@@ -143,8 +177,12 @@ class TestWindowBindings:
         assert mock_app._flag_window_mode is False
         assert mock_app._flag_plotting_mode is True
 
-    def test_move_hist_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_hist_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_hist handler."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         # Find the move_hist handler (bound to 'h')
@@ -162,17 +200,23 @@ class TestWindowBindings:
         assert mock_app._flag_window_mode is False
         assert mock_app._flag_hist_mode is True
 
-    def test_move_to_default_handler(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_to_default_handler(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test the move_to_default handler."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
-        # Find the move_to_default handler (bound to 'escape')
-        escape_bindings = [
-            b for b in mock_app.kb.bindings if "escape" in str(b.keys)
-        ]
-        assert len(escape_bindings) > 0
+        # Find the move_to_default handler (bound to 'q' - the quit
+        # key exits leader modes). There are two 'q' bindings: one for
+        # normal mode (exit_app) and one for leader modes
+        # We want the second one (exit_leader_mode wrapper)
+        quit_bindings = [b for b in mock_app.kb.bindings if b.keys == ("q",)]
+        assert len(quit_bindings) == 2
 
-        handler = escape_bindings[0].handler
+        # The second binding is the exit_leader_mode one
+        handler = quit_bindings[1].handler
         handler(mock_event)
 
         # Verify default focus was called
@@ -181,67 +225,91 @@ class TestWindowBindings:
         # Verify returned to normal mode
         mock_app.return_to_normal_mode.assert_called_once()
 
-    def test_all_handlers_bound_to_correct_keys(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_all_handlers_bound_to_correct_keys(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that all handlers are bound to their expected keys."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
-        # Expected keys: t, a, v, p, h, escape
-        expected_keys = ["t", "a", "v", "p", "h", "escape"]
+        # Expected keys: t, a, v, p, h, q (quit key exits leader modes)
+        expected_keys = ["t", "a", "v", "p", "h", "'q'"]
 
         for key in expected_keys:
             bindings = [b for b in mock_app.kb.bindings if key in str(b.keys)]
             assert len(bindings) > 0, f"Key '{key}' not bound"
 
-    def test_t_key_has_filter_condition(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_t_key_has_filter_condition(self, mock_h5forest_class, mock_app):
         """Test that 't' key has window mode filter."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         t_bindings = [b for b in mock_app.kb.bindings if "t" in str(b.keys)]
         assert len(t_bindings) > 0
         assert t_bindings[0].filter is not None
 
-    def test_a_key_has_filter_condition(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_a_key_has_filter_condition(self, mock_h5forest_class, mock_app):
         """Test that 'a' key has window mode filter."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         a_bindings = [b for b in mock_app.kb.bindings if "a" in str(b.keys)]
         assert len(a_bindings) > 0
         assert a_bindings[0].filter is not None
 
-    def test_v_key_has_combined_filter_condition(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_v_key_has_combined_filter_condition(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that 'v' key has window mode and values visible filter."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         v_bindings = [b for b in mock_app.kb.bindings if "v" in str(b.keys)]
         assert len(v_bindings) > 0
         assert v_bindings[0].filter is not None
 
-    def test_p_key_has_filter_condition(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_p_key_has_filter_condition(self, mock_h5forest_class, mock_app):
         """Test that 'p' key has window mode filter."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         p_bindings = [b for b in mock_app.kb.bindings if "p" in str(b.keys)]
         assert len(p_bindings) > 0
         assert p_bindings[0].filter is not None
 
-    def test_h_key_has_filter_condition(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_h_key_has_filter_condition(self, mock_h5forest_class, mock_app):
         """Test that 'h' key has window mode filter."""
+        mock_h5forest_class.return_value = mock_app
         _init_window_bindings(mock_app)
 
         h_bindings = [b for b in mock_app.kb.bindings if "h" in str(b.keys)]
         assert len(h_bindings) > 0
         assert h_bindings[0].filter is not None
 
-    @patch("h5forest.bindings.window_bindings.error_handler")
+    @patch("h5forest.h5_forest.H5Forest")
     def test_handlers_wrapped_with_error_handler(
-        self, mock_error_handler, mock_app
+        self, mock_h5forest_class, mock_app
     ):
-        """Test that handlers are wrapped with error_handler decorator."""
+        """Test that the bindings class is properly initialized."""
+        mock_h5forest_class.return_value = mock_app
+        # With the refactored binding system, error handling is built
+        # into the class
+        bindings = H5KeyBindings(mock_app)
+        assert bindings is not None
+        assert hasattr(bindings, "bind_function")
 
-        assert callable(error_handler)
-
-    def test_move_plot_sets_correct_mode_flags(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_plot_sets_correct_mode_flags(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test that move_plot sets all mode flags correctly."""
+        mock_h5forest_class.return_value = mock_app
         # Set initial state
         mock_app._flag_normal_mode = True
         mock_app._flag_window_mode = True
@@ -261,8 +329,12 @@ class TestWindowBindings:
         # Ensure hist mode wasn't affected
         assert mock_app._flag_hist_mode is False
 
-    def test_move_hist_sets_correct_mode_flags(self, mock_app, mock_event):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_move_hist_sets_correct_mode_flags(
+        self, mock_h5forest_class, mock_app, mock_event
+    ):
         """Test that move_hist sets all mode flags correctly."""
+        mock_h5forest_class.return_value = mock_app
         # Set initial state
         mock_app._flag_normal_mode = True
         mock_app._flag_window_mode = True
@@ -282,8 +354,12 @@ class TestWindowBindings:
         # Ensure plotting mode wasn't affected
         assert mock_app._flag_plotting_mode is False
 
-    def test_hotkeys_contains_correct_labels(self, mock_app):
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_hotkeys_contains_correct_labels(
+        self, mock_h5forest_class, mock_app
+    ):
         """Test that hotkeys dict contains expected labels."""
+        mock_h5forest_class.return_value = mock_app
         hot_keys = _init_window_bindings(mock_app)
 
         # Dict should have 6 keys
