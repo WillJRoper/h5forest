@@ -45,6 +45,13 @@ from h5forest.bindings.tree_funcs import (
     move_up_ten,
 )
 from h5forest.bindings.utils import translate_key_label
+from h5forest.bindings.window_funcs import (
+    move_attr,
+    move_hist,
+    move_plot,
+    move_tree,
+    move_values,
+)
 
 
 class H5KeyBindings:
@@ -182,6 +189,28 @@ class H5KeyBindings:
             "exit_search",
         )
 
+        # Window mode keys
+        self.tree_focus_key = self.config.get_keymap(
+            "window_mode",
+            "focus_tree",
+        )
+        self.attr_focus_key = self.config.get_keymap(
+            "window_mode",
+            "focus_attributes",
+        )
+        self.values_focus_key = self.config.get_keymap(
+            "window_mode",
+            "focus_values",
+        )
+        self.plot_focus_key = self.config.get_keymap(
+            "window_mode",
+            "focus_plot",
+        )
+        self.hist_focus_key = self.config.get_keymap(
+            "window_mode",
+            "focus_histogram",
+        )
+
         # ====== Define attributes to hold all the different labels ======
 
         # Normal mode labels
@@ -260,6 +289,23 @@ class H5KeyBindings:
             f"{translate_key_label(self.cancel_search_key)} → Cancel"
         )
 
+        # Window mode labels
+        self.focus_tree_label = Label(
+            f"{translate_key_label(self.tree_focus_key)} → Move to Tree"
+        )
+        self.focus_attrs_label = Label(
+            f"{translate_key_label(self.attr_focus_key)} → Move to Attributes"
+        )
+        self.focus_values_label = Label(
+            f"{translate_key_label(self.values_focus_key)} → Move to Values"
+        )
+        self.focus_plot_label = Label(
+            f"{translate_key_label(self.plot_focus_key)} → Move to Plot"
+        )
+        self.focus_hist_label = Label(
+            f"{translate_key_label(self.hist_focus_key)} → Move to Histogram"
+        )
+
         # ========== Define all the filters we will need ==========
 
         # Normal mode filters
@@ -274,6 +320,7 @@ class H5KeyBindings:
             lambda: app.flag_dataset_mode and app.dataset_values_has_content
         )
         self.filter_search_mode = lambda: app.flag_search_mode
+        self.filter_window_mode = lambda: app.flag_window_mode
 
     def bind_function(self, key, function, filter_lambda):
         """Bind a function to a key with a filter condition.
@@ -501,6 +548,35 @@ class H5KeyBindings:
             self.filter_search_mode,
         )
 
+    def _init_window_bindings(self):
+        """Initialize window mode keybindings."""
+        # Bind window mode focus keys
+        self.bind_function(
+            self.tree_focus_key,
+            move_tree,
+            self.filter_window_mode,
+        )
+        self.bind_function(
+            self.attr_focus_key,
+            move_attr,
+            self.filter_window_mode,
+        )
+        self.bind_function(
+            self.values_focus_key,
+            move_values,
+            self.filter_window_mode,
+        )
+        self.bind_function(
+            self.plot_focus_key,
+            move_plot,
+            self.filter_window_mode,
+        )
+        self.bind_function(
+            self.hist_focus_key,
+            move_hist,
+            self.filter_window_mode,
+        )
+
     def _init_bindings(self):
         """Initialize all keybindings."""
         self._init_normal_mode_bindings()
@@ -508,6 +584,7 @@ class H5KeyBindings:
         self._init_tree_bindings()
         self._init_dataset_bindings()
         self._init_search_bindings()
+        self._init_window_bindings()
 
     def get_current_hotkeys(self):
         """Get the current hotkeys based on application state."""
@@ -565,6 +642,14 @@ class H5KeyBindings:
         # Show the search mode keys if in search mode
         if self.filter_search_mode():
             hotkeys.append(self.accept_search_label)
+
+        # Show the window mode keys if in window mode
+        if self.filter_window_mode():
+            hotkeys.append(self.focus_tree_label)
+            hotkeys.append(self.focus_attrs_label)
+            hotkeys.append(self.focus_values_label)
+            hotkeys.append(self.focus_plot_label)
+            hotkeys.append(self.focus_hist_label)
 
         # Show the quit key in normal mode
         if self.filter_normal_mode():
