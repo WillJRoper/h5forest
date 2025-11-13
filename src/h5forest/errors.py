@@ -1,6 +1,7 @@
 """A module containing functions for graceful error handling."""
 
 import traceback
+from importlib.util import find_spec
 from pathlib import Path
 
 
@@ -78,6 +79,10 @@ def handle_plugins(func):
     """
 
     def wrapper(*args, **kwargs):
+        # If hdf5plugin exists, don't convert any errors.
+        if find_spec("hdf5plugin"):
+            return func(*args, **kwargs)
+
         try:
             return func(*args, **kwargs)
         except OSError as e:
