@@ -179,7 +179,8 @@ class TestErrorHandler:
             test_function()
         except PluginError as e:
             assert e.args == (
-                "Cannot open dataset, try `pip install h5forest[hdf5plugin]`",
+                "Cannot open dataset, try `pip install h5forest[hdf5plugin]`. "
+                "HDF5 plugins may be missing or in a non-standard location.",
             )
 
     def test_handle_plugins_untouched(self):
