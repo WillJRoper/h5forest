@@ -61,6 +61,9 @@ def error_handler(func):
     return wrapper
 
 
+class PluginError(Exception): ...
+
+
 def handle_plugins(func):
     """
     Wrap a function in a try/except block to catch the OSError
@@ -78,7 +81,7 @@ def handle_plugins(func):
         try:
             return func(*args, **kwargs)
         except OSError as e:
-            raise Exception(
+            raise PluginError(
                 "Cannot open dataset, try `pip install h5forest[hdf5plugin]`"
             ) from e
 
