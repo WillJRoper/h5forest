@@ -327,6 +327,7 @@ class ScatterPlotter(Plotter):
         self.ax.grid(True)
         self.ax.set_axisbelow(True)
 
+        @error_handler
         def run_in_thread():
             # Now lets plot the data
             # Use chunk preference to determine if we should load in chunks
