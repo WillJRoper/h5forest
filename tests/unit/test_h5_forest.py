@@ -784,8 +784,14 @@ class TestH5ForestPrintAndInput:
         assert app.mini_buffer_content.text == "Temporary message"
         app.app.invalidate.assert_called()
 
-        # Wait for timeout plus a small buffer
-        time.sleep(0.15)
+        # Wait for the background thread to call call_soon_threadsafe
+        # Use polling to avoid race conditions
+        max_wait = 1.0  # Maximum 1 second wait
+        start_time = time.time()
+        while time.time() - start_time < max_wait:
+            if app.app.loop.call_soon_threadsafe.called:
+                break
+            time.sleep(0.01)  # Poll every 10ms
 
         # The clear function should have been called via call_soon_threadsafe
         app.app.loop.call_soon_threadsafe.assert_called_once()
