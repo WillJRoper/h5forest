@@ -1,6 +1,7 @@
 """A module containing functions for graceful error handling."""
 
 import traceback
+from importlib.util import find_spec
 from pathlib import Path
 
 
@@ -57,5 +58,37 @@ def error_handler(func):
             error_msg = f"ERROR@{context} ({location}): {e}"
 
             H5Forest().print(error_msg)
+
+    return wrapper
+
+
+class PluginError(Exception): ...
+
+
+def handle_plugins(func):
+    """
+    Wrap a function in a try/except block to catch the OSError
+    which occurs when h5py is missing its plugins.
+
+    The error is transformed into an PluginError which recommends
+    users install h5py with hdf5plugin.
+
+    Args:
+        func (function):
+            The function to wrap.
+    """
+
+    def wrapper(*args, **kwargs):
+        # If hdf5plugin exists, don't convert any errors.
+        if find_spec("hdf5plugin"):
+            return func(*args, **kwargs)
+
+        try:
+            return func(*args, **kwargs)
+        except OSError as e:
+            raise PluginError(
+                "Cannot open dataset, try `pip install h5forest[hdf5plugin]`. "
+                "HDF5 plugins may be missing or in a non-standard location."
+            ) from e
 
     return wrapper

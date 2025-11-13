@@ -1,10 +1,11 @@
 """Tests for h5forest.errors module."""
 
+import sys
 from unittest.mock import Mock, patch
 
 import pytest
 
-from h5forest.errors import error_handler
+from h5forest.errors import PluginError, error_handler, handle_plugins
 
 
 # Module-level function for testing error_handler with function context
@@ -167,3 +168,61 @@ class TestErrorHandler:
             # Should still handle the exception gracefully
             mock_forest.print.assert_called_once()
             assert result is None
+
+    def test_handle_plugins_convert_without_hdf5plugin(self):
+        """Test that handle_plugins properly converts OSErrors."""
+
+        @handle_plugins
+        def test_function():
+            raise OSError("test")
+
+        # handle_plugins check if hdf5plugin exists using
+        # importlib.util.find_spec. find_spec first checks in sys.modules,
+        # and returns the __spec__ of the module. If we just set it to False,
+        # Then it looks like the module is unavailable.
+        # Note that we can't set it to None,
+        # otherwise find_spec will throw a ValueError
+        mock_hdf5plugin = Mock()
+        mock_hdf5plugin.__spec__ = False
+        sys.modules["hdf5plugin"] = mock_hdf5plugin
+
+        try:
+            test_function()
+        except PluginError as e:
+            assert e.args == (
+                "Cannot open dataset, try `pip install h5forest[hdf5plugin]`. "
+                "HDF5 plugins may be missing or in a non-standard location.",
+            )
+
+    def test_handle_plugins_convert_with_hdf5plugin(self):
+        """Test that handle_plugins properly converts OSErrors."""
+
+        @handle_plugins
+        def test_function():
+            raise OSError("test")
+
+        # handle_plugins check if hdf5plugin exists using
+        # importlib.util.find_spec. find_spec first checks in sys.modules,
+        # and returns the __spec__ of the module. If we just set it to True,
+        # Then it looks like the module is available.
+        # Note that hdf5plugin is never actually imported, so this works fine.
+        mock_hdf5plugin = Mock()
+        mock_hdf5plugin.__spec__ = True
+        sys.modules["hdf5plugin"] = mock_hdf5plugin
+
+        try:
+            test_function()
+        except OSError as e:
+            assert e.args == ("test",)
+
+    def test_handle_plugins_untouched(self):
+        """Test that handle_plugins leaves non-OSError exceptions"""
+
+        @handle_plugins
+        def test_function():
+            raise RuntimeError("test")
+
+        try:
+            test_function()
+        except RuntimeError as e:
+            assert e.args == ("test",)
