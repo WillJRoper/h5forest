@@ -59,3 +59,27 @@ def error_handler(func):
             H5Forest().print(error_msg)
 
     return wrapper
+
+
+def handle_plugins(func):
+    """
+    Wrap a function in a try/except block to catch the OSError
+    which occurs when h5py is missing its plugins.
+
+    The error is transformed into an Exception which recommends
+    users install h5py with hdf5plugin.
+
+    Args:
+        func (function):
+            The function to wrap.
+    """
+
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except OSError as e:
+            raise Exception(
+                "Cannot open dataset, try `pip install h5forest[hdf5plugin]`"
+            ) from e
+
+    return wrapper
