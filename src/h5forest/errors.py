@@ -69,7 +69,7 @@ def handle_plugins(func):
     Wrap a function in a try/except block to catch the OSError
     which occurs when h5py is missing its plugins.
 
-    The error is transformed into an Exception which recommends
+    The error is transformed into an PluginError which recommends
     users install h5py with hdf5plugin.
 
     Args:
