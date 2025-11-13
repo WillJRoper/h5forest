@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from h5forest.errors import error_handler
+from h5forest.errors import PluginError, error_handler, handle_plugins
 
 
 # Module-level function for testing error_handler with function context
@@ -167,3 +167,29 @@ class TestErrorHandler:
             # Should still handle the exception gracefully
             mock_forest.print.assert_called_once()
             assert result is None
+
+    def test_handle_plugins_convert(self):
+        """Test that handle_plugins properly converts OSErrors."""
+
+        @handle_plugins
+        def test_function():
+            raise OSError("test")
+
+        try:
+            test_function()
+        except PluginError as e:
+            assert e.args == (
+                "Cannot open dataset, try `pip install h5forest[hdf5plugin]`",
+            )
+
+    def test_handle_plugins_untouched(self):
+        """Test that handle_plugins leaves non-OSError exceptions"""
+
+        @handle_plugins
+        def test_function():
+            raise RuntimeError("test")
+
+        try:
+            test_function()
+        except RuntimeError as e:
+            assert e.args == ("test",)
