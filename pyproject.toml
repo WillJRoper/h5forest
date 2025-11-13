@@ -52,8 +52,10 @@ dependencies = [
   "ruamel.yaml>=0.18",
 ]
 
-# Add special dependencies for development
 [project.optional-dependencies]
+hdf5plugin = ["hdf5plugin"]
+
+# Add special dependencies for development
 dev = ["ruff", ]
 test = [
   "pytest>=6.0",
