@@ -19,6 +19,7 @@ Example usage:
 import h5py
 import numpy as np
 
+from h5forest.errors import handle_plugins
 from h5forest.progress import ProgressBar
 
 try:
@@ -348,6 +349,7 @@ class Node:
             self._attr_text = self._get_attr_text()
         return self._attr_text
 
+    @handle_plugins
     def get_value_text(self, start_index=None, end_index=None):
         """
         Return the value text for the node (optionally in a range).
@@ -410,6 +412,7 @@ class Node:
                 # Combine path and data for output
                 return str(data_subset) + truncated
 
+    @handle_plugins
     def get_min_max(self):
         """
         Return the minimum and maximum values of the dataset.
@@ -469,6 +472,7 @@ class Node:
 
                 return min_val, max_val
 
+    @handle_plugins
     def get_mean(self):
         """
         Return the mean of the dataset values.
@@ -528,6 +532,7 @@ class Node:
                 # Return the mean
                 return val_sum / (self.size)
 
+    @handle_plugins
     def get_std(self):
         """
         Return the standard deviation of the dataset values.
