@@ -21,6 +21,12 @@ import numpy as np
 
 from h5forest.progress import ProgressBar
 
+try:
+    import hdf5plugin as _  # noqa: F401 hdf5plugin is not used directly. Importing it is enough.
+except ImportError:
+    # hdf5plugin is optional. Do nothing if it does not exist.
+    pass
+
 
 class Node:
     """
