@@ -53,6 +53,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Handle cases of non-standard or non-existant hdf5 plugin locations
 hdf5plugin = ["hdf5plugin"]
 
 # Add special dependencies for development
