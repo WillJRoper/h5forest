@@ -157,6 +157,7 @@ def minimum_maximum(event):
     def run_operation(use_chunks):
         """Run the min/max operation after user confirmation."""
 
+        @error_handler
         def run_in_thread():
             # Get the value string
             vmin, vmax = node.get_min_max()
@@ -197,6 +198,7 @@ def mean(event):
     def run_operation(use_chunks):
         """Run the mean operation after user confirmation."""
 
+        @error_handler
         def run_in_thread():
             # Get the value string
             vmean = node.get_mean()
@@ -237,6 +239,7 @@ def std(event):
     def run_operation(use_chunks):
         """Run the std operation after user confirmation."""
 
+        @error_handler
         def run_in_thread():
             # Get the value string
             vstd = node.get_std()
