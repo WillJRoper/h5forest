@@ -82,7 +82,8 @@ def handle_plugins(func):
             return func(*args, **kwargs)
         except OSError as e:
             raise PluginError(
-                "Cannot open dataset, try `pip install h5forest[hdf5plugin]`"
+                "Cannot open dataset, try `pip install h5forest[hdf5plugin]`. "
+                "HDF5 plugins may be missing or in a non-standard location."
             ) from e
 
     return wrapper
