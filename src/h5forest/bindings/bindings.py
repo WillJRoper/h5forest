@@ -533,39 +533,38 @@ class H5KeyBindings:
         self.filter_not_normal_mode = lambda: not app.flag_normal_mode
         self.filter_not_searching = lambda: not app.flag_search_mode
         self.filter_tree_focus = lambda: app.tree_has_focus
-        self.filter_expanded_attrs = (
-            lambda: app.flag_expanded_attrs and self.filter_tree_focus()
+        self.filter_expanded_attrs = lambda: (
+            app.flag_expanded_attrs and self.filter_tree_focus()
         )
-        self.filter_not_expanded_attrs = (
-            lambda: not app.flag_expanded_attrs and self.filter_tree_focus()
+        self.filter_not_expanded_attrs = lambda: (
+            not app.flag_expanded_attrs and self.filter_tree_focus()
         )
         self.filter_dataset_mode = lambda: app.flag_dataset_mode
-        self.filter_dataset_values_shown = (
-            lambda: app.flag_dataset_mode and app.dataset_values_has_content
+        self.filter_dataset_values_shown = lambda: (
+            app.flag_dataset_mode and app.dataset_values_has_content
         )
         self.filter_search_mode = lambda: app.flag_search_mode
         self.filter_window_mode = lambda: app.flag_window_mode
         self.filter_jump_mode = lambda: app.flag_jump_mode
         self.filter_hist_mode = lambda: app.flag_hist_mode
-        self.filter_hist_mode_tree_focused = (
-            lambda: app.flag_hist_mode and self.filter_tree_focus()
+        self.filter_hist_mode_tree_focused = lambda: (
+            app.flag_hist_mode and self.filter_tree_focus()
         )
-        self.filter_hist_mode_hist_focused = (
-            lambda: app.flag_hist_mode and app.histogram_config_has_focus
+        self.filter_hist_mode_hist_focused = lambda: (
+            app.flag_hist_mode and app.histogram_config_has_focus
         )
-        self.filter_have_hist_data = (
-            lambda: app.flag_hist_mode and app.histogram_plotter.data_assigned
+        self.filter_have_hist_data = lambda: (
+            app.flag_hist_mode and app.histogram_plotter.data_assigned
         )
         self.filter_plot_mode = lambda: app.flag_plotting_mode
-        self.filter_plot_mode_tree_focused = (
-            lambda: app.flag_plotting_mode and self.filter_tree_focus()
+        self.filter_plot_mode_tree_focused = lambda: (
+            app.flag_plotting_mode and self.filter_tree_focus()
         )
-        self.filter_plot_mode_plot_focused = (
-            lambda: app.flag_plotting_mode and app.plot_config_has_focus
+        self.filter_plot_mode_plot_focused = lambda: (
+            app.flag_plotting_mode and app.plot_config_has_focus
         )
-        self.filter_have_plot_data = (
-            lambda: app.flag_plotting_mode
-            and app.scatter_plotter.data_assigned
+        self.filter_have_plot_data = lambda: (
+            app.flag_plotting_mode and app.scatter_plotter.data_assigned
         )
 
     def bind_function(self, key, function, filter_lambda):

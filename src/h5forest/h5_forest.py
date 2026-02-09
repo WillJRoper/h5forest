@@ -693,8 +693,9 @@ class H5Forest:
                 title="Plotting",
             ),
             filter=Condition(
-                lambda: self.flag_plotting_mode
-                or len(self.scatter_plotter) > 0
+                lambda: (
+                    self.flag_plotting_mode or len(self.scatter_plotter) > 0
+                )
             ),
         )
 
