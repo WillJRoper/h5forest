@@ -44,7 +44,61 @@ configuration:
 
 **Note:** Vim mode is **optional** and disabled by default. To enable vim-style navigation, edit `~/.h5forest/config.yaml` and set `vim_mode: true`.
 
-### 2. Keymaps
+### 2. Plotting
+
+The `plotting` section controls the default appearance of scatter plots and
+histograms, as well as saved figure output:
+
+```yaml
+plotting:
+  figure:
+    width: 3.5
+    height: 3.5
+    grid: true
+    grid_axis: both       # both, x, or y
+    grid_alpha: null      # null uses the matplotlib default
+    face_color: null
+    axes_face_color: null
+
+  scatter:
+    marker: "."
+    color: r
+    marker_size: null
+    alpha: null
+    edge_color: null
+    marker_line_width: null
+    line_style: none      # for example: "-", "--", ":", or none
+    line_color: null
+    line_width: null
+
+  histogram:
+    bins: 50
+    type: bar             # bar, step, or stepfilled
+    color: null
+    edge_color: null
+    line_width: null
+    alpha: null
+
+  save:
+    dpi: 100
+    bbox_inches: tight
+```
+
+Colors and line/marker styles accept values understood by `matplotlib`. A
+`null` value leaves that setting at the `matplotlib` default. Setting
+`scatter.line_style` to a line style connects the scatter points; `none`
+keeps the default markers-only rendering.
+
+h5forest validates plotting option types and ranges when it starts. Invalid
+values produce a warning and fall back to the packaged default; matplotlib
+performs final validation of color, marker, and linestyle names.
+
+The scatter marker and histogram bin count initialize their respective TUI
+configuration panels and can still be changed for an individual plot. The
+remaining appearance settings are persistent defaults read when h5forest
+starts. Restart h5forest after changing the configuration file.
+
+### 3. Keymaps
 
 The `keymaps` section contains key bindings for different modes:
 

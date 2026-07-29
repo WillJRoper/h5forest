@@ -63,10 +63,13 @@ From Normal Mode, press **`p`** to enter Plotting Mode.
 
 **Available Parameters:**
 
+- X/Y axis labels
 - X/Y axis scaling (linear or logarithmic)
-- Point size and transparency
-- Color schemes
-- Axis ranges
+- Marker style
+
+Persistent defaults for colors, marker size, transparency, marker edges,
+optional connecting lines, figure dimensions, grids, and saved image DPI can
+be set in the [`plotting` configuration section](../configuration.md#2-plotting).
 
 ## Scale Toggling
 
