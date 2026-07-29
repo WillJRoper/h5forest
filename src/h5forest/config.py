@@ -365,6 +365,118 @@ class ConfigManager:
             )
         return v
 
+    @staticmethod
+    def _is_number(value: Any) -> bool:
+        """Return whether a value is a number but not a boolean."""
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+    @classmethod
+    def _is_plotting_value_valid(
+        cls, section: str, option: str, value: Any
+    ) -> bool:
+        """Validate one plotting option's basic type and range."""
+        nullable_colors = {
+            ("figure", "face_color"),
+            ("figure", "axes_face_color"),
+            ("scatter", "color"),
+            ("scatter", "edge_color"),
+            ("scatter", "line_color"),
+            ("histogram", "color"),
+            ("histogram", "edge_color"),
+        }
+        positive_numbers = {
+            ("figure", "width"),
+            ("figure", "height"),
+            ("save", "dpi"),
+        }
+        non_negative_numbers = {
+            ("scatter", "marker_line_width"),
+            ("scatter", "line_width"),
+            ("histogram", "line_width"),
+        }
+        alpha_options = {
+            ("figure", "grid_alpha"),
+            ("scatter", "alpha"),
+            ("histogram", "alpha"),
+        }
+        key = (section, option)
+
+        if key in nullable_colors:
+            return value is None or isinstance(value, str)
+        if key in positive_numbers:
+            return cls._is_number(value) and value > 0
+        if key == ("scatter", "marker_size"):
+            return value is None or (cls._is_number(value) and value > 0)
+        if key in non_negative_numbers:
+            return value is None or (cls._is_number(value) and value >= 0)
+        if key in alpha_options:
+            return value is None or (cls._is_number(value) and 0 <= value <= 1)
+        if key == ("figure", "grid"):
+            return isinstance(value, bool)
+        if key == ("figure", "grid_axis"):
+            return isinstance(value, str) and value in {"both", "x", "y"}
+        if key in {
+            ("scatter", "marker"),
+            ("scatter", "line_style"),
+        }:
+            return isinstance(value, str)
+        if key == ("histogram", "bins"):
+            return (
+                isinstance(value, int)
+                and not isinstance(value, bool)
+                and value > 0
+            )
+        if key == ("histogram", "type"):
+            return isinstance(value, str) and value in {
+                "bar",
+                "step",
+                "stepfilled",
+            }
+        if key == ("save", "bbox_inches"):
+            return value is None or isinstance(value, str)
+        return False
+
+    @error_handler
+    def get_plotting_options(self, section: str) -> Dict[str, Any]:
+        """Return validated options for one plotting section.
+
+        Invalid values fall back to their packaged defaults and emit a
+        warning. Unknown user keys are left untouched in the config file but
+        are not returned to plotting code.
+
+        Args:
+            section: One of ``figure``, ``scatter``, ``histogram``, or
+                ``save``.
+
+        Returns:
+            Dict[str, Any]: Validated options for the requested section.
+        """
+        default_plotting = self._defaults_plain.get("plotting", {})
+        if section not in default_plotting:
+            raise KeyError(
+                f"Unknown plotting configuration section: {section}"
+            )
+
+        defaults = default_plotting[section]
+        configured = self.get(f"plotting.{section}", {})
+        if not isinstance(configured, dict):
+            warnings.warn(
+                f"plotting.{section} must be a mapping; using defaults."
+            )
+            configured = {}
+
+        options = {}
+        for option, default in defaults.items():
+            value = configured.get(option, default)
+            if not self._is_plotting_value_valid(section, option, value):
+                warnings.warn(
+                    f"Invalid plotting.{section}.{option} value {value!r}; "
+                    f"using default {default!r}."
+                )
+                value = default
+            options[option] = copy.deepcopy(value)
+        return options
+
     @error_handler
     def is_vim_mode_enabled(self) -> bool:
         """Return whether vim mode is enabled.

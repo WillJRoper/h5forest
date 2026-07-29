@@ -20,6 +20,45 @@ configuration:
   # confirmation of loading/processing chunk by chunk.
   always_chunk: false
 
+# Plot appearance and output settings
+plotting:
+  figure:
+    # Figure dimensions in inches
+    width: 3.5
+    height: 3.5
+    grid: true
+    # Grid axis can be "both", "x", or "y"
+    grid_axis: both
+    grid_alpha: null
+    face_color: null
+    axes_face_color: null
+
+  scatter:
+    marker: "."
+    color: r
+    marker_size: null
+    alpha: null
+    edge_color: null
+    marker_line_width: null
+    # Set to a matplotlib linestyle (for example "-" or "--") to connect
+    # points. "none" draws markers only.
+    line_style: none
+    line_color: null
+    line_width: null
+
+  histogram:
+    bins: 50
+    # Supported types: bar, step, stepfilled
+    type: bar
+    color: null
+    edge_color: null
+    line_width: null
+    alpha: null
+
+  save:
+    dpi: 100
+    bbox_inches: tight
+
 # Key mappings for different modes
 # If you enable vim_mode above, you cannot remap h, j, k, l, g, G
 keymaps:
