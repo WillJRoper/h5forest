@@ -111,7 +111,19 @@ class TestConfigFileCreation:
 
         assert isinstance(config, dict)
         assert "configuration" in config
+        assert "plotting" in config
         assert "keymaps" in config
+
+    def test_default_plotting_config(self, mock_home_dir):
+        """Test that plotting defaults are available through dot notation."""
+        config = ConfigManager()
+
+        assert config.get("plotting.figure.width") == 3.5
+        assert config.get("plotting.scatter.marker") == "."
+        assert config.get("plotting.scatter.color") == "r"
+        assert config.get("plotting.histogram.bins") == 50
+        assert config.get("plotting.histogram.type") == "bar"
+        assert config.get("plotting.save.dpi") == 100
 
     def test_default_vim_mode_disabled(self, mock_home_dir):
         """Test that vim mode is disabled by default."""
@@ -163,6 +175,65 @@ class TestConfigLoading:
         # Default values still present
         assert config.get("configuration.always_chunk") is False
         assert config.get("keymaps.normal_mode.quit") == "q"
+
+    def test_get_plotting_options(self, mock_home_dir):
+        """Test validated plotting section access."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        custom_config = {
+            "plotting": {
+                "scatter": {
+                    "marker": "s",
+                    "color": "navy",
+                    "marker_size": 12,
+                    "alpha": 0.5,
+                }
+            }
+        }
+        with open(config_path, "w") as f:
+            yaml.dump(custom_config, f)
+
+        options = ConfigManager().get_plotting_options("scatter")
+
+        assert options["marker"] == "s"
+        assert options["color"] == "navy"
+        assert options["marker_size"] == 12
+        assert options["alpha"] == 0.5
+        assert options["line_style"] == "none"
+
+    def test_invalid_plotting_options_use_defaults(self, mock_home_dir):
+        """Test invalid plotting values warn and use packaged defaults."""
+        config_path = mock_home_dir / ".h5forest" / "config.yaml"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        custom_config = {
+            "plotting": {
+                "figure": {
+                    "width": -1,
+                    "grid": "yes",
+                    "grid_axis": ["x"],
+                },
+                "histogram": {"bins": 0, "type": ["pie"], "alpha": 2},
+                "save": {"dpi": None},
+            }
+        }
+        with open(config_path, "w") as f:
+            yaml.dump(custom_config, f)
+
+        config = ConfigManager()
+        with pytest.warns(UserWarning, match="Invalid plotting"):
+            figure = config.get_plotting_options("figure")
+        with pytest.warns(UserWarning, match="Invalid plotting"):
+            histogram = config.get_plotting_options("histogram")
+        with pytest.warns(UserWarning, match="Invalid plotting"):
+            save = config.get_plotting_options("save")
+
+        assert figure["width"] == 3.5
+        assert figure["grid"] is True
+        assert figure["grid_axis"] == "both"
+        assert histogram["bins"] == 50
+        assert histogram["type"] == "bar"
+        assert histogram["alpha"] is None
+        assert save["dpi"] == 100
 
     def test_handles_invalid_yaml(self, mock_home_dir):
         """Test handling of invalid YAML in config file."""
