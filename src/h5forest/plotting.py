@@ -36,14 +36,82 @@ class Plotter:
             The text to display in the plotting TextArea.
     """
 
-    def __init__(self):
-        """Initialise the plotter."""
+    def __init__(self, plotting_config=None):
+        """Initialise the plotter.
+
+        Args:
+            plotting_config (dict):
+                Plot appearance settings loaded from the config file.
+        """
+        if not isinstance(plotting_config, dict):
+            plotting_config = {}
+
+        figure_config = plotting_config.get("figure", {})
+        if not isinstance(figure_config, dict):
+            figure_config = {}
+        self.figure_config = {
+            "width": figure_config.get("width", 3.5),
+            "height": figure_config.get("height", 3.5),
+            "grid": figure_config.get("grid", True),
+            "grid_axis": figure_config.get("grid_axis", "both"),
+            "grid_alpha": figure_config.get("grid_alpha"),
+            "face_color": figure_config.get("face_color"),
+            "axes_face_color": figure_config.get("axes_face_color"),
+        }
+
+        save_config = plotting_config.get("save", {})
+        if not isinstance(save_config, dict):
+            save_config = {}
+        self.save_config = {
+            "dpi": save_config.get("dpi", 100),
+            "bbox_inches": save_config.get("bbox_inches", "tight"),
+        }
+
         # Container for the plot parameters
         self.plot_params = {}
 
         # Placeholder for the fig and ax
         self.fig = None
         self.ax = None
+
+    @staticmethod
+    def _without_none(options):
+        """Return artist options whose values are not null."""
+        return {
+            key: value for key, value in options.items() if value is not None
+        }
+
+    def _create_figure(self):
+        """Create a figure and axes using the configured shared appearance."""
+        figure_kwargs = self._without_none(
+            {"facecolor": self.figure_config["face_color"]}
+        )
+        self.fig = plt.figure(
+            figsize=(
+                self.figure_config["width"],
+                self.figure_config["height"],
+            ),
+            **figure_kwargs,
+        )
+        self.ax = self.fig.add_subplot(111)
+
+        if self.figure_config["axes_face_color"] is not None:
+            self.ax.set_facecolor(self.figure_config["axes_face_color"])
+
+        grid_kwargs = {}
+        if self.figure_config["grid"]:
+            grid_kwargs = self._without_none(
+                {
+                    "axis": (
+                        self.figure_config["grid_axis"]
+                        if self.figure_config["grid_axis"] != "both"
+                        else None
+                    ),
+                    "alpha": self.figure_config["grid_alpha"],
+                }
+            )
+        self.ax.grid(self.figure_config["grid"], **grid_kwargs)
+        self.ax.set_axisbelow(True)
 
     @error_handler
     def get_row(self, row):
@@ -83,7 +151,11 @@ class Plotter:
             # Strip the user input
             out_path = H5Forest().user_input.strip()
 
-            self.fig.savefig(out_path, dpi=100, bbox_inches="tight")
+            self.fig.savefig(
+                out_path,
+                dpi=self.save_config["dpi"],
+                bbox_inches=self.save_config["bbox_inches"],
+            )
 
             H5Forest().print("Plot saved!")
             H5Forest().default_focus()
@@ -155,10 +227,27 @@ class ScatterPlotter(Plotter):
             The y-axis data.
     """
 
-    def __init__(self):
+    def __init__(self, plotting_config=None):
         """Initialise the scatter plotter."""
         # Call the parent class
-        super().__init__()
+        super().__init__(plotting_config)
+
+        scatter_config = {}
+        if isinstance(plotting_config, dict):
+            scatter_config = plotting_config.get("scatter", {})
+        if not isinstance(scatter_config, dict):
+            scatter_config = {}
+        self.scatter_config = {
+            "marker": scatter_config.get("marker", "."),
+            "color": scatter_config.get("color", "r"),
+            "marker_size": scatter_config.get("marker_size"),
+            "alpha": scatter_config.get("alpha"),
+            "edge_color": scatter_config.get("edge_color"),
+            "marker_line_width": scatter_config.get("marker_line_width"),
+            "line_style": scatter_config.get("line_style", "none"),
+            "line_color": scatter_config.get("line_color"),
+            "line_width": scatter_config.get("line_width"),
+        }
 
         # Define the default text for the plotting TextArea
         self.default_plot_text = (
@@ -168,7 +257,7 @@ class ScatterPlotter(Plotter):
             "y-label:     <label>\n"
             "x-scale:     linear\n"
             "y-scale:     linear\n"
-            "marker:      .\n"
+            f"marker:      {self.scatter_config['marker']}\n"
         )
 
         # Define the text for the plotting TextArea
@@ -319,13 +408,35 @@ class ScatterPlotter(Plotter):
         y_scale = split_text[5].split(": ")[1].strip()
         marker = split_text[6].split(": ")[1].strip()
 
-        # Create the figure
-        self.fig = plt.figure(figsize=(3.5, 3.5))
-        self.ax = self.fig.add_subplot(111)
+        self._create_figure()
 
-        # Draw a grid and make sure its behind everything
-        self.ax.grid(True)
-        self.ax.set_axisbelow(True)
+        scatter_kwargs = self._without_none(
+            {
+                "marker": marker,
+                "color": self.scatter_config["color"],
+                "s": self.scatter_config["marker_size"],
+                "alpha": self.scatter_config["alpha"],
+                "edgecolors": self.scatter_config["edge_color"],
+                "linewidths": self.scatter_config["marker_line_width"],
+            }
+        )
+        line_style = self.scatter_config["line_style"]
+        draw_line = str(line_style).lower() not in {"", "none", "null"}
+        line_kwargs = self._without_none(
+            {
+                "linestyle": line_style,
+                "color": self.scatter_config["line_color"]
+                or self.scatter_config["color"],
+                "linewidth": self.scatter_config["line_width"],
+                "alpha": self.scatter_config["alpha"],
+            }
+        )
+
+        def draw_data(x_data, y_data):
+            """Draw one full dataset or chunk with configured styling."""
+            self.ax.scatter(x_data, y_data, **scatter_kwargs)
+            if draw_line:
+                self.ax.plot(x_data, y_data, **line_kwargs)
 
         @error_handler
         def run_in_thread():
@@ -348,12 +459,7 @@ class ScatterPlotter(Plotter):
                     self.y_data = hdf[y_node.path][...]
 
                 # Plot the data
-                self.ax.scatter(
-                    self.x_data,
-                    self.y_data,
-                    marker=marker,
-                    color="r",
-                )
+                draw_data(self.x_data, self.y_data)
 
             else:
                 # Loop over chunks and plot each one
@@ -378,12 +484,7 @@ class ScatterPlotter(Plotter):
                             y_data = hdf[y_node.path][slices]
 
                             # Plot the data
-                            self.ax.scatter(
-                                x_data,
-                                y_data,
-                                marker=marker,
-                                color="r",
-                            )
+                            draw_data(x_data, y_data)
 
                             pb.advance(step=x_data.size)
 
@@ -470,15 +571,39 @@ class HistogramPlotter(Plotter):
             The bin widths.
     """
 
-    def __init__(self):
+    def __init__(self, plotting_config=None):
         """Initialise the histogram plotter."""
         # Call the parent class
-        super().__init__()
+        super().__init__(plotting_config)
+
+        histogram_config = {}
+        if isinstance(plotting_config, dict):
+            histogram_config = plotting_config.get("histogram", {})
+        if not isinstance(histogram_config, dict):
+            histogram_config = {}
+        self.histogram_config = {
+            "bins": histogram_config.get("bins", 50),
+            "type": histogram_config.get("type", "bar"),
+            "color": histogram_config.get("color"),
+            "edge_color": histogram_config.get("edge_color"),
+            "line_width": histogram_config.get("line_width"),
+            "alpha": histogram_config.get("alpha"),
+        }
+        if self.histogram_config["type"] not in {
+            "bar",
+            "step",
+            "stepfilled",
+        }:
+            warnings.warn(
+                "Unknown plotting.histogram.type "
+                f"'{self.histogram_config['type']}'; using 'bar'."
+            )
+            self.histogram_config["type"] = "bar"
 
         # Define the default text for the plotting TextArea
         self.default_plot_text = (
             "data:        <key>\n"
-            "nbins:       50\n"
+            f"nbins:       {self.histogram_config['bins']}\n"
             "x-label:     <label>\n"
             "x-scale:     linear\n"
             "y-scale:     linear\n"
@@ -499,6 +624,7 @@ class HistogramPlotter(Plotter):
         self.hist = None
         self.xs = None
         self.widths = None
+        self.bin_edges = None
 
         # Attributes for working with threads
         self.assign_data_thread = None
@@ -606,6 +732,7 @@ class HistogramPlotter(Plotter):
                 bins = np.linspace(self.x_min, self.x_max, nbins + 1)
             self.widths = bins[1:] - bins[:-1]
             self.xs = (bins[1:] + bins[:-1]) / 2
+            self.bin_edges = bins
 
             # Use chunk preference to determine if we should load in chunks
             # Load all at once if:
@@ -709,16 +836,30 @@ class HistogramPlotter(Plotter):
                 )
                 return
 
-        # Create the figure
-        self.fig = plt.figure(figsize=(3.5, 3.5))
-        self.ax = self.fig.add_subplot(111)
+        self._create_figure()
 
-        # Draw a grid and make sure its behind everything
-        self.ax.grid(True)
-        self.ax.set_axisbelow(True)
-
-        # Draw the bars
-        self.ax.bar(self.xs, self.hist, width=self.widths)
+        artist_kwargs = self._without_none(
+            {
+                "color": self.histogram_config["color"],
+                "edgecolor": self.histogram_config["edge_color"],
+                "linewidth": self.histogram_config["line_width"],
+                "alpha": self.histogram_config["alpha"],
+            }
+        )
+        if self.histogram_config["type"] == "bar":
+            self.ax.bar(
+                self.xs,
+                self.hist,
+                width=self.widths,
+                **artist_kwargs,
+            )
+        else:
+            self.ax.stairs(
+                self.hist,
+                self.bin_edges,
+                fill=self.histogram_config["type"] == "stepfilled",
+                **artist_kwargs,
+            )
 
         # Set the labels
         self.ax.set_xlabel(x_label)
@@ -742,6 +883,7 @@ class HistogramPlotter(Plotter):
         self.hist = None
         self.xs = None
         self.widths = None
+        self.bin_edges = None
         self.plot_text = self.default_plot_text
         self.fig = None
         self.ax = None

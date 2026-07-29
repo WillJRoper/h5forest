@@ -180,8 +180,12 @@ class H5Forest:
         self.mode_title = DynamicTitle("Normal Mode")
 
         # Attach the hexbin plotter
-        self.scatter_plotter = ScatterPlotter()
-        self.histogram_plotter = HistogramPlotter()
+        plotting_config = {
+            section: self.config.get_plotting_options(section)
+            for section in ("figure", "scatter", "histogram", "save")
+        }
+        self.scatter_plotter = ScatterPlotter(plotting_config)
+        self.histogram_plotter = HistogramPlotter(plotting_config)
 
         # Set up the text areas that will populate the layout
         self.tree_buffer = None

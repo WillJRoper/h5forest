@@ -51,6 +51,31 @@ class TestPlotter:
         plotter.plot_params = {"x": "data1", "y": "data2"}
         assert len(plotter) == 2
 
+    @patch("h5forest.plotting.plt.figure")
+    def test_configured_figure(self, mock_figure):
+        """Test shared figure appearance settings."""
+        mock_ax = Mock()
+        mock_figure.return_value.add_subplot.return_value = mock_ax
+        plotter = Plotter(
+            {
+                "figure": {
+                    "width": 8,
+                    "height": 4,
+                    "grid": False,
+                    "grid_axis": "x",
+                    "grid_alpha": 0.25,
+                    "face_color": "black",
+                    "axes_face_color": "gray",
+                }
+            }
+        )
+
+        plotter._create_figure()
+
+        mock_figure.assert_called_once_with(figsize=(8, 4), facecolor="black")
+        mock_ax.set_facecolor.assert_called_once_with("gray")
+        mock_ax.grid.assert_called_once_with(False)
+
     @patch("h5forest.plotting.plt.show")
     def test_show(self, mock_show):
         """Test show method."""
@@ -121,6 +146,23 @@ class TestPlotter:
         mock_forest.default_focus.assert_called_once()
         mock_forest.return_to_normal_mode.assert_called_once()
 
+    @patch("h5forest.plotting.Path.cwd")
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_configured_save(self, mock_forest_class, mock_cwd):
+        """Test configured save DPI and bounding box."""
+        mock_cwd.return_value = Mock(__str__=Mock(return_value="/tmp"))
+        mock_forest = Mock(user_input="/tmp/test.png")
+        mock_forest_class.return_value = mock_forest
+        plotter = Plotter({"save": {"dpi": 300, "bbox_inches": None}})
+        plotter.fig = Mock()
+
+        plotter.save()
+        mock_forest.input.call_args[0][1]()
+
+        plotter.fig.savefig.assert_called_once_with(
+            "/tmp/test.png", dpi=300, bbox_inches=None
+        )
+
     @patch("h5forest.plotting.plt.show")
     def test_plot_and_show(self, mock_show):
         """Test plot_and_show method."""
@@ -176,6 +218,24 @@ class TestScatterPlotter:
         assert plotter.assignx_thread is None
         assert plotter.assigny_thread is None
         assert plotter.plot_thread is None
+
+    def test_configured_defaults(self):
+        """Test scatter defaults loaded from plotting configuration."""
+        plotter = ScatterPlotter(
+            {
+                "scatter": {
+                    "marker": "s",
+                    "color": "navy",
+                    "marker_size": 12,
+                    "line_style": "--",
+                }
+            }
+        )
+
+        assert "marker:      s" in plotter.default_plot_text
+        assert plotter.scatter_config["color"] == "navy"
+        assert plotter.scatter_config["marker_size"] == 12
+        assert plotter.scatter_config["line_style"] == "--"
 
     def test_set_x_key_with_1d_dataset(self):
         """Test set_x_key with valid 1D dataset."""
@@ -361,7 +421,15 @@ class TestScatterPlotter:
     def test_plot_non_chunked_data(self, mock_h5py_file, mock_figure):
         """Test _plot with non-chunked data."""
         # Setup plot parameters
-        plotter = ScatterPlotter()
+        plotter = ScatterPlotter(
+            {
+                "scatter": {
+                    "line_style": "--",
+                    "line_color": "blue",
+                    "line_width": 2,
+                }
+            }
+        )
 
         # Create mock nodes
         x_node = Mock()
@@ -427,6 +495,13 @@ class TestScatterPlotter:
 
         # Verify scatter was called
         mock_ax.scatter.assert_called_once()
+        mock_ax.plot.assert_called_once_with(
+            x_data,
+            y_data,
+            linestyle="--",
+            color="blue",
+            linewidth=2,
+        )
 
         # Verify labels and scales were set
         mock_ax.set_xlabel.assert_called_once_with("X Values")
@@ -1606,6 +1681,46 @@ class TestHistogramPlotter:
         mock_ax.set_ylabel.assert_called_once_with("$N$")
         mock_ax.set_xscale.assert_called_once_with("linear")
         mock_ax.set_yscale.assert_called_once_with("linear")
+
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_stepfilled_histogram(self, mock_figure):
+        """Test configured step-filled histogram rendering."""
+        plotter = HistogramPlotter(
+            {
+                "histogram": {
+                    "bins": 20,
+                    "type": "stepfilled",
+                    "color": "purple",
+                    "alpha": 0.5,
+                }
+            }
+        )
+        plotter.hist = np.array([2, 4])
+        plotter.xs = np.array([0.5, 1.5])
+        plotter.widths = np.array([1.0, 1.0])
+        plotter.bin_edges = np.array([0.0, 1.0, 2.0])
+        plotter.compute_hist_thread = Mock()
+        mock_ax = Mock()
+        mock_figure.return_value.add_subplot.return_value = mock_ax
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       20\n"
+            "x-label:     Data Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
+
+        plotter._plot(text)
+
+        assert "nbins:       20" in plotter.default_plot_text
+        mock_ax.bar.assert_not_called()
+        mock_ax.stairs.assert_called_once_with(
+            plotter.hist,
+            plotter.bin_edges,
+            fill=True,
+            color="purple",
+            alpha=0.5,
+        )
 
     @patch("h5forest.plotting.plt.figure")
     def test_plot_histogram_with_log_scale(self, mock_figure):
