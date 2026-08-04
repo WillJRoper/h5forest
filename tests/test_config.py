@@ -1,7 +1,7 @@
 """Tests for the ConfigManager class."""
 
 import warnings
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 import yaml
@@ -234,6 +234,40 @@ class TestConfigLoading:
         assert histogram["type"] == "bar"
         assert histogram["alpha"] is None
         assert save["dpi"] == 100
+
+    def test_non_mapping_plotting_section_uses_defaults(self, mock_home_dir):
+        """Test a plotting section with the wrong shape is ignored."""
+        config = ConfigManager()
+        config._config["plotting"]["scatter"] = "red"
+
+        with pytest.warns(UserWarning, match="must be a mapping"):
+            options = config.get_plotting_options("scatter")
+
+        assert options["marker"] == "."
+        assert options["color"] == "r"
+
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_unknown_plotting_section_reports_error(
+        self, mock_h5forest_class, mock_home_dir
+    ):
+        """Test requesting an unknown plotting section is reported safely."""
+        mock_forest = Mock()
+        mock_h5forest_class.return_value = mock_forest
+
+        result = ConfigManager().get_plotting_options("unknown")
+
+        assert result is None
+        mock_forest.print.assert_called_once()
+        assert (
+            "Unknown plotting configuration section"
+            in (mock_forest.print.call_args[0][0])
+        )
+
+    def test_unknown_plotting_option_is_invalid(self):
+        """Test validator additions must explicitly define their rules."""
+        assert not ConfigManager._is_plotting_value_valid(
+            "scatter", "unknown", "value"
+        )
 
     def test_handles_invalid_yaml(self, mock_home_dir):
         """Test handling of invalid YAML in config file."""

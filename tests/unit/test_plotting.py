@@ -25,6 +25,15 @@ class TestPlotter:
         assert plotter.fig is None
         assert plotter.ax is None
 
+    def test_plotter_ignores_malformed_shared_sections(self):
+        """Test malformed figure and save sections use local defaults."""
+        plotter = Plotter({"figure": "wide", "save": 300})
+
+        assert plotter.figure_config["width"] == 3.5
+        assert plotter.figure_config["grid"] is True
+        assert plotter.save_config["dpi"] == 100
+        assert plotter.save_config["bbox_inches"] == "tight"
+
     def test_get_row(self):
         """Test get_row method."""
         plotter = Plotter()
@@ -313,6 +322,13 @@ class TestScatterPlotter:
         assert plotter.scatter_config["color"] == "navy"
         assert plotter.scatter_config["marker_size"] == 12
         assert plotter.scatter_config["line_style"] == "--"
+
+    def test_malformed_scatter_config_uses_defaults(self):
+        """Test a non-mapping scatter section is ignored safely."""
+        plotter = ScatterPlotter({"scatter": "red"})
+
+        assert plotter.scatter_config["marker"] == "."
+        assert plotter.scatter_config["color"] == "r"
 
     def test_set_x_key_with_1d_dataset(self):
         """Test set_x_key with valid 1D dataset."""
@@ -1495,6 +1511,22 @@ class TestHistogramPlotter:
         assert plotter.assign_data_thread is None
         assert plotter.compute_hist_thread is None
 
+    def test_malformed_histogram_config_uses_defaults(self):
+        """Test a non-mapping histogram section is ignored safely."""
+        plotter = HistogramPlotter({"histogram": ["bar"]})
+
+        assert plotter.histogram_config["bins"] == 50
+        assert plotter.histogram_config["type"] == "bar"
+
+    def test_unknown_histogram_type_warns_and_uses_bars(self):
+        """Test direct callers cannot select an unsupported renderer."""
+        with pytest.warns(
+            UserWarning, match="Unknown plotting.histogram.type"
+        ):
+            plotter = HistogramPlotter({"histogram": {"type": "pie"}})
+
+        assert plotter.histogram_config["type"] == "bar"
+
     def test_compute_hist_discards_stale_result_on_failure(self):
         """Test that a failed recomputation cannot reuse an earlier result."""
         plotter = HistogramPlotter()
@@ -1783,6 +1815,13 @@ class TestHistogramPlotter:
         mock_ax.set_ylabel.assert_called_once_with("$N$")
         mock_ax.set_xscale.assert_called_once_with("linear")
         mock_ax.set_yscale.assert_called_once_with("linear")
+
+    def test_plot_histogram_before_computation_raises(self):
+        """Test plotting cannot proceed before a histogram worker exists."""
+        plotter = HistogramPlotter()
+
+        with pytest.raises(RuntimeError, match="has not been computed"):
+            plotter._plot(plotter.plot_text)
 
     @patch("h5forest.plotting.plt.figure")
     def test_plot_stepfilled_histogram(self, mock_figure):

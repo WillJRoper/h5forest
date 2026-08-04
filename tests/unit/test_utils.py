@@ -983,6 +983,18 @@ class TestWaitIndicator:
 
         mock_app.print.assert_not_called()
 
+    def test_show_frame_while_running(self):
+        """Test a live indicator displays its queued spinner frame."""
+        mock_app = MagicMock()
+        indicator = WaitIndicator(mock_app, "Generating histogram...")
+        indicator.running = True
+
+        indicator._show_frame("⠋")
+
+        mock_app.print.assert_called_once_with(
+            "⠋ Generating histogram...", timeout=None
+        )
+
     def test_start_when_already_running(self):
         """Test that calling start() when already running does nothing."""
         import time
