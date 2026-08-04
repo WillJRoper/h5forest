@@ -365,6 +365,193 @@ class ConfigManager:
             )
         return v
 
+    @staticmethod
+    def _is_number(value: Any) -> bool:
+        """Return whether a value is a configurable numeric quantity.
+
+        ``bool`` needs an explicit exclusion because Python treats it as a
+        subclass of ``int``. Accepting ``True`` as a figure width or DPI would
+        technically pass a normal numeric check, but it is almost certainly a
+        typo in a YAML file and should fall back to the documented default.
+        """
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+    @classmethod
+    def _is_plotting_value_valid(
+        cls, section: str, option: str, value: Any
+    ) -> bool:
+        """Validate one plotting option before handing it to Matplotlib.
+
+        The plotting config contains a mixture of ordinary values, optional
+        Matplotlib keyword arguments, and a handful of small enums. Keeping
+        the rules here means ``get_plotting_options`` can treat every option
+        in the same way: a valid user value goes through, while anything else
+        falls back to the packaged default with a warning.
+
+        We intentionally return ``False`` for options we do not recognise.
+        The caller only asks about keys from our defaults, so reaching the
+        final branch usually means a new option was added without adding its
+        validation rule here as well. Failing closed is safer than passing an
+        unchecked value into Matplotlib and getting an opaque plotting error.
+        """
+        # Colours are optional because ``None`` asks Matplotlib to use its own
+        # colour cycle or style defaults. A string is deliberately broad here:
+        # Matplotlib understands named colours, hex values, and several other
+        # string formats, and it remains the authority on those details.
+        nullable_colors = {
+            ("figure", "face_color"),
+            ("figure", "axes_face_color"),
+            ("scatter", "color"),
+            ("scatter", "edge_color"),
+            ("scatter", "line_color"),
+            ("histogram", "color"),
+            ("histogram", "edge_color"),
+        }
+
+        # Figure dimensions and DPI cannot do anything useful at zero or
+        # below. These values are required, unlike the optional artist widths
+        # below, so ``None`` is not accepted for this group.
+        positive_numbers = {
+            ("figure", "width"),
+            ("figure", "height"),
+            ("save", "dpi"),
+        }
+
+        # A width of zero is meaningful here: it lets someone turn an edge or
+        # line off without also changing its colour. ``None`` means that we do
+        # not pass the keyword at all and let Matplotlib choose its default.
+        non_negative_numbers = {
+            ("scatter", "marker_line_width"),
+            ("scatter", "line_width"),
+            ("histogram", "line_width"),
+        }
+
+        # Matplotlib expresses alpha as a fraction. As with the other optional
+        # artist settings, ``None`` means "leave this up to Matplotlib".
+        alpha_options = {
+            ("figure", "grid_alpha"),
+            ("scatter", "alpha"),
+            ("histogram", "alpha"),
+        }
+        key = (section, option)
+
+        # Deal with the shared option families first, then handle the handful
+        # of options whose rules are unique to one setting.
+        if key in nullable_colors:
+            return value is None or isinstance(value, str)
+        if key in positive_numbers:
+            return cls._is_number(value) and value > 0
+
+        # Marker size differs from the required positive values only because
+        # omitting it is useful: Matplotlib can then choose a style-dependent
+        # default marker size.
+        if key == ("scatter", "marker_size"):
+            return value is None or (cls._is_number(value) and value > 0)
+        if key in non_negative_numbers:
+            return value is None or (cls._is_number(value) and value >= 0)
+        if key in alpha_options:
+            return value is None or (cls._is_number(value) and 0 <= value <= 1)
+
+        # Do not accept 0/1 here even though bool is a subclass of int in
+        # Python. Requiring an actual bool catches a surprisingly easy config
+        # typo and keeps the public setting unambiguous.
+        if key == ("figure", "grid"):
+            return isinstance(value, bool)
+
+        # These values are passed to Matplotlib as enums. Restricting them here
+        # gives the user a useful config warning instead of a later exception
+        # while a plot is being generated.
+        if key == ("figure", "grid_axis"):
+            return isinstance(value, str) and value in {"both", "x", "y"}
+        if key in {
+            ("scatter", "marker"),
+            ("scatter", "line_style"),
+        }:
+            return isinstance(value, str)
+
+        # Histogram bins must be a real positive integer. The explicit bool
+        # check matters because ``isinstance(True, int)`` is true in Python.
+        if key == ("histogram", "bins"):
+            return (
+                isinstance(value, int)
+                and not isinstance(value, bool)
+                and value > 0
+            )
+
+        # These are the histogram renderers supported by the Plotter. Keeping
+        # the whitelist in step with that implementation avoids accepting a
+        # value here only to replace it later while constructing the plotter.
+        if key == ("histogram", "type"):
+            return isinstance(value, str) and value in {
+                "bar",
+                "step",
+                "stepfilled",
+            }
+
+        # ``None`` disables Matplotlib's bounding-box adjustment; strings such
+        # as "tight" are passed through for Matplotlib to interpret.
+        if key == ("save", "bbox_inches"):
+            return value is None or isinstance(value, str)
+
+        # Unknown options are unsafe by default. See the docstring above for
+        # why this is preferable to accepting an unchecked value here.
+        return False
+
+    @error_handler
+    def get_plotting_options(self, section: str) -> Dict[str, Any]:
+        """Return validated options for one plotting section.
+
+        Invalid values fall back to their packaged defaults and emit a
+        warning. Unknown user keys are left untouched in the config file but
+        are not returned to plotting code.
+
+        Args:
+            section: One of ``figure``, ``scatter``, ``histogram``, or
+                ``save``.
+
+        Returns:
+            Dict[str, Any]: Validated options for the requested section.
+        """
+        # The packaged defaults are also our schema. Building the result from
+        # these keys, rather than directly returning the user's mapping, means
+        # unknown settings never leak through as surprise Matplotlib kwargs.
+        default_plotting = self._defaults_plain.get("plotting", {})
+        if section not in default_plotting:
+            raise KeyError(
+                f"Unknown plotting configuration section: {section}"
+            )
+
+        defaults = default_plotting[section]
+        configured = self.get(f"plotting.{section}", {})
+
+        # A section can be valid YAML while still having the wrong shape, for
+        # example ``scatter: red``. Treat the whole section as absent in that
+        # case so each option below naturally resolves to its default.
+        if not isinstance(configured, dict):
+            warnings.warn(
+                f"plotting.{section} must be a mapping; using defaults."
+            )
+            configured = {}
+
+        # Validate one known option at a time. This gives a precise warning for
+        # every bad value and, importantly, lets valid neighbours survive even
+        # when another setting in the same section is malformed.
+        options = {}
+        for option, default in defaults.items():
+            value = configured.get(option, default)
+            if not self._is_plotting_value_valid(section, option, value):
+                warnings.warn(
+                    f"Invalid plotting.{section}.{option} value {value!r}; "
+                    f"using default {default!r}."
+                )
+                value = default
+
+            # Most values are immutable scalars today, but copying here keeps
+            # this accessor safe if a list or mapping option is added later.
+            # A plotter must not be able to mutate our cached config defaults.
+            options[option] = copy.deepcopy(value)
+        return options
+
     @error_handler
     def is_vim_mode_enabled(self) -> bool:
         """Return whether vim mode is enabled.

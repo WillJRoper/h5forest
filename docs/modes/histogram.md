@@ -62,7 +62,7 @@ From Normal Mode, press **`H`** to enter Histogram Mode.
 **Select Dataset** (**`Enter`**)
 
 - When focused on a dataset in the tree view, press **`Enter`** to select it
-- Sets default binning, labels, and scales (linear x and y, 50 bins, key as x-label)
+- Sets default binning, labels, and scales (linear x and y, configured bin count, key as x-label)
 - Displays configuration in the histogram panel
 
 ### Histogram Generation
@@ -79,6 +79,11 @@ From Normal Mode, press **`H`** to enter Histogram Mode.
 - Saves histogram to file (using whatever format specified by filename extension, e.g., PNG, PDF)
 
 ## Histogram Configuration
+
+The initial bin count and persistent rendering style can be set in the
+[`plotting` configuration section](../configuration.md#2-plotting). Histogram
+rendering supports `bar`, `step`, and `stepfilled` types, with configurable
+colors, edges, line width, and transparency.
 
 ### Direct Configuration Bindings
 
@@ -150,7 +155,9 @@ Histogram Mode provides direct key bindings for common configuration tasks, elim
 Begin with default histogram settings, then refine configuration based on initial results. Use direct key bindings (**`b`**, **`x`**, **`y`**) for quick adjustments.
 
 !!! tip "Bin Count Guidelines"
-For most datasets, automatic binning (50 bins) works well. Press **`b`** to adjust: increase bins for more detail, decrease for smoother curves.
+For most datasets, the default of 50 bins works well. Press **`b`** to adjust:
+increase bins for more detail or decrease them for smoother curves. The
+persistent default can be changed with `plotting.histogram.bins`.
 
 !!! warning "Log Scale Constraints"
 Logarithmic scales require strictly positive values. The system will prevent you from using log scales with negative or zero data and display a clear error message.

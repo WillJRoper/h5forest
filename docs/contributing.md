@@ -470,7 +470,7 @@ keymaps:
 Add tests in `tests/unit/test_your_mode_bindings.py`:
 
 ```python
-@patch('h5forest.h5_forest.H5Forest')
+@patch("h5forest.h5_forest.H5Forest")
 def test_my_new_function(self, mock_h5forest_class, mock_app, mock_event):
     """Test my new function."""
     mock_h5forest_class.return_value = mock_app
@@ -497,13 +497,15 @@ def test_my_new_function(self, mock_h5forest_class, mock_app, mock_event):
 def copy_hist_value(event):
     """Copy the current histogram bin value to clipboard."""
     from h5forest.h5_forest import H5Forest
+
     app = H5Forest()
 
     # Get current bin value logic here
     value = app.histogram_plotter.get_current_bin_value()
     # Copy to clipboard logic
-    subprocess.run(["xclip", "-selection", "clipboard"],
-                   input=str(value).encode())
+    subprocess.run(
+        ["xclip", "-selection", "clipboard"], input=str(value).encode()
+    )
     app.print(f"Copied value: {value}")
 ```
 

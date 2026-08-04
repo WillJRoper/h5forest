@@ -123,9 +123,10 @@ class TestComponentName:
 ```python
 def test_node_with_fixture(self, temp_h5_file):
     """Test using the temp_h5_file fixture."""
-    with h5py.File(temp_h5_file, 'r') as f:
+    with h5py.File(temp_h5_file, "r") as f:
         node = Node("test", f, temp_h5_file)
         assert node.name == "test"
+
 
 def test_with_mock_io(self, mock_prompt_toolkit_io):
     """Test that requires mocked prompt_toolkit I/O."""
