@@ -7,7 +7,12 @@ import h5py
 import numpy as np
 import pytest
 
-from h5forest.plotting import HistogramPlotter, Plotter, ScatterPlotter
+from h5forest.plotting import (
+    HistogramPlotter,
+    Plotter,
+    PlotThread,
+    ScatterPlotter,
+)
 
 
 class TestPlotter:
@@ -50,6 +55,33 @@ class TestPlotter:
 
         plotter.plot_params = {"x": "data1", "y": "data2"}
         assert len(plotter) == 2
+
+    def test_plot_thread_propagates_worker_exception(self):
+        """Test that a background failure is raised by join."""
+
+        def fail():
+            raise ValueError("worker failed")
+
+        thread = PlotThread(target=fail)
+        thread.start()
+
+        with pytest.raises(ValueError, match="worker failed"):
+            thread.join()
+
+    def test_join_thread_clears_failed_worker(self):
+        """Test that a failed worker does not poison later plot attempts."""
+
+        def fail():
+            raise ValueError("worker failed")
+
+        plotter = Plotter()
+        plotter.worker = PlotThread(target=fail)
+        plotter.worker.start()
+
+        with pytest.raises(ValueError, match="worker failed"):
+            plotter._join_thread("worker")
+
+        assert plotter.worker is None
 
     @patch("h5forest.plotting.plt.figure")
     def test_configured_figure(self, mock_figure):
@@ -163,6 +195,24 @@ class TestPlotter:
             "/tmp/test.png", dpi=300, bbox_inches=None
         )
 
+    @patch("h5forest.plotting.Path.cwd")
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_save_callback_reports_failure(self, mock_forest_class, mock_cwd):
+        """Test that delayed file-writing errors are shown in the TUI."""
+        mock_cwd.return_value = Mock(__str__=Mock(return_value="/tmp"))
+        mock_forest = Mock(user_input="/invalid/test.png")
+        mock_forest_class.return_value = mock_forest
+        plotter = Plotter()
+        plotter.fig = Mock()
+        plotter.fig.savefig.side_effect = OSError("cannot write file")
+
+        plotter.save()
+        mock_forest.input.call_args[0][1]()
+
+        mock_forest.print.assert_called_once()
+        assert "cannot write file" in mock_forest.print.call_args[0][0]
+        mock_forest.default_focus.assert_not_called()
+
     @patch("h5forest.plotting.plt.show")
     def test_plot_and_show(self, mock_show):
         """Test plot_and_show method."""
@@ -174,6 +224,33 @@ class TestPlotter:
 
         plotter._plot.assert_called_once_with(text, use_chunks=False)
         mock_show.assert_called_once()
+
+    @patch("h5forest.plotting.plt.show")
+    def test_plot_and_show_skips_incomplete_plot(self, mock_show):
+        """Test that a validation failure does not open an empty figure."""
+        plotter = Plotter()
+        plotter._plot = Mock(return_value=False)
+
+        plotter.plot_and_show("test plot text")
+
+        mock_show.assert_not_called()
+
+    @patch("h5forest.plotting.plt.show")
+    @patch("h5forest.h5_forest.H5Forest")
+    def test_plot_and_show_catches_worker_error(
+        self, mock_forest_class, mock_show
+    ):
+        """Test that propagated worker errors reach the UI error handler."""
+        mock_forest = Mock()
+        mock_forest_class.return_value = mock_forest
+        plotter = Plotter()
+        plotter._plot = Mock(side_effect=ValueError("worker failed"))
+
+        plotter.plot_and_show("test plot text")
+
+        mock_forest.print.assert_called_once()
+        assert "worker failed" in mock_forest.print.call_args[0][0]
+        mock_show.assert_not_called()
 
     @patch("h5forest.plotting.Path.cwd")
     @patch("h5forest.h5_forest.H5Forest")
@@ -1089,15 +1166,12 @@ class TestScatterPlotterErrorHandling:
 class TestHistogramPlotterErrorHandling:
     """Test error handling in HistogramPlotter."""
 
-    @patch("h5forest.h5_forest.H5Forest")
     @patch("h5forest.plotting.get_app")
     @patch("h5forest.plotting.h5py.File")
     def test_compute_hist_with_negative_values_log_scale(
-        self, mock_h5py_file, mock_get_app, mock_forest_class
+        self, mock_h5py_file, mock_get_app
     ):
-        """Test that log scale with negative data values shows error."""
-        mock_forest = Mock()
-        mock_forest_class.return_value = mock_forest
+        """Test that negative log data propagates out of the worker."""
         mock_app = Mock()
         mock_get_app.return_value = mock_app
 
@@ -1125,25 +1199,17 @@ class TestHistogramPlotterErrorHandling:
 
         plotter.compute_hist(text)
 
-        # Wait for thread to complete
-        if plotter.compute_hist_thread is not None:
-            plotter.compute_hist_thread.join()
+        with pytest.raises(ValueError, match="negative"):
+            plotter._join_thread("compute_hist_thread")
 
-        # Verify error was printed
-        mock_forest.print.assert_called_once()
-        error_msg = mock_forest.print.call_args[0][0]
-        assert "Cannot use log scale" in error_msg
-        assert "negative" in error_msg
+        assert plotter.compute_hist_thread is None
 
-    @patch("h5forest.h5_forest.H5Forest")
     @patch("h5forest.plotting.get_app")
     @patch("h5forest.plotting.h5py.File")
     def test_compute_hist_with_zero_values_log_scale(
-        self, mock_h5py_file, mock_get_app, mock_forest_class
+        self, mock_h5py_file, mock_get_app
     ):
-        """Test that log scale with zero data values shows error."""
-        mock_forest = Mock()
-        mock_forest_class.return_value = mock_forest
+        """Test that zero log data propagates out of the worker."""
         mock_app = Mock()
         mock_get_app.return_value = mock_app
 
@@ -1171,22 +1237,17 @@ class TestHistogramPlotterErrorHandling:
 
         plotter.compute_hist(text)
 
-        # Wait for thread to complete
-        if plotter.compute_hist_thread is not None:
-            plotter.compute_hist_thread.join()
+        with pytest.raises(ValueError, match="zero"):
+            plotter._join_thread("compute_hist_thread")
 
-        # Verify error was printed
-        mock_forest.print.assert_called_once()
-        error_msg = mock_forest.print.call_args[0][0]
-        assert "Cannot use log scale" in error_msg
-        assert "zero" in error_msg
+        assert plotter.compute_hist_thread is None
 
     @patch("h5forest.h5_forest.H5Forest")
     @patch("h5forest.plotting.plt.figure")
     def test_plot_hist_with_zero_counts_log_yscale(
         self, mock_figure, mock_forest_class
     ):
-        """Test that log y-scale with zero histogram counts shows error."""
+        """Test that empty bins are accepted on a logarithmic count axis."""
         mock_forest = Mock()
         mock_forest_class.return_value = mock_forest
 
@@ -1218,24 +1279,43 @@ class TestHistogramPlotterErrorHandling:
 
         plotter._plot(text)
 
-        # Verify error was printed
-        mock_forest.print.assert_called_once()
-        error_msg = mock_forest.print.call_args[0][0]
-        assert "Cannot use log scale on y-axis" in error_msg
-        assert "zero" in error_msg
-
-        # Verify scale was NOT set (function returned early)
-        mock_ax.set_yscale.assert_not_called()
+        mock_forest.print.assert_not_called()
+        mock_ax.set_yscale.assert_called_once_with("log")
 
     @patch("h5forest.h5_forest.H5Forest")
-    @patch("h5forest.plotting.get_app")
-    @patch("h5forest.plotting.h5py.File")
-    def test_compute_hist_with_none_values(
-        self, mock_h5py_file, mock_get_app, mock_forest_class
+    @patch("h5forest.plotting.plt.figure")
+    def test_plot_empty_hist_with_log_yscale(
+        self, mock_figure, mock_forest_class
     ):
-        """Test that None x_min/x_max shows appropriate error."""
+        """Test that a log count axis requires at least one positive bin."""
         mock_forest = Mock()
         mock_forest_class.return_value = mock_forest
+        plotter = HistogramPlotter()
+        plotter.hist = np.zeros(5)
+        plotter.xs = np.arange(5)
+        plotter.widths = np.ones(5)
+        plotter.compute_hist_thread = Mock()
+
+        text = (
+            "data:        /hist_data\n"
+            "nbins:       5\n"
+            "x-label:     Data Values\n"
+            "x-scale:     linear\n"
+            "y-scale:     log\n"
+        )
+
+        plotter._plot(text)
+
+        mock_forest.print.assert_called_once_with(
+            "Cannot use log scale on y-axis: histogram contains no "
+            "positive counts"
+        )
+        mock_figure.assert_not_called()
+
+    @patch("h5forest.plotting.get_app")
+    @patch("h5forest.plotting.h5py.File")
+    def test_compute_hist_with_none_values(self, mock_h5py_file, mock_get_app):
+        """Test that a missing range propagates out of the worker."""
         mock_app = Mock()
         mock_get_app.return_value = mock_app
 
@@ -1263,15 +1343,12 @@ class TestHistogramPlotterErrorHandling:
 
         plotter.compute_hist(text)
 
-        # Wait for thread to complete
-        if plotter.compute_hist_thread is not None:
-            plotter.compute_hist_thread.join()
+        with pytest.raises(
+            RuntimeError, match="failed to determine data range"
+        ):
+            plotter._join_thread("compute_hist_thread")
 
-        # Verify error was printed
-        mock_forest.print.assert_called_once()
-        error_msg = mock_forest.print.call_args[0][0]
-        assert "failed to determine data range" in error_msg
-        assert "See error above for details" in error_msg
+        assert plotter.compute_hist_thread is None
 
     @patch("h5forest.h5_forest.H5Forest")
     @patch("h5forest.plotting.plt.figure")
@@ -1417,6 +1494,31 @@ class TestHistogramPlotter:
         assert plotter.widths is None
         assert plotter.assign_data_thread is None
         assert plotter.compute_hist_thread is None
+
+    def test_compute_hist_discards_stale_result_on_failure(self):
+        """Test that a failed recomputation cannot reuse an earlier result."""
+        plotter = HistogramPlotter()
+        plotter.hist = np.array([1, 2, 3])
+        plotter.xs = np.array([1, 2, 3])
+        plotter.widths = np.ones(3)
+        plotter.bin_edges = np.arange(4)
+
+        text = (
+            "data:        /missing\n"
+            "nbins:       3\n"
+            "x-label:     Data\n"
+            "x-scale:     linear\n"
+            "y-scale:     linear\n"
+        )
+        plotter.compute_hist(text)
+
+        with pytest.raises(KeyError):
+            plotter.compute_hist_thread.join()
+
+        assert plotter.hist is None
+        assert plotter.xs is None
+        assert plotter.widths is None
+        assert plotter.bin_edges is None
 
     def test_set_data_key(self):
         """Test set_data_key method."""

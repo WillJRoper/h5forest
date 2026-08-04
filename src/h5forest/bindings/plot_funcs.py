@@ -66,8 +66,12 @@ def plot_toggle_x_scale(event):
     # Wait for x-axis data assignment thread to finish if it's running
     if app.scatter_plotter.assignx_thread is not None:
         with WaitIndicator(app, "Computing x-axis data range..."):
-            app.scatter_plotter.assignx_thread.join()
-        app.scatter_plotter.assignx_thread = None
+            # A PlotThread raises its worker error from join. Always discard
+            # the completed worker so the user can select new data and retry.
+            try:
+                app.scatter_plotter.assignx_thread.join()
+            finally:
+                app.scatter_plotter.assignx_thread = None
 
     # Check if x_min/x_max are available
     if app.scatter_plotter.x_min is None or app.scatter_plotter.x_max is None:
@@ -120,8 +124,11 @@ def plot_toggle_y_scale(event):
     # Wait for y-axis data assignment thread to finish if it's running
     if app.scatter_plotter.assigny_thread is not None:
         with WaitIndicator(app, "Computing y-axis data range..."):
-            app.scatter_plotter.assigny_thread.join()
-        app.scatter_plotter.assigny_thread = None
+            # A failed range calculation should not poison every later retry.
+            try:
+                app.scatter_plotter.assigny_thread.join()
+            finally:
+                app.scatter_plotter.assigny_thread = None
 
     # Check if y_min/y_max are available
     if app.scatter_plotter.y_min is None or app.scatter_plotter.y_max is None:
@@ -248,8 +255,12 @@ def plot_scatter(event):
         app.print(msg)
         return
 
+    @error_handler
     def do_plot(use_chunks):
         """Actually perform the plot after chunking preference is set."""
+        # The chunking prompt can call us after ``plot_scatter`` has returned.
+        # Keep an error boundary here so delayed callback failures still reach
+        # the mini buffer instead of escaping through prompt-toolkit.
         # Make the plot with wait indicator
         with WaitIndicator(app, "Generating scatter plot..."):
             app.scatter_plotter.plot_and_show(
@@ -286,8 +297,11 @@ def save_scatter(event):
         app.print(msg)
         return
 
+    @error_handler
     def do_save(use_chunks):
         """Actually save the plot after chunking preference is set."""
+        # This can also be delayed by a prompt, so it cannot depend on the
+        # outer keybinding's decorator to catch an exception.
         app.scatter_plotter.plot_and_save(
             app.plot_content.text, use_chunks=use_chunks
         )

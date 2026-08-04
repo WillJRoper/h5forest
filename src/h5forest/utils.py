@@ -353,13 +353,32 @@ class WaitIndicator:
         while self.running:
             char = self.SPINNER_CHARS[idx % len(self.SPINNER_CHARS)]
             self.app.app.loop.call_soon_threadsafe(
-                lambda c=char: self.app.print(f"{c} {self.message}")
+                lambda c=char: self._show_frame(c)
             )
             idx += 1
             time.sleep(self.update_interval)
 
-        # Clear the message when done
-        self.app.app.loop.call_soon_threadsafe(lambda: self.app.print(""))
+        self.app.app.loop.call_soon_threadsafe(self._clear_frame)
+
+    def _show_frame(self, char):
+        """Show a frame unless the operation has already finished."""
+        # Frames are queued onto the prompt-toolkit event loop. The operation
+        # may finish before a queued frame gets its turn, so check again here
+        # rather than letting an old spinner overwrite the final result.
+        if self.running:
+            self.app.print(f"{char} {self.message}", timeout=None)
+
+    def _clear_frame(self):
+        """Clear only this indicator, preserving newer status messages."""
+        # Errors use the same mini buffer as the spinner. Only remove text that
+        # is definitely one of our own frames, otherwise an error reported by
+        # the worker would disappear just as the wait indicator stopped.
+        text = self.app.mini_buffer_content.text
+        is_indicator = any(
+            text == f"{char} {self.message}" for char in self.SPINNER_CHARS
+        )
+        if is_indicator:
+            self.app.print("", timeout=None)
 
     def start(self):
         """Start the spinning indicator."""

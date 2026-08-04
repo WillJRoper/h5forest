@@ -46,8 +46,13 @@ def edit_bins(event):
     # Wait for data assignment thread to finish if it's running
     if app.histogram_plotter.assign_data_thread is not None:
         with WaitIndicator(app, "Computing data range..."):
-            app.histogram_plotter.assign_data_thread.join()
-        app.histogram_plotter.assign_data_thread = None
+            # Joining can surface a failure from the worker. Clear the saved
+            # thread either way so selecting another dataset gives us a clean
+            # retry rather than joining the same failed worker forever.
+            try:
+                app.histogram_plotter.assign_data_thread.join()
+            finally:
+                app.histogram_plotter.assign_data_thread = None
 
     # Check if x_min/x_max are available (needed to compute histogram)
     if (
@@ -97,8 +102,11 @@ def toggle_x_scale(event):
     # Wait for data assignment thread to finish if it's running
     if app.histogram_plotter.assign_data_thread is not None:
         with WaitIndicator(app, "Computing data range..."):
-            app.histogram_plotter.assign_data_thread.join()
-        app.histogram_plotter.assign_data_thread = None
+            # Keep the plotter retryable if range calculation raises here.
+            try:
+                app.histogram_plotter.assign_data_thread.join()
+            finally:
+                app.histogram_plotter.assign_data_thread = None
 
     # Check if x_min/x_max are available
     if (
@@ -154,8 +162,11 @@ def toggle_y_scale(event):
     # Wait for data assignment thread to finish if it's running
     if app.histogram_plotter.assign_data_thread is not None:
         with WaitIndicator(app, "Computing data range..."):
-            app.histogram_plotter.assign_data_thread.join()
-        app.histogram_plotter.assign_data_thread = None
+            # Keep the plotter retryable if range calculation raises here.
+            try:
+                app.histogram_plotter.assign_data_thread.join()
+            finally:
+                app.histogram_plotter.assign_data_thread = None
 
     # Check if x_min/x_max are available (needed to compute histogram)
     if (
@@ -280,8 +291,12 @@ def plot_hist(event):
         # Set the text in the plotting area
         app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
+    @error_handler
     def do_plot(use_chunks):
         """Actually perform the plot after chunking preference is set."""
+        # This callback may run after ``plot_hist`` has returned because the
+        # user can answer a chunking prompt later. It therefore needs its own
+        # error boundary rather than relying on the decorator above.
         # Compute and plot the histogram with wait indicator
         with WaitIndicator(app, "Generating histogram..."):
             # Compute the histogram
@@ -328,8 +343,11 @@ def save_hist(event):
         # Set the text in the plotting area
         app.hist_content.text = app.histogram_plotter.set_data_key(node)
 
+    @error_handler
     def do_save(use_chunks):
         """Actually save the plot after chunking preference is set."""
+        # As with ``do_plot``, a prompt can invoke this after the outer binding
+        # has returned, so catch and report failures at the callback itself.
         # Compute the histogram
         app.hist_content.text = app.histogram_plotter.compute_hist(
             app.hist_content.text, use_chunks=use_chunks

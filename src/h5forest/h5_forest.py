@@ -179,7 +179,11 @@ class H5Forest:
         self.value_title = DynamicTitle("Values")
         self.mode_title = DynamicTitle("Normal Mode")
 
-        # Attach the hexbin plotter
+        # Pull every plotting section through ConfigManager's validation before
+        # constructing either plotter. Both plotters receive the same mapping
+        # because figure and save options are shared, while each subclass picks
+        # out its own scatter or histogram section. Keeping this plumbing here
+        # also means plotting.py never needs to know where config files live.
         plotting_config = {
             section: self.config.get_plotting_options(section)
             for section in ("figure", "scatter", "histogram", "save")
@@ -194,6 +198,10 @@ class H5Forest:
         self.attributes_content = None
         self.values_content = None
         self.mini_buffer_content = None
+        # Each status message gets a new id. Comparing the text alone is not
+        # quite enough here because the same message can be printed twice, and
+        # we do not want the first message's timer to clear the second one.
+        self._mini_buffer_message_id = 0
         self.progress_bar_content = None
         self.plot_content = None
         self.hist_content = None
@@ -770,7 +778,10 @@ class H5Forest:
                 Uses threading to clear the message without blocking.
         """
         args = [str(a) for a in args]
-        self.mini_buffer_content.text = " ".join(args)
+        message = " ".join(args)
+        self._mini_buffer_message_id += 1
+        message_id = self._mini_buffer_message_id
+        self.mini_buffer_content.text = message
         self.app.invalidate()
 
         # If timeout is provided, clear the message after the specified time
@@ -782,15 +793,25 @@ class H5Forest:
                 # Use call_soon_threadsafe to safely update UI from
                 # background thread
                 self.app.loop.call_soon_threadsafe(
-                    lambda: self._clear_mini_buffer()
+                    lambda: self._clear_mini_buffer(message, message_id)
                 )
 
             # Start the clearing thread
             thread = threading.Thread(target=_clear_message, daemon=True)
             thread.start()
 
-    def _clear_mini_buffer(self):
+    def _clear_mini_buffer(self, message=None, message_id=None):
         """Clear the mini buffer content."""
+        # A newer status may have arrived while this timer was sleeping. In
+        # that case this callback belongs to an old message and should quietly
+        # leave the current one alone.
+        if (
+            message_id is not None
+            and message_id != self._mini_buffer_message_id
+        ):
+            return
+        if message is not None and self.mini_buffer_content.text != message:
+            return
         self.mini_buffer_content.text = ""
         self.app.invalidate()
 

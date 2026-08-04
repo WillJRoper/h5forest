@@ -826,6 +826,31 @@ class TestH5ForestPrintAndInput:
         # Message should still be there
         assert app.mini_buffer_content.text == "Persistent message"
 
+    def test_stale_timeout_preserves_newer_message(self, temp_h5_file):
+        """Test that an old timeout cannot clear a newer message."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app.app.invalidate = MagicMock()
+        app.mini_buffer_content.text = "New error"
+
+        app._clear_mini_buffer("Old status")
+
+        assert app.mini_buffer_content.text == "New error"
+
+    def test_stale_timeout_preserves_repeated_message(self, temp_h5_file):
+        """Test that matching text from a newer print is not cleared early."""
+        from h5forest.h5_forest import H5Forest
+
+        app = H5Forest(temp_h5_file)
+        app.app.invalidate = MagicMock()
+        app.mini_buffer_content.text = "Repeated status"
+        app._mini_buffer_message_id = 2
+
+        app._clear_mini_buffer("Repeated status", message_id=1)
+
+        assert app.mini_buffer_content.text == "Repeated status"
+
     def test_print_default_timeout(self, temp_h5_file):
         """Test print with default timeout (5 seconds)."""
         from h5forest.h5_forest import H5Forest

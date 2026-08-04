@@ -262,6 +262,37 @@ class TestHistBindings:
         mock_app.histogram_plotter.compute_hist.assert_called_once()
 
     @patch("h5forest.h5_forest.H5Forest")
+    @patch("h5forest.bindings.hist_funcs.prompt_for_chunking_preference")
+    def test_delayed_plot_callback_reports_error(
+        self, mock_prompt, mock_h5forest_class, mock_app, mock_event
+    ):
+        """Test errors raised after a chunking prompt remain visible."""
+        mock_h5forest_class.return_value = mock_app
+        callbacks = []
+
+        def capture_callback(app, nodes, callback):
+            callbacks.append(callback)
+
+        mock_prompt.side_effect = capture_callback
+        mock_app.histogram_plotter.compute_hist.side_effect = RuntimeError(
+            "histogram worker failed"
+        )
+        _init_hist_bindings(mock_app)
+
+        bindings = [
+            binding
+            for binding in mock_app.kb.bindings
+            if binding.keys == ("h",) and binding.filter is not None
+        ]
+        bindings[0].handler(mock_event)
+
+        assert len(callbacks) == 1
+        callbacks[0](use_chunks=False)
+        mock_app.print.assert_called_once()
+        assert "histogram worker failed" in mock_app.print.call_args[0][0]
+        mock_app.histogram_plotter.plot_and_show.assert_not_called()
+
+    @patch("h5forest.h5_forest.H5Forest")
     def test_plot_hist_with_group_node(
         self, mock_h5forest_class, mock_app, mock_event
     ):

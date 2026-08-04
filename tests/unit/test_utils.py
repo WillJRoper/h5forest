@@ -965,12 +965,23 @@ class TestWaitIndicator:
         indicator.start()
         time.sleep(0.15)
         indicator.stop()
+        mock_app.mini_buffer_content.text = "⠋ Loading"
 
         # Last call should clear the message (empty string)
         last_call = mock_app.app.loop.call_soon_threadsafe.call_args_list[-1]
         # Execute the lambda to see what it does
         last_call[0][0]()
-        mock_app.print.assert_called_with("")
+        mock_app.print.assert_called_with("", timeout=None)
+
+    def test_clear_frame_preserves_newer_message(self):
+        """Test that stopping does not erase an operation error."""
+        mock_app = MagicMock()
+        mock_app.mini_buffer_content.text = "Histogram generation failed"
+        indicator = WaitIndicator(mock_app, "Generating histogram...")
+
+        indicator._clear_frame()
+
+        mock_app.print.assert_not_called()
 
     def test_start_when_already_running(self):
         """Test that calling start() when already running does nothing."""
