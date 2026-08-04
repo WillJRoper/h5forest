@@ -1,8 +1,19 @@
 """Shared pytest fixtures for h5forest tests."""
 
 import os
+import sys
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
+
+# Tests should always exercise the checkout they belong to. Without this, a
+# plain ``pytest`` can silently import an older, non-editable h5forest install
+# from site-packages while collecting tests from this repository. Apart from
+# producing misleading results, that becomes a collection error as soon as a
+# branch adds a new public name that the installed copy does not have yet.
+source_root = str(Path(__file__).resolve().parents[1] / "src")
+if source_root not in sys.path:
+    sys.path.insert(0, source_root)
 
 import h5py
 import numpy as np
@@ -21,8 +32,6 @@ def ensure_test_fixtures():
     # Only create fixtures if they don't exist
     if not os.path.exists(simple_path):
         # Import the creation script
-        import sys
-
         sys.path.insert(0, fixtures_dir)
         from create_fixtures import create_all_fixtures
 
